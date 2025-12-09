@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.output
+dist
+
+# Development files
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+coverage
+
+# Documentation
+*.md
+!README.md
+
+# Plan files
+plan/
+
+# Misc
+.cursor
+

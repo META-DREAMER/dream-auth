@@ -1,118 +1,143 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { KeyRound, Loader2, LogOut, Shield, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  Zap,
-  Server,
-  Route as RouteIcon,
-  Shield,
-  Waves,
-  Sparkles,
-} from 'lucide-react'
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { signOut, useSession } from "@/lib/auth-client";
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute("/")({
+	component: HomePage,
+});
 
-function App() {
-  const features = [
-    {
-      icon: <Zap className="w-12 h-12 text-cyan-400" />,
-      title: 'Powerful Server Functions',
-      description:
-        'Write server-side code that seamlessly integrates with your client components. Type-safe, secure, and simple.',
-    },
-    {
-      icon: <Server className="w-12 h-12 text-cyan-400" />,
-      title: 'Flexible Server Side Rendering',
-      description:
-        'Full-document SSR, streaming, and progressive enhancement out of the box. Control exactly what renders where.',
-    },
-    {
-      icon: <RouteIcon className="w-12 h-12 text-cyan-400" />,
-      title: 'API Routes',
-      description:
-        'Build type-safe API endpoints alongside your application. No separate backend needed.',
-    },
-    {
-      icon: <Shield className="w-12 h-12 text-cyan-400" />,
-      title: 'Strongly Typed Everything',
-      description:
-        'End-to-end type safety from server to client. Catch errors before they reach production.',
-    },
-    {
-      icon: <Waves className="w-12 h-12 text-cyan-400" />,
-      title: 'Full Streaming Support',
-      description:
-        'Stream data from server to client progressively. Perfect for AI applications and real-time updates.',
-    },
-    {
-      icon: <Sparkles className="w-12 h-12 text-cyan-400" />,
-      title: 'Next Generation Ready',
-      description:
-        'Built from the ground up for modern web applications. Deploy anywhere JavaScript runs.',
-    },
-  ]
+function HomePage() {
+	const { data: session, isPending } = useSession();
+	const navigate = useNavigate();
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <section className="relative py-20 px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10"></div>
-        <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <img
-              src="/tanstack-circle-logo.png"
-              alt="TanStack Logo"
-              className="w-24 h-24 md:w-32 md:h-32"
-            />
-            <h1 className="text-6xl md:text-7xl font-black text-white [letter-spacing:-0.08em]">
-              <span className="text-gray-300">TANSTACK</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                START
-              </span>
-            </h1>
-          </div>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-4 font-light">
-            The framework for next generation AI applications
-          </p>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-            Full-stack framework powered by TanStack Router for React and Solid.
-            Build modern applications with server functions, streaming, and type
-            safety.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <a
-              href="https://tanstack.com/start"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-cyan-500/50"
-            >
-              Documentation
-            </a>
-            <p className="text-gray-400 text-sm mt-2">
-              Begin your TanStack Start journey by editing{' '}
-              <code className="px-2 py-1 bg-slate-700 rounded text-cyan-400">
-                /src/routes/index.tsx
-              </code>
-            </p>
-          </div>
-        </div>
-      </section>
+	const handleSignOut = async () => {
+		await signOut();
+		navigate({ to: "/login" });
+	};
 
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10"
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  )
+	if (isPending) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+				<Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+			</div>
+		);
+	}
+
+	// Not authenticated - show welcome page with login prompt
+	if (!session) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+				{/* Background decoration */}
+				<div className="absolute inset-0 overflow-hidden pointer-events-none">
+					<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
+					<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
+					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
+				</div>
+
+				<div className="relative text-center max-w-xl">
+					<div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
+						<Shield className="h-10 w-10 text-white" />
+					</div>
+
+					<h1 className="text-4xl font-bold tracking-tight text-zinc-100 mb-4">
+						Auth Server
+					</h1>
+					<p className="text-lg text-zinc-400 mb-8">
+						Home Cluster Identity Provider
+					</p>
+
+					<div className="flex flex-col sm:flex-row gap-4 justify-center">
+						<Button
+							asChild
+							size="lg"
+							className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+						>
+							<Link to="/login">
+								<KeyRound className="mr-2 h-5 w-5" />
+								Sign in
+							</Link>
+						</Button>
+						<Button
+							asChild
+							variant="outline"
+							size="lg"
+							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+						>
+							<Link to="/register">Create account</Link>
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Authenticated - show user info
+	return (
+		<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			{/* Background decoration */}
+			<div className="absolute inset-0 overflow-hidden pointer-events-none">
+				<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
+				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
+			</div>
+
+			<div className="relative max-w-2xl mx-auto pt-20">
+				<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<CardHeader className="text-center">
+						<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
+							<User className="h-8 w-8 text-white" />
+						</div>
+						<CardTitle className="text-2xl text-zinc-100">
+							Welcome back, {session.user.name || "User"}
+						</CardTitle>
+						<CardDescription className="text-zinc-400">
+							You are signed in as {session.user.email}
+						</CardDescription>
+					</CardHeader>
+
+					<CardContent className="space-y-6">
+						<div className="rounded-lg bg-zinc-800/50 border border-zinc-700 p-4">
+							<h3 className="text-sm font-medium text-zinc-400 mb-3">
+								Session Info
+							</h3>
+							<dl className="space-y-2 text-sm">
+								<div className="flex justify-between">
+									<dt className="text-zinc-500">User ID</dt>
+									<dd className="text-zinc-300 font-mono text-xs">
+										{session.user.id}
+									</dd>
+								</div>
+								<div className="flex justify-between">
+									<dt className="text-zinc-500">Email</dt>
+									<dd className="text-zinc-300">{session.user.email}</dd>
+								</div>
+								{session.user.name && (
+									<div className="flex justify-between">
+										<dt className="text-zinc-500">Name</dt>
+										<dd className="text-zinc-300">{session.user.name}</dd>
+									</div>
+								)}
+							</dl>
+						</div>
+
+						<Button
+							onClick={handleSignOut}
+							variant="outline"
+							className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							Sign out
+						</Button>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
 }
