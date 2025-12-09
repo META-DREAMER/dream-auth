@@ -1,7 +1,11 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
-export const env = createEnv({
+/**
+ * Server-side environment variables.
+ * Only import this in server-side code (API routes, server functions, etc.)
+ */
+export const serverEnv = createEnv({
 	server: {
 		// Database
 		DATABASE_URL: z.string().url(),
@@ -27,20 +31,9 @@ export const env = createEnv({
 	},
 
 	/**
-	 * The prefix that client-side variables must have. This is enforced both at
-	 * a type-level and at runtime.
+	 * Server-side vars use process.env
 	 */
-	clientPrefix: "VITE_",
-
-	client: {
-		VITE_APP_TITLE: z.string().min(1).optional(),
-	},
-
-	/**
-	 * What object holds the environment variables at runtime. This is usually
-	 * `process.env` or `import.meta.env`.
-	 */
-	runtimeEnv: import.meta.env,
+	runtimeEnv: process.env,
 
 	/**
 	 * By default, this library will feed the environment variables directly to

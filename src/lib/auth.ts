@@ -1,15 +1,16 @@
 import { betterAuth } from "better-auth";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
+import { serverEnv } from "@/env";
 
 const pool = new Pool({
-	connectionString: process.env.DATABASE_URL,
+	connectionString: serverEnv.DATABASE_URL,
 });
 
 export const auth = betterAuth({
 	database: pool,
-	baseURL: process.env.BETTER_AUTH_URL,
-	secret: process.env.BETTER_AUTH_SECRET,
+	baseURL: serverEnv.BETTER_AUTH_URL,
+	secret: serverEnv.BETTER_AUTH_SECRET,
 
 	emailAndPassword: {
 		enabled: true,
@@ -31,7 +32,7 @@ export const auth = betterAuth({
 					httpOnly: true,
 					secure: process.env.NODE_ENV === "production",
 					sameSite: "lax",
-					domain: process.env.COOKIE_DOMAIN,
+					domain: serverEnv.COOKIE_DOMAIN,
 				},
 			},
 		},
