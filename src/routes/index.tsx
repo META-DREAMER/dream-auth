@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { KeyRound, Loader2, LogOut, Shield, User } from "lucide-react";
+import { KeyRound, LogOut, Settings, Shield, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -8,28 +8,20 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
 });
 
 function HomePage() {
-	const { data: session, isPending } = useSession();
+	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
 
 	const handleSignOut = async () => {
 		await signOut();
 		navigate({ to: "/login" });
 	};
-
-	if (isPending) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-				<Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-			</div>
-		);
-	}
 
 	// Not authenticated - show welcome page with login prompt
 	if (!session) {
@@ -127,14 +119,25 @@ function HomePage() {
 							</dl>
 						</div>
 
-						<Button
-							onClick={handleSignOut}
-							variant="outline"
-							className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
-						>
-							<LogOut className="mr-2 h-4 w-4" />
-							Sign out
-						</Button>
+						<div className="flex flex-col sm:flex-row gap-3">
+							<Button
+								asChild
+								className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+							>
+								<Link to="/settings">
+									<Settings className="mr-2 h-4 w-4" />
+									Settings
+								</Link>
+							</Button>
+							<Button
+								onClick={handleSignOut}
+								variant="outline"
+								className="flex-1 border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+							>
+								<LogOut className="mr-2 h-4 w-4" />
+								Sign out
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			</div>

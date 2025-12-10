@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import {
 	createRootRoute,
@@ -6,10 +7,25 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { getSessionFn } from "@/lib/session.server";
+import type { Session } from "@/lib/auth";
 
 import appCss from "../styles.css?url";
 
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60, // 1 minute
+			retry: 1,
+		},
+	},
+});
+
 export const Route = createRootRoute({
+	beforeLoad: async () => {
+		const session = await getSessionFn();
+		return { session };
+	},
 	head: () => ({
 		meta: [
 			{
@@ -84,5 +100,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-	return <Outlet />;
+	return (
+		<QueryClientProvider client={queryClient}>
+			<Outlet />
+		</QueryClientProvider>
+	);
 }

@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiVerifyRouteImport } from './routes/api/verify'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -24,6 +26,10 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +47,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -51,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -59,6 +71,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -66,8 +79,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/_authed/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -78,6 +93,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/settings'
     | '/api/health'
     | '/api/verify'
     | '/api/auth/$'
@@ -86,14 +102,17 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/settings'
     | '/api/health'
     | '/api/verify'
     | '/api/auth/$'
   id:
     | '__root__'
     | '/'
+    | '/_authed'
     | '/login'
     | '/register'
+    | '/_authed/settings'
     | '/api/health'
     | '/api/verify'
     | '/api/auth/$'
@@ -101,6 +120,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ApiHealthRoute: typeof ApiHealthRoute
@@ -124,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -145,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -155,8 +189,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedSettingsRoute: AuthedSettingsRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthedRoute: AuthedRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ApiHealthRoute: ApiHealthRoute,

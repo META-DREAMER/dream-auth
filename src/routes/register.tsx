@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import { AlertCircle, CheckCircle, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
@@ -21,6 +26,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/register")({
 	validateSearch: searchSchema,
+	beforeLoad: async ({ context, search }) => {
+		// Redirect authenticated users away from register page
+		if (context.session) {
+			throw redirect({ to: search.redirect || "/" });
+		}
+	},
 	component: RegisterPage,
 });
 

@@ -120,20 +120,101 @@ pg                - PostgreSQL client
 
 ---
 
-### Next Steps (Phase 2: Passwordless)
-
-According to the PRD, Phase 2 will add passkey support:
-
-- [ ] BetterAuth passkey plugin integration
-- [ ] Passkey registration flow in settings
-- [ ] Passkey login button on login page
-- [ ] Passkey management UI (view/delete registered keys)
-
----
-
 ### Notes
 
 - The project uses TanStack Start with file-based routing
 - Server routes use the `server.handlers` pattern (not separate API route exports)
 - BetterAuth's `tanstackStartCookies` plugin handles cookie management automatically
 - The forward-auth endpoint is designed for nginx ingress `auth-url` annotation
+
+---
+
+## Phase 2: Passwordless - COMPLETED
+
+**Date:** December 9, 2024  
+**Status:** Complete  
+**Goal:** Add passkey support for modern passwordless authentication
+
+---
+
+### Summary
+
+Implemented WebAuthn passkey support using BetterAuth's passkey plugin. Users can now sign in using biometrics or security keys, and manage their registered passkeys from a settings page. React Query is used for data fetching and mutations.
+
+---
+
+### Checklist from PRD
+
+- [x] BetterAuth passkey plugin integration
+- [x] Passkey registration flow in settings
+- [x] Passkey login button on login page
+- [x] Passkey management UI (view/delete registered keys)
+
+---
+
+### Files Created
+
+| File                                    | Purpose                                                                          |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| `src/routes/settings.tsx`               | Settings page with user profile and passkey management                           |
+| `src/components/passkey-list.tsx`       | Component displaying user's passkeys with delete functionality using React Query |
+| `src/components/add-passkey-dialog.tsx` | Dialog component for registering new passkeys with React Query mutation          |
+
+#### shadcn/ui Components Installed
+
+- `table`
+- `alert-dialog`
+- `separator`
+- `skeleton`
+- `badge`
+- `dialog`
+
+---
+
+### Files Modified
+
+| File                    | Changes                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `src/routes/__root.tsx` | Added React Query `QueryClientProvider` wrapper                                        |
+| `src/routes/login.tsx`  | Added passkey sign-in button, conditional UI support, webauthn autocomplete attributes |
+| `src/routes/index.tsx`  | Added Settings button link for authenticated users                                     |
+
+---
+
+### Dependencies Added
+
+```
+@tanstack/react-query  - Data fetching and caching library
+```
+
+---
+
+### Key Features
+
+1. **Passkey Login** - Users with registered passkeys see a "Sign in with Passkey" button on the login page
+2. **Conditional UI** - Browsers supporting WebAuthn conditional mediation show passkey autofill suggestions
+3. **Passkey Registration** - Authenticated users can register new passkeys from the settings page
+4. **Passkey Management** - Users can view all registered passkeys and delete them with confirmation
+5. **React Query Integration** - All passkey data operations use React Query for caching and optimistic updates
+
+---
+
+### API Methods Used
+
+| Method                       | Purpose                                |
+| ---------------------------- | -------------------------------------- |
+| `signIn.passkey()`           | Authenticate with a registered passkey |
+| `passkey.addPasskey()`       | Register a new passkey                 |
+| `passkey.listUserPasskeys()` | List all passkeys for current user     |
+| `passkey.deletePasskey()`    | Remove a registered passkey            |
+
+---
+
+### Next Steps (Phase 3: Web3)
+
+According to the PRD, Phase 3 will add Ethereum wallet authentication:
+
+- [ ] BetterAuth SIWE plugin integration
+- [ ] Wallet connect component (RainbowKit or similar)
+- [ ] Wallet address display in user profile
+- [ ] Wallet-only registration option

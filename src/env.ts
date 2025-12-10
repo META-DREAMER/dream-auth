@@ -14,13 +14,18 @@ export const serverEnv = createEnv({
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_URL: z.string().url(),
 
-		// Cookie configuration
-		COOKIE_DOMAIN: z.string().min(1),
+		// Cookie configuration - optional for local development
+		// When not set, cookies will use the current origin (works on localhost)
+		COOKIE_DOMAIN: z.string().min(1).optional(),
 
 		// Feature flags
 		ENABLE_REGISTRATION: z
 			.string()
 			.default("false")
+			.transform((val) => val === "true"),
+		ENABLE_PASSKEYS: z
+			.string()
+			.default("true")
 			.transform((val) => val === "true"),
 
 		// Admin configuration

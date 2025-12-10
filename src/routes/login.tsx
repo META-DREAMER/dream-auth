@@ -1,6 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, KeyRound, Loader2 } from "lucide-react";
-import { useState } from "react";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
+import { AlertCircle, Fingerprint, KeyRound, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { signIn } from "@/lib/auth-client";
 
 const searchSchema = z.object({
@@ -21,6 +27,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/login")({
 	validateSearch: searchSchema,
+	beforeLoad: async ({ context, search }) => {
+		// Redirect authenticated users away from login page
+		if (context.session) {
+			throw redirect({ to: search.redirect || "/" });
+		}
+	},
 	component: LoginPage,
 });
 
@@ -31,6 +43,70 @@ function LoginPage() {
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+	const [passkeySupported, setPasskeySupported] = useState(false);
+
+	// Check passkey support and enable conditional UI (autofill)
+	useEffect(() => {
+		const checkPasskeySupport = async () => {
+			// Check if WebAuthn is available
+			if (
+				typeof window !== "undefined" &&
+				window.PublicKeyCredential &&
+				typeof PublicKeyCredential.isConditionalMediationAvailable ===
+					"function"
+			) {
+				try {
+					const isAvailable =
+						await PublicKeyCredential.isConditionalMediationAvailable();
+					setPasskeySupported(isAvailable);
+
+					// Enable conditional UI (passkey autofill)
+					if (isAvailable) {
+						signIn.passkey({
+							autoFill: true,
+							fetchOptions: {
+								onSuccess() {
+									window.location.href = redirect || "/";
+								},
+							},
+						});
+					}
+				} catch {
+					setPasskeySupported(false);
+				}
+			}
+		};
+
+		checkPasskeySupport();
+	}, [redirect]);
+
+	const handlePasskeySignIn = async () => {
+		setError(null);
+		setIsPasskeyLoading(true);
+
+		try {
+			const result = await signIn.passkey({
+				fetchOptions: {
+					onSuccess() {
+						navigate({ to: redirect || "/" });
+					},
+					onError(ctx) {
+						setError(ctx.error.message || "Passkey authentication failed");
+					},
+				},
+			});
+
+			if (result?.error) {
+				setError(result.error.message || "Passkey authentication failed");
+				return;
+			}
+		} catch {
+			setError("Passkey authentication failed. Please try again.");
+		} finally {
+			setIsPasskeyLoading(false);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -78,15 +154,52 @@ function LoginPage() {
 					</CardDescription>
 				</CardHeader>
 
-				<form onSubmit={handleSubmit}>
-					<CardContent className="space-y-4">
-						{error && (
-							<div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
-								<AlertCircle className="h-4 w-4 shrink-0" />
-								<span>{error}</span>
-							</div>
-						)}
+				<CardContent className="space-y-4">
+					{error && (
+						<div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
+							<AlertCircle className="h-4 w-4 shrink-0" />
+							<span>{error}</span>
+						</div>
+					)}
 
+					{/* Passkey Sign In Button */}
+					{passkeySupported && (
+						<>
+							<Button
+								type="button"
+								onClick={handlePasskeySignIn}
+								disabled={isPasskeyLoading}
+								variant="outline"
+								className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:text-zinc-50 hover:border-emerald-500/50"
+							>
+								{isPasskeyLoading ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Authenticating...
+									</>
+								) : (
+									<>
+										<Fingerprint className="mr-2 h-4 w-4" />
+										Sign in with Passkey
+									</>
+								)}
+							</Button>
+
+							<div className="relative">
+								<div className="absolute inset-0 flex items-center">
+									<Separator className="w-full bg-zinc-800" />
+								</div>
+								<div className="relative flex justify-center text-xs uppercase">
+									<span className="bg-zinc-900 px-2 text-zinc-500">
+										or continue with email
+									</span>
+								</div>
+							</div>
+						</>
+					)}
+
+					{/* Email/Password Form */}
+					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
 							<Label htmlFor="email" className="text-zinc-300">
 								Email
@@ -98,7 +211,7 @@ function LoginPage() {
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
 								required
-								autoComplete="email"
+								autoComplete="username webauthn"
 								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
@@ -114,13 +227,11 @@ function LoginPage() {
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								required
-								autoComplete="current-password"
+								autoComplete="current-password webauthn"
 								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
-					</CardContent>
 
-					<CardFooter className="flex flex-col gap-4">
 						<Button
 							type="submit"
 							disabled={isLoading}
@@ -135,19 +246,21 @@ function LoginPage() {
 								"Sign in"
 							)}
 						</Button>
+					</form>
+				</CardContent>
 
-						<p className="text-center text-sm text-zinc-500">
-							Don't have an account?{" "}
-							<Link
-								to="/register"
-								search={{ redirect }}
-								className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-							>
-								Create one
-							</Link>
-						</p>
-					</CardFooter>
-				</form>
+				<CardFooter className="flex flex-col">
+					<p className="text-center text-sm text-zinc-500">
+						Don't have an account?{" "}
+						<Link
+							to="/register"
+							search={{ redirect }}
+							className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+						>
+							Create one
+						</Link>
+					</p>
+				</CardFooter>
 			</Card>
 		</div>
 	);
