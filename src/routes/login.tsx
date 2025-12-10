@@ -7,7 +7,7 @@ import {
 import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { WalletConnectButton } from "@/components/auth/wallet-connect-button";
+import { ConnectWalletButton } from "@/components/auth/connect-wallet-button";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -180,10 +180,10 @@ function LoginPage() {
 						</Button>
 					)}
 
-					<WalletConnectButton
-						onSuccess={() => navigate({ to: redirectParam || "/" })}
-						onError={(err) => setError(err)}
-					/>
+				<ConnectWalletButton
+					onSuccess={() => navigate({ to: redirectParam || "/" })}
+					onError={(err) => setError(err)}
+				/>
 
 					<div className="relative">
 						<div className="absolute inset-0 flex items-center">

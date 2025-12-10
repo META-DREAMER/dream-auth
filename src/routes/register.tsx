@@ -7,7 +7,7 @@ import {
 import { CheckCircle, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
-import { WalletConnectButton } from "@/components/auth/wallet-connect-button";
+import { ConnectWalletButton } from "@/components/auth/connect-wallet-button";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -124,15 +124,15 @@ function RegisterPage() {
 					<CardContent className="space-y-4">
 						{error && <ErrorAlert message={error} />}
 
-						<WalletConnectButton
-							onSuccess={() => {
-								setSuccess(true);
-								setTimeout(() => {
-									navigate({ to: redirectTo || "/" });
-								}, 1500);
-							}}
-							onError={(err) => setError(err)}
-						/>
+					<ConnectWalletButton
+						onSuccess={() => {
+							setSuccess(true);
+							setTimeout(() => {
+								navigate({ to: redirectTo || "/" });
+							}, 1500);
+						}}
+						onError={(err) => setError(err)}
+					/>
 
 						<div className="relative">
 							<div className="absolute inset-0 flex items-center">

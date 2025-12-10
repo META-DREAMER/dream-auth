@@ -12,7 +12,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { useSiweAuth } from "@/hooks/use-siwe-auth";
-import { useWalletConnect } from "@/hooks/use-wallet-connect";
+import { useConnectWallet } from "@/hooks/use-connect-wallet";
 
 /**
  * Dialog component for linking a new wallet to an existing account.
@@ -22,8 +22,8 @@ export function LinkWalletDialog() {
 	const [open, setOpen] = useState(false);
 	const queryClient = useQueryClient();
 
-	const { address, isConnected, isConnecting, connect, disconnect } =
-		useWalletConnect();
+	const { address, isConnected, isConnecting, connectors, connect, disconnect } =
+		useConnectWallet();
 
 	const { authenticate, isAuthenticating, error, clearError } = useSiweAuth({
 		mode: "link",
@@ -34,11 +34,6 @@ export function LinkWalletDialog() {
 			setOpen(false);
 		},
 	});
-
-	const handleConnect = () => {
-		clearError();
-		connect();
-	};
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);
@@ -79,24 +74,33 @@ export function LinkWalletDialog() {
 					{error && <ErrorAlert message={error} />}
 
 					{!isConnected ? (
-						<Button
-							onClick={handleConnect}
-							disabled={isLoading}
-							variant="outline"
-							className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:border-orange-500/50"
-						>
-							{isConnecting ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Connecting...
-								</>
-							) : (
-								<>
-									<Wallet className="mr-2 h-4 w-4" />
-									Connect Wallet
-								</>
-							)}
-						</Button>
+						<div className="space-y-2">
+							<p className="text-sm text-zinc-400 mb-3">Select a wallet to connect:</p>
+							{connectors.map((connector) => (
+								<Button
+									key={connector.uid}
+									onClick={() => {
+										clearError();
+										connect(connector);
+									}}
+									disabled={isLoading}
+									variant="outline"
+									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:border-orange-500/50"
+								>
+									{isConnecting ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Connecting...
+										</>
+									) : (
+										<>
+											<Wallet className="mr-2 h-4 w-4" />
+											{connector.name}
+										</>
+									)}
+								</Button>
+							))}
+						</div>
 					) : (
 						<div className="space-y-4">
 							<div className="rounded-lg bg-zinc-800/50 border border-zinc-700 p-4">

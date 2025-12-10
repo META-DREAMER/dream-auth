@@ -1,22 +1,28 @@
 import { useCallback } from "react";
-import { useConnection, useConnect, useDisconnect, useConnectors } from "wagmi";
+import {
+	useAccount,
+	useConnect,
+	useDisconnect,
+	useConnectors,
+	type Connector,
+} from "wagmi";
 
 /**
  * Hook that wraps wagmi's wallet connection with simplified API.
- * Automatically selects the first available connector.
+ * Exposes all available connectors so user can select which one to use.
  */
-export function useWalletConnect() {
-	const { address, isConnected, chain } = useConnection();
+export function useConnectWallet() {
+	const { address, isConnected, chain } = useAccount();
 	const connectors = useConnectors();
 	const { mutate: connect, isPending: isConnecting } = useConnect();
 	const { mutate: disconnect } = useDisconnect();
 
-	const handleConnect = useCallback(() => {
-		const connector = connectors[0];
-		if (connector) {
+	const connectWithConnector = useCallback(
+		(connector: Connector) => {
 			connect({ connector });
-		}
-	}, [connectors, connect]);
+		},
+		[connect],
+	);
 
 	return {
 		// State
@@ -26,7 +32,7 @@ export function useWalletConnect() {
 		isConnecting,
 		connectors,
 		// Actions
-		connect: handleConnect,
+		connect: connectWithConnector,
 		disconnect,
 	};
 }

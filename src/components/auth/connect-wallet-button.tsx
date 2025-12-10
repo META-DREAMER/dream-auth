@@ -2,9 +2,9 @@ import { Loader2, Wallet } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSiweAuth } from "@/hooks/use-siwe-auth";
-import { useWalletConnect } from "@/hooks/use-wallet-connect";
+import { useConnectWallet } from "@/hooks/use-connect-wallet";
 
-interface WalletConnectButtonProps {
+interface ConnectWalletButtonProps {
 	onSuccess?: () => void;
 	onError?: (error: string) => void;
 	mode?: "signin" | "link";
@@ -18,13 +18,14 @@ interface WalletConnectButtonProps {
  * 3. Sign SIWE message
  * 4. Verify signature and create session
  */
-export function WalletConnectButton({
+export function ConnectWalletButton({
 	onSuccess,
 	onError,
 	mode = "signin",
 	className,
-}: WalletConnectButtonProps) {
-	const { address, isConnected, isConnecting, connect } = useWalletConnect();
+}: ConnectWalletButtonProps) {
+	const { address, isConnected, isConnecting, connectors, connect } =
+		useConnectWallet();
 	const { authenticate, isAuthenticating, error, clearError } = useSiweAuth({
 		mode,
 		onSuccess,
@@ -74,28 +75,34 @@ export function WalletConnectButton({
 
 	return (
 		<div className="space-y-2">
-			<Button
-				type="button"
-				onClick={connect}
-				disabled={isLoading}
-				variant="outline"
-				className={
-					className ||
-					"w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:text-zinc-50 hover:border-orange-500/50"
-				}
-			>
-				{isLoading ? (
-					<>
-						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						{isConnecting ? "Connecting..." : "Signing..."}
-					</>
-				) : (
-					<>
-						<Wallet className="mr-2 h-4 w-4" />
-						{mode === "link" ? "Connect Wallet to Link" : "Connect Wallet"}
-					</>
-				)}
-			</Button>
+			{connectors.map((connector) => (
+				<Button
+					key={connector.uid}
+					type="button"
+					onClick={() => {
+						clearError();
+						connect(connector);
+					}}
+					disabled={isLoading}
+					variant="outline"
+					className={
+						className ||
+						"w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:text-zinc-50 hover:border-orange-500/50"
+					}
+				>
+					{isLoading ? (
+						<>
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							{isConnecting ? "Connecting..." : "Signing..."}
+						</>
+					) : (
+						<>
+							<Wallet className="mr-2 h-4 w-4" />
+							{connector.name}
+						</>
+					)}
+				</Button>
+			))}
 			{error && <p className="text-sm text-red-400 text-center">{error}</p>}
 		</div>
 	);
