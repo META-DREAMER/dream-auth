@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { WalletConnectButton } from "@/components/wallet-connect-button";
 import { signUp } from "@/lib/auth-client";
 
 const searchSchema = z.object({
@@ -136,6 +138,28 @@ function RegisterPage() {
 								<span>{error}</span>
 							</div>
 						)}
+
+						{/* Wallet-only Registration */}
+						<WalletConnectButton
+							onSuccess={() => {
+								setSuccess(true);
+								setTimeout(() => {
+									navigate({ to: redirect || "/" });
+								}, 1500);
+							}}
+							onError={(err) => setError(err)}
+						/>
+
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<Separator className="w-full bg-zinc-800" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-zinc-900 px-2 text-zinc-500">
+									or register with email
+								</span>
+							</div>
+						</div>
 
 						<div className="space-y-2">
 							<Label htmlFor="name" className="text-zinc-300">

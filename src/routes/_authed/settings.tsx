@@ -6,9 +6,12 @@ import {
 	Mail,
 	Settings,
 	User,
+	Wallet,
 } from "lucide-react";
 import { AddPasskeyDialog } from "@/components/add-passkey-dialog";
+import { LinkWalletDialog } from "@/components/link-wallet-dialog";
 import { PasskeyList } from "@/components/passkey-list";
+import { WalletList } from "@/components/wallet-list";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -127,6 +130,27 @@ function SettingsPage() {
 						</CardHeader>
 						<CardContent>
 							<PasskeyList />
+						</CardContent>
+					</Card>
+
+					{/* Wallets Section */}
+					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="text-zinc-100 flex items-center gap-2">
+										<Wallet className="h-5 w-5 text-orange-500" />
+										Linked Wallets
+									</CardTitle>
+									<CardDescription className="text-zinc-400">
+										Sign in with your Ethereum wallet
+									</CardDescription>
+								</div>
+								<LinkWalletDialog />
+							</div>
+						</CardHeader>
+						<CardContent>
+							<WalletList />
 						</CardContent>
 					</Card>
 

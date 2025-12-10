@@ -7,6 +7,8 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { WagmiProvider } from "wagmi";
+import { wagmiConfig } from "@/lib/wagmi";
 import { getSessionFn } from "@/lib/session.server";
 
 import appCss from "../styles.css?url";
@@ -100,8 +102,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
 	return (
+		<WagmiProvider config={wagmiConfig}>
 		<QueryClientProvider client={queryClient}>
 			<Outlet />
 		</QueryClientProvider>
+		</WagmiProvider>
 	);
 }

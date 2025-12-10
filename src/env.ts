@@ -27,6 +27,10 @@ export const serverEnv = createEnv({
 			.string()
 			.default("true")
 			.transform((val) => val === "true"),
+		ENABLE_SIWE: z
+			.string()
+			.default("true")
+			.transform((val) => val === "true"),
 
 		// Admin configuration
 		ADMIN_EMAILS: z

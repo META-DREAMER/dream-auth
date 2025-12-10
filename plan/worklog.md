@@ -210,11 +210,129 @@ Implemented WebAuthn passkey support using BetterAuth's passkey plugin. Users ca
 
 ---
 
-### Next Steps (Phase 3: Web3)
+---
 
-According to the PRD, Phase 3 will add Ethereum wallet authentication:
+## Phase 3: Web3 - COMPLETED
 
-- [ ] BetterAuth SIWE plugin integration
-- [ ] Wallet connect component (RainbowKit or similar)
-- [ ] Wallet address display in user profile
-- [ ] Wallet-only registration option
+**Date:** December 10, 2024  
+**Status:** Complete  
+**Goal:** Add Ethereum wallet authentication (Sign-In With Ethereum)
+
+---
+
+### Summary
+
+Implemented SIWE (Sign-In With Ethereum) authentication using BetterAuth's SIWE plugin and wagmi for wallet connectivity. Users can now authenticate using MetaMask or other Ethereum-compatible wallets, register with wallet-only accounts, and manage linked wallets from the settings page.
+
+---
+
+### Checklist from PRD
+
+- [x] BetterAuth SIWE plugin integration
+- [x] Wallet connect component (wagmi + injected connectors)
+- [x] Wallet address display in user profile
+- [x] Wallet-only registration option
+
+---
+
+### Files Created
+
+| File                                       | Purpose                                                    |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| `src/lib/wagmi.ts`                         | Wagmi configuration with injected wallet connectors        |
+| `src/components/wallet-connect-button.tsx` | SIWE authentication button handling full sign-in flow      |
+| `src/components/wallet-list.tsx`           | Display linked wallets with unlink functionality           |
+| `src/components/link-wallet-dialog.tsx`    | Dialog for linking additional wallets to existing accounts |
+
+---
+
+### Files Modified
+
+| File                              | Changes                                                          |
+| --------------------------------- | ---------------------------------------------------------------- |
+| `src/lib/auth.ts`                 | Added SIWE plugin with nonce generation and message verification |
+| `src/lib/auth-client.ts`          | Added siweClient plugin, exported siwe namespace                 |
+| `src/routes/__root.tsx`           | Added WagmiProvider wrapper for wallet connectivity              |
+| `src/routes/login.tsx`            | Added wallet connect button for SIWE sign-in                     |
+| `src/routes/register.tsx`         | Added wallet-only registration option                            |
+| `src/routes/_authed/settings.tsx` | Added linked wallets section with management UI                  |
+| `src/env.ts`                      | Added ENABLE_SIWE feature flag                                   |
+| `src/env.client.ts`               | Added VITE_WALLETCONNECT_PROJECT_ID for optional WalletConnect   |
+
+---
+
+### Dependencies Added
+
+```
+wagmi     - React hooks for Ethereum wallet connectivity
+viem      - Low-level Ethereum interface (required by wagmi)
+siwe      - Sign-In With Ethereum message parsing and verification
+```
+
+---
+
+### Key Features
+
+1. **Wallet Sign-In** - Users can sign in by connecting their wallet and signing a SIWE message
+2. **Wallet Registration** - New users can register with just their wallet (no email required)
+3. **Wallet Linking** - Authenticated users can link additional wallets to their account
+4. **Wallet Management** - Users can view and unlink wallets from the settings page
+5. **Nonce Security** - Server-side nonce generation with expiration for replay protection
+6. **Conditional Feature** - SIWE can be disabled via ENABLE_SIWE environment variable
+
+---
+
+### SIWE Authentication Flow
+
+1. User clicks "Connect Wallet" button
+2. Wallet extension prompts user to connect
+3. Client requests nonce from BetterAuth server
+4. Client creates SIWE message with nonce
+5. Wallet prompts user to sign message
+6. Client sends signature to server for verification
+7. Server verifies signature and creates session
+8. User is redirected to application
+
+---
+
+### Environment Variables Added
+
+| Variable                        | Required | Description                                  |
+| ------------------------------- | -------- | -------------------------------------------- |
+| `ENABLE_SIWE`                   | No       | Enable SIWE authentication (default: `true`) |
+| `VITE_WALLETCONNECT_PROJECT_ID` | No       | WalletConnect project ID for mobile wallets  |
+
+---
+
+### API Methods Used
+
+| Method                         | Purpose                                        |
+| ------------------------------ | ---------------------------------------------- |
+| `siwe.nonce()`                 | Get nonce for SIWE message from server         |
+| `SiweMessage.prepareMessage()` | Create EIP-4361 SIWE message (client-side)     |
+| `siwe.verify()`                | Verify signature and authenticate/link account |
+| `authClient.listAccounts()`    | List linked accounts including wallets         |
+| `authClient.unlinkAccount()`   | Unlink a wallet from account                   |
+
+---
+
+### Technical Notes
+
+1. **SIWE Message Creation**: The SIWE message is created client-side using the `siwe` package's `SiweMessage` class, following EIP-4361 standard format.
+
+2. **Server Verification**: Uses viem's `verifyMessage` for cryptographic signature verification (recommended by BetterAuth docs).
+
+3. **Account Linking**: Enabled via `accountLinking.enabled: true` in server config. When a logged-in user verifies a new wallet, it's automatically linked to their account.
+
+4. **Nonce Management**: Server generates random nonces with 5-minute expiration stored in memory (production should use Redis/database).
+
+---
+
+### Next Steps (Phase 4: OIDC Provider)
+
+According to the PRD, Phase 4 will add OIDC provider functionality:
+
+- [ ] BetterAuth OIDC provider plugin
+- [ ] OIDC client configuration via environment/YAML
+- [ ] Consent screen implementation
+- [ ] Discovery and token endpoints
