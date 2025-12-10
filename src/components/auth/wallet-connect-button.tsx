@@ -35,7 +35,7 @@ export function WalletConnectButton({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally depends on wallet state
 	useEffect(() => {
 		clearError();
-	}, [isConnected, address, clearError]);
+	}, [isConnected, address]);
 
 	// Auto-trigger SIWE auth when wallet connects (signin mode only)
 	useEffect(() => {

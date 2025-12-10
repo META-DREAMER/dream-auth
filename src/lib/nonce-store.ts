@@ -18,17 +18,6 @@ export function storeNonce(nonce: string, ttlMs = 5 * 60 * 1000): void {
 }
 
 /**
- * Check if a nonce is valid (exists and not expired).
- * Does NOT consume the nonce - use validateAndConsumeNonce for that.
- * @param nonce - The nonce to validate
- * @returns true if valid, false otherwise
- */
-export function isNonceValid(nonce: string): boolean {
-	const expires = nonceStore.get(nonce);
-	return !!expires && expires >= Date.now();
-}
-
-/**
  * Validate and consume a nonce (single use).
  * Returns true if the nonce was valid, false otherwise.
  * The nonce is deleted regardless of validity.

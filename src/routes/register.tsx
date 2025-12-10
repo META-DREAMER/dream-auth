@@ -4,9 +4,12 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle, Loader2, UserPlus } from "lucide-react";
+import { CheckCircle, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
+import { WalletConnectButton } from "@/components/auth/wallet-connect-button";
+import { ErrorAlert } from "@/components/shared/error-alert";
+import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -19,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { WalletConnectButton } from "@/components/wallet-connect-button";
 import { signUp } from "@/lib/auth-client";
 
 const searchSchema = z.object({
@@ -29,7 +31,6 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/register")({
 	validateSearch: searchSchema,
 	beforeLoad: async ({ context, search }) => {
-		// Redirect authenticated users away from register page
 		if (context.session) {
 			throw redirect({ to: search.redirect || "/" });
 		}
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
 	const navigate = useNavigate();
-	const { redirect } = Route.useSearch();
+	const { redirect: redirectTo } = Route.useSearch();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -53,14 +54,12 @@ function RegisterPage() {
 		setError(null);
 		setIsLoading(true);
 
-		// Validate passwords match
 		if (password !== confirmPassword) {
 			setError("Passwords do not match");
 			setIsLoading(false);
 			return;
 		}
 
-		// Validate password strength
 		if (password.length < 8) {
 			setError("Password must be at least 8 characters");
 			setIsLoading(false);
@@ -68,11 +67,7 @@ function RegisterPage() {
 		}
 
 		try {
-			const result = await signUp.email({
-				email,
-				password,
-				name,
-			});
+			const result = await signUp.email({ email, password, name });
 
 			if (result.error) {
 				setError(result.error.message || "Registration failed");
@@ -80,9 +75,8 @@ function RegisterPage() {
 			}
 
 			setSuccess(true);
-			// Redirect after a short delay to show success message
 			setTimeout(() => {
-				navigate({ to: redirect || "/" });
+				navigate({ to: redirectTo || "/" });
 			}, 1500);
 		} catch {
 			setError("An unexpected error occurred");
@@ -111,11 +105,7 @@ function RegisterPage() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
-			{/* Background decoration */}
-			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-			</div>
+			<PageBackground />
 
 			<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
 				<CardHeader className="space-y-1 text-center">
@@ -132,19 +122,13 @@ function RegisterPage() {
 
 				<form onSubmit={handleSubmit}>
 					<CardContent className="space-y-4">
-						{error && (
-							<div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
-								<AlertCircle className="h-4 w-4 shrink-0" />
-								<span>{error}</span>
-							</div>
-						)}
+						{error && <ErrorAlert message={error} />}
 
-						{/* Wallet-only Registration */}
 						<WalletConnectButton
 							onSuccess={() => {
 								setSuccess(true);
 								setTimeout(() => {
-									navigate({ to: redirect || "/" });
+									navigate({ to: redirectTo || "/" });
 								}, 1500);
 							}}
 							onError={(err) => setError(err)}
@@ -246,7 +230,7 @@ function RegisterPage() {
 							Already have an account?{" "}
 							<Link
 								to="/login"
-								search={{ redirect }}
+								search={{ redirect: redirectTo }}
 								className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
 							>
 								Sign in

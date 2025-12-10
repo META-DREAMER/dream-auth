@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	createRootRoute,
 	HeadContent,
@@ -8,8 +8,8 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { WagmiProvider } from "wagmi";
-import { wagmiConfig } from "@/lib/wagmi";
 import { getSessionFn } from "@/lib/session.server";
+import { wagmiConfig } from "@/lib/wagmi";
 
 import appCss from "../styles.css?url";
 
@@ -103,9 +103,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootComponent() {
 	return (
 		<WagmiProvider config={wagmiConfig}>
-		<QueryClientProvider client={queryClient}>
-			<Outlet />
-		</QueryClientProvider>
+			<QueryClientProvider client={queryClient}>
+				<Outlet />
+			</QueryClientProvider>
 		</WagmiProvider>
 	);
 }

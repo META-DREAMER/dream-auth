@@ -1,8 +1,8 @@
+import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { generateRandomString } from "better-auth/crypto";
-import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { siwe } from "better-auth/plugins";
-import { passkey } from "@better-auth/passkey";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
 import { verifyMessage } from "viem";
 import { serverEnv } from "@/env";

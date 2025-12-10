@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Fingerprint,
@@ -8,10 +8,11 @@ import {
 	User,
 	Wallet,
 } from "lucide-react";
-import { AddPasskeyDialog } from "@/components/add-passkey-dialog";
-import { LinkWalletDialog } from "@/components/link-wallet-dialog";
-import { PasskeyList } from "@/components/passkey-list";
-import { WalletList } from "@/components/wallet-list";
+import { AddPasskeyDialog } from "@/components/auth/add-passkey-dialog";
+import { LinkWalletDialog } from "@/components/auth/link-wallet-dialog";
+import { PasskeyList } from "@/components/auth/passkey-list";
+import { WalletList } from "@/components/auth/wallet-list";
+import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -21,28 +22,19 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { signOut } from "@/lib/auth-client";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 export const Route = createFileRoute("/_authed/settings")({
 	component: SettingsPage,
 });
 
 function SettingsPage() {
-	const navigate = useNavigate();
 	const { session } = Route.useRouteContext();
-
-	const handleSignOut = async () => {
-		await signOut();
-		navigate({ to: "/login" });
-	};
+	const handleSignOut = useSignOut();
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-			{/* Background decoration */}
-			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-			</div>
+			<PageBackground />
 
 			<div className="relative max-w-3xl mx-auto px-4 py-8">
 				{/* Header */}
@@ -185,4 +177,3 @@ function SettingsPage() {
 		</div>
 	);
 }
-

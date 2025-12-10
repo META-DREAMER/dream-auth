@@ -4,9 +4,12 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { AlertCircle, Fingerprint, KeyRound, Loader2 } from "lucide-react";
+import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { WalletConnectButton } from "@/components/auth/wallet-connect-button";
+import { ErrorAlert } from "@/components/shared/error-alert";
+import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -19,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { WalletConnectButton } from "@/components/wallet-connect-button";
 import { signIn } from "@/lib/auth-client";
 
 const searchSchema = z.object({
@@ -29,7 +31,6 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/login")({
 	validateSearch: searchSchema,
 	beforeLoad: async ({ context, search }) => {
-		// Redirect authenticated users away from login page
 		if (context.session) {
 			throw redirect({ to: search.redirect || "/" });
 		}
@@ -54,19 +55,18 @@ function LoginPage() {
 	// Check passkey support and enable conditional UI (autofill) - runs once on mount
 	useEffect(() => {
 		const checkPasskeySupport = async () => {
-			// Check if WebAuthn is available
+			// biome-ignore lint/complexity/useOptionalChain: typeof check required for SSR safety - window?.X still throws ReferenceError if window is undeclared
 			if (
 				typeof window !== "undefined" &&
 				window.PublicKeyCredential &&
-				typeof PublicKeyCredential.isConditionalMediationAvailable ===
+				typeof window.PublicKeyCredential.isConditionalMediationAvailable ===
 					"function"
 			) {
 				try {
 					const isAvailable =
-						await PublicKeyCredential.isConditionalMediationAvailable();
+						await window.PublicKeyCredential.isConditionalMediationAvailable();
 					setPasskeySupported(isAvailable);
 
-					// Enable conditional UI (passkey autofill)
 					if (isAvailable) {
 						signIn
 							.passkey({
@@ -79,7 +79,6 @@ function LoginPage() {
 							})
 							.catch(() => {
 								// Silently ignore errors from conditional UI
-								// This can fail if user cancels or doesn't select a passkey
 							});
 					}
 				} catch {
@@ -124,17 +123,13 @@ function LoginPage() {
 		setIsLoading(true);
 
 		try {
-			const result = await signIn.email({
-				email,
-				password,
-			});
+			const result = await signIn.email({ email, password });
 
 			if (result.error) {
 				setError(result.error.message || "Invalid credentials");
 				return;
 			}
 
-			// Redirect to the original destination or home
 			navigate({ to: redirectParam || "/" });
 		} catch {
 			setError("An unexpected error occurred");
@@ -145,11 +140,7 @@ function LoginPage() {
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
-			{/* Background decoration */}
-			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-			</div>
+			<PageBackground />
 
 			<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
 				<CardHeader className="space-y-1 text-center">
@@ -165,14 +156,8 @@ function LoginPage() {
 				</CardHeader>
 
 				<CardContent className="space-y-4">
-					{error && (
-						<div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">
-							<AlertCircle className="h-4 w-4 shrink-0" />
-							<span>{error}</span>
-						</div>
-					)}
+					{error && <ErrorAlert message={error} />}
 
-					{/* Passkey Sign In Button */}
 					{passkeySupported && (
 						<Button
 							type="button"
@@ -195,24 +180,22 @@ function LoginPage() {
 						</Button>
 					)}
 
-					{/* Wallet Connect Button */}
 					<WalletConnectButton
 						onSuccess={() => navigate({ to: redirectParam || "/" })}
 						onError={(err) => setError(err)}
 					/>
 
-				<div className="relative">
-					<div className="absolute inset-0 flex items-center">
-						<Separator className="w-full bg-zinc-800" />
+					<div className="relative">
+						<div className="absolute inset-0 flex items-center">
+							<Separator className="w-full bg-zinc-800" />
+						</div>
+						<div className="relative flex justify-center text-xs uppercase">
+							<span className="bg-zinc-900 px-2 text-zinc-500">
+								or continue with email
+							</span>
+						</div>
 					</div>
-					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-zinc-900 px-2 text-zinc-500">
-							or continue with email
-						</span>
-					</div>
-				</div>
 
-					{/* Email/Password Form */}
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
 							<Label htmlFor="email" className="text-zinc-300">

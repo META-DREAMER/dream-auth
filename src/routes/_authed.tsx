@@ -18,4 +18,3 @@ export const Route = createFileRoute("/_authed")({
 function AuthedLayout() {
 	return <Outlet />;
 }
-

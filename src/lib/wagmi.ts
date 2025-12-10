@@ -1,4 +1,4 @@
-import { http, createConfig } from "wagmi";
+import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { injected, walletConnect } from "wagmi/connectors";
 import { clientEnv } from "@/env.client";
@@ -21,4 +21,3 @@ export const wagmiConfig = createConfig({
 		[mainnet.id]: http(),
 	},
 });
-

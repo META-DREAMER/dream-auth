@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { KeyRound, LogOut, Settings, Shield, User } from "lucide-react";
+import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -8,7 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { signOut } from "@/lib/auth-client";
+import { useSignOut } from "@/hooks/use-sign-out";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -16,23 +17,15 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
 	const { session } = Route.useRouteContext();
-	const navigate = useNavigate();
-
-	const handleSignOut = async () => {
-		await signOut();
-		navigate({ to: "/login" });
-	};
+	const handleSignOut = useSignOut();
 
 	// Not authenticated - show welcome page with login prompt
 	if (!session) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
-				{/* Background decoration */}
-				<div className="absolute inset-0 overflow-hidden pointer-events-none">
-					<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-					<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
-				</div>
+				<PageBackground />
+				{/* Extra center decoration for unauthenticated view */}
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
 				<div className="relative text-center max-w-xl">
 					<div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/25">
@@ -74,11 +67,7 @@ function HomePage() {
 	// Authenticated - show user info
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
-			{/* Background decoration */}
-			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-			</div>
+			<PageBackground />
 
 			<div className="relative max-w-2xl mx-auto pt-20">
 				<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">

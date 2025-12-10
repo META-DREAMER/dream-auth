@@ -122,7 +122,7 @@ export function LinkWalletDialog() {
 							</Button>
 
 							<Button
-								onClick={disconnect}
+								onClick={() => disconnect()}
 								variant="ghost"
 								className="w-full text-zinc-400 hover:text-zinc-100"
 								disabled={isLoading}
