@@ -1,38 +1,34 @@
-import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useState } from "react";
 import { useAccount, useDisconnect, useSignMessage } from "wagmi";
+import { createSiweMessage } from "viem/siwe";
 import { siwe } from "@/lib/auth-client";
-import { createSiweChallengeFn } from "@/lib/siwe.server";
+import { clientEnv } from "@/env.client";
 
 interface UseSiweAuthOptions {
-	mode: "signin" | "link";
 	onSuccess?: () => void;
 	onError?: (error: string) => void;
-	/** Whether to disconnect wallet on error (default: true for signin, false for link) */
+	/** Whether to disconnect wallet on error (default: true) */
 	disconnectOnError?: boolean;
 }
 
 /**
  * Hook that handles SIWE (Sign-In With Ethereum) authentication flow:
- * 1. Get SIWE challenge (nonce + message) from server
- * 2. Sign message with wallet
- * 3. Verify signature and authenticate
+ * 1. Get SIWE challenge (nonce) from server (via client call)
+ * 2. Create SIWE message client-side
+ * 3. Sign message with wallet
+ * 4. Verify signature and authenticate
  */
 export function useSiweAuth({
-	mode,
 	onSuccess,
 	onError,
-	disconnectOnError,
-}: UseSiweAuthOptions) {
+	disconnectOnError = true,
+}: UseSiweAuthOptions = {}) {
 	const { address, chain } = useAccount();
 	const { disconnect } = useDisconnect();
 	const { mutateAsync: signMessageAsync } = useSignMessage();
-	const createSiweChallenge = useServerFn(createSiweChallengeFn);
 
 	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-
-	const shouldDisconnectOnError = disconnectOnError ?? mode === "signin";
 
 	const authenticate = useCallback(async () => {
 		if (!address || !chain) {
@@ -44,15 +40,39 @@ export function useSiweAuth({
 		setError(null);
 
 		try {
-			// Step 1: Get SIWE challenge (nonce + prepared message) from server
-			const { message } = await createSiweChallenge({
-				data: { address, chainId: chain.id, mode },
+			// Step 1: Get SIWE nonce
+			const nonceResponse = await siwe.nonce({
+				walletAddress: address,
+				chainId: chain.id,
 			});
 
-			// Step 2: Sign message with wallet
+			if (nonceResponse.error || !nonceResponse.data?.nonce) {
+				throw new Error(nonceResponse.error?.message || "Failed to generate SIWE nonce");
+			}
+
+			const nonce = nonceResponse.data.nonce;
+			const statement = "Sign in with your Ethereum wallet to Dream Auth";
+			
+			// Determine domain and URI
+			// Use configured auth URL or fallback to current origin
+			const authUrlStr = clientEnv.VITE_AUTH_URL || window.location.origin;
+			const authUrl = new URL(authUrlStr);
+
+			// Step 2: Create SIWE message using viem's utility (bypasses buggy SiweMessage constructor in siwe v3)
+			const message = createSiweMessage({
+				domain: authUrl.hostname,
+				address,
+				statement,
+				uri: authUrlStr,
+				version: "1",
+				chainId: chain.id,
+				nonce,
+			});
+
+			// Step 3: Sign message with wallet
 			const signature = await signMessageAsync({ message });
 
-			// Step 3: Verify signature and authenticate
+			// Step 4: Verify signature and authenticate
 			const verifyResult = await siwe.verify({
 				message,
 				signature,
@@ -72,7 +92,7 @@ export function useSiweAuth({
 			setError(errorMessage);
 			onError?.(errorMessage);
 
-			if (shouldDisconnectOnError) {
+			if (disconnectOnError) {
 				disconnect();
 			}
 			return false;
@@ -82,11 +102,9 @@ export function useSiweAuth({
 	}, [
 		address,
 		chain,
-		mode,
 		signMessageAsync,
-		createSiweChallenge,
 		disconnect,
-		shouldDisconnectOnError,
+		disconnectOnError,
 		onSuccess,
 		onError,
 	]);

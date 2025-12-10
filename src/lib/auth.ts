@@ -1,10 +1,10 @@
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
-import { generateRandomString } from "better-auth/crypto";
 import { siwe } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
-import { http, verifyMessage, createPublicClient } from "viem";
+import { http, verifyMessage, createPublicClient,  } from "viem";
+import { generateSiweNonce } from "viem/siwe";
 import { serverEnv } from "@/env";
 import { mainnet } from "viem/chains";
 
@@ -78,7 +78,7 @@ export const auth = betterAuth({
 						getNonce: async () => {
 							// Generate a cryptographically secure random nonce
 							// Better-auth handles nonce storage and validation internally
-							return generateRandomString(32);
+							return generateSiweNonce();
 						},
 						verifyMessage: async ({ message, signature, address }) => {
 							try {

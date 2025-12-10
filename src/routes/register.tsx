@@ -7,7 +7,7 @@ import {
 import { CheckCircle, Loader2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
-import { ConnectWalletButton } from "@/components/auth/connect-wallet-button";
+import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -124,7 +124,7 @@ function RegisterPage() {
 					<CardContent className="space-y-4">
 						{error && <ErrorAlert message={error} />}
 
-					<ConnectWalletButton
+					<ConnectSIWEButton
 						onSuccess={() => {
 							setSuccess(true);
 							setTimeout(() => {

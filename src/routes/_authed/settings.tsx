@@ -26,6 +26,7 @@ import { useSignOut } from "@/hooks/use-sign-out";
 
 export const Route = createFileRoute("/_authed/settings")({
 	component: SettingsPage,
+	ssr: false,
 });
 
 function SettingsPage() {

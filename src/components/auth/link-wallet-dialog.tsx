@@ -1,142 +1,138 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Wallet } from "lucide-react";
-import { useState } from "react";
-import { ErrorAlert } from "@/components/shared/error-alert";
+import { Loader2, Plus, PenLine } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import { useSiweAuth } from "@/hooks/use-siwe-auth";
-import { useConnectWallet } from "@/hooks/use-connect-wallet";
+import { useSimpleKit } from "@/components/simplekit";
+import { useAccount, useDisconnect } from "wagmi";
 
 /**
- * Dialog component for linking a new wallet to an existing account.
- * Uses SIWE to verify wallet ownership before linking.
+ * Button component for linking a new wallet to an existing account.
+ * Uses SimpleKit for connection and SIWE for verification.
+ * 
+ * Flow:
+ * 1. User clicks "Link Wallet" - opens connect modal
+ * 2. After connecting, auto-triggers SIWE (with manual retry available)
+ * 3. User signs SIWE message to complete linking
+ * 
+ * Auto-triggers once per linking attempt, with manual retry always available.
  */
 export function LinkWalletDialog() {
-	const [open, setOpen] = useState(false);
 	const queryClient = useQueryClient();
+	const { open: openConnectModal, isConnected, isModalOpen, formattedAddress } = useSimpleKit();
+	const { address } = useAccount();
+	const { disconnect } = useDisconnect();
+	const [isLinkingFlow, setIsLinkingFlow] = useState(false);
 
-	const { address, isConnected, isConnecting, connectors, connect, disconnect } =
-		useConnectWallet();
+	// Track if we've auto-triggered for this linking flow
+	const autoTriggeredRef = useRef(false);
 
-	const { authenticate, isAuthenticating, error, clearError } = useSiweAuth({
-		mode: "link",
-		disconnectOnError: false,
+	const { authenticate, isAuthenticating } = useSiweAuth({
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["linked-accounts"] });
+			setIsLinkingFlow(false);
+			autoTriggeredRef.current = false;
+			// Disconnect so user can link another wallet
 			disconnect();
-			setOpen(false);
 		},
+		onError: () => {
+			// Keep isLinkingFlow true so user can see the retry button
+		},
+		disconnectOnError: true,
 	});
 
-	const handleOpenChange = (newOpen: boolean) => {
-		setOpen(newOpen);
-		if (!newOpen) {
-			clearError();
-			if (isConnected) {
-				disconnect();
-			}
+	// Auto-trigger SIWE when wallet connects during linking flow
+	useEffect(() => {
+		if (
+			isLinkingFlow &&
+			isConnected &&
+			address &&
+			!isModalOpen &&
+			!isAuthenticating &&
+			!autoTriggeredRef.current
+		) {
+			// Mark as auto-triggered for this flow
+			autoTriggeredRef.current = true;
+			// Small delay to let modal close animation complete
+			const timer = setTimeout(() => {
+				authenticate();
+			}, 300);
+			return () => clearTimeout(timer);
 		}
+	}, [isLinkingFlow, isConnected, address, isModalOpen, isAuthenticating, authenticate]);
+
+	// Start linking flow - disconnect any existing wallet, then open connect modal
+	const handleStartLinking = () => {
+		setIsLinkingFlow(true);
+		autoTriggeredRef.current = false;
+		// Disconnect any existing wallet to ensure fresh connection for linking
+		if (isConnected) {
+			disconnect();
+		}
+		openConnectModal();
 	};
 
-	const isLoading = isConnecting || isAuthenticating;
+	// Complete linking - sign SIWE message (manual trigger)
+	const handleSignToLink = () => {
+		authenticate();
+	};
 
-	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
+	// Cancel linking flow
+	const handleCancel = () => {
+		setIsLinkingFlow(false);
+		autoTriggeredRef.current = false;
+	};
+
+	const buttonClasses = "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100";
+
+	// State: Connected and in linking flow - show sign button with cancel option
+	if (isConnected && isLinkingFlow) {
+		return (
+			<div className="flex gap-2">
 				<Button
 					variant="outline"
 					size="sm"
-					className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+					className={buttonClasses}
+					onClick={handleSignToLink}
+					disabled={isAuthenticating}
 				>
-					<Plus className="mr-2 h-4 w-4" />
-					Link Wallet
-				</Button>
-			</DialogTrigger>
-			<DialogContent className="bg-zinc-900 border-zinc-800">
-				<DialogHeader>
-					<DialogTitle className="text-zinc-100 flex items-center gap-2">
-						<Wallet className="h-5 w-5 text-orange-500" />
-						Link Ethereum Wallet
-					</DialogTitle>
-					<DialogDescription className="text-zinc-400">
-						Connect and sign with your wallet to link it to your account.
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className="space-y-4 py-4">
-					{error && <ErrorAlert message={error} />}
-
-					{!isConnected ? (
-						<div className="space-y-2">
-							<p className="text-sm text-zinc-400 mb-3">Select a wallet to connect:</p>
-							{connectors.map((connector) => (
-								<Button
-									key={connector.uid}
-									onClick={() => {
-										clearError();
-										connect(connector);
-									}}
-									disabled={isLoading}
-									variant="outline"
-									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:border-orange-500/50"
-								>
-									{isConnecting ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Connecting...
-										</>
-									) : (
-										<>
-											<Wallet className="mr-2 h-4 w-4" />
-											{connector.name}
-										</>
-									)}
-								</Button>
-							))}
-						</div>
+					{isAuthenticating ? (
+						<>
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							Linking...
+						</>
 					) : (
-						<div className="space-y-4">
-							<div className="rounded-lg bg-zinc-800/50 border border-zinc-700 p-4">
-								<p className="text-sm text-zinc-400 mb-1">Connected wallet:</p>
-								<p className="font-mono text-zinc-100">
-									{address?.slice(0, 6)}...{address?.slice(-4)}
-								</p>
-							</div>
-
-							<Button
-								onClick={authenticate}
-								disabled={isLoading}
-								className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium"
-							>
-								{isAuthenticating ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Signing & Linking...
-									</>
-								) : (
-									"Sign Message to Link"
-								)}
-							</Button>
-
-							<Button
-								onClick={() => disconnect()}
-								variant="ghost"
-								className="w-full text-zinc-400 hover:text-zinc-100"
-								disabled={isLoading}
-							>
-								Disconnect & Use Different Wallet
-							</Button>
-						</div>
+						<>
+							<PenLine className="mr-2 h-4 w-4" />
+							Sign to Link {formattedAddress}
+						</>
 					)}
-				</div>
-			</DialogContent>
-		</Dialog>
+				</Button>
+				{!isAuthenticating && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-zinc-400 hover:text-zinc-300"
+						onClick={handleCancel}
+					>
+						Cancel
+					</Button>
+				)}
+			</div>
+		);
+	}
+
+	// Default state: Always show "Link Wallet" to start fresh connection
+	return (
+		<Button
+			variant="outline"
+			size="sm"
+			className={buttonClasses}
+			onClick={handleStartLinking}
+			disabled={isAuthenticating}
+		>
+			<Plus className="mr-2 h-4 w-4" />
+			Link Wallet
+		</Button>
 	);
 }

@@ -1,5 +1,4 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	createRootRoute,
 	HeadContent,
@@ -7,20 +6,10 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { WagmiProvider } from "wagmi";
 import { getSessionFn } from "@/lib/session.server";
-import { wagmiConfig } from "@/lib/wagmi";
+import { Web3Provider } from "@/components/web3-provider";
 
 import appCss from "../styles.css?url";
-
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: 1000 * 60, // 1 minute
-			retry: 1,
-		},
-	},
-});
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
@@ -102,10 +91,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
 	return (
-		<WagmiProvider config={wagmiConfig}>
-			<QueryClientProvider client={queryClient}>
-				<Outlet />
-			</QueryClientProvider>
-		</WagmiProvider>
+		<Web3Provider>
+			<Outlet />
+		</Web3Provider>
 	);
 }

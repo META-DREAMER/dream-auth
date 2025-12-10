@@ -14,7 +14,7 @@ export const wagmiConfig = createConfig({
 		injected(),
 		// WalletConnect requires a valid projectId - only add if configured
 		...(clientEnv.VITE_WALLETCONNECT_PROJECT_ID
-			? [walletConnect({ projectId: clientEnv.VITE_WALLETCONNECT_PROJECT_ID })]
+			? [walletConnect({ projectId: clientEnv.VITE_WALLETCONNECT_PROJECT_ID, showQrModal: true })]
 			: []),
 	],
 	transports: {

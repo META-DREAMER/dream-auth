@@ -7,7 +7,7 @@ import {
 import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { ConnectWalletButton } from "@/components/auth/connect-wallet-button";
+import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -181,7 +181,7 @@ function LoginPage() {
 						</Button>
 					)}
 
-				<ConnectWalletButton
+				<ConnectSIWEButton
 					onSuccess={() => navigate({ to: redirectParam || "/" })}
 					onError={(err) => setError(err)}
 				/>
