@@ -30,6 +30,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/login")({
 	validateSearch: searchSchema,
+	ssr: false,
 	beforeLoad: async ({ context, search }) => {
 		if (context.session) {
 			throw redirect({ to: search.redirect || "/" });

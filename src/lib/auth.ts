@@ -4,9 +4,9 @@ import { generateRandomString } from "better-auth/crypto";
 import { siwe } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
-import { verifyMessage } from "viem";
+import { http, verifyMessage, createPublicClient } from "viem";
 import { serverEnv } from "@/env";
-import { storeNonce, validateAndConsumeNonce } from "./nonce-store";
+import { mainnet } from "viem/chains";
 
 const pool = new Pool({
 	connectionString: serverEnv.DATABASE_URL,
@@ -43,28 +43,28 @@ export const auth = betterAuth({
 		// },
 	},
 
-	advanced: {
-		cookiePrefix: "auth",
-		cookies: {
-			session_token: {
-				attributes: {
-					httpOnly: true,
-					secure: process.env.NODE_ENV === "production",
-					sameSite: "lax",
+	// advanced: {
+		// cookiePrefix: "auth",
+		// cookies: {
+			// session_token: {
+				// attributes: {
+					// httpOnly: true,
+					// secure: process.env.NODE_ENV === "production",
+					// sameSite: "lax",
 					// Only set domain if explicitly configured (for cross-subdomain auth)
 					// When undefined, cookie uses current origin (works for localhost)
-					...(serverEnv.COOKIE_DOMAIN && { domain: serverEnv.COOKIE_DOMAIN }),
-				},
-			},
-		},
-	},
+					// ...(serverEnv.COOKIE_DOMAIN && { domain: serverEnv.COOKIE_DOMAIN }),
+				// },
+			// },
+		// },
+	// },
 
 	plugins: [
 		// Passkey/WebAuthn authentication
 		...(serverEnv.ENABLE_PASSKEYS
 			? [
 					passkey({
-						rpName: "Auth Server",
+						rpName: "Dream Auth",
 						rpID: authUrl.hostname,
 						origin: serverEnv.BETTER_AUTH_URL,
 					}),
@@ -77,27 +77,13 @@ export const auth = betterAuth({
 						domain: authUrl.hostname,
 						getNonce: async () => {
 							// Generate a cryptographically secure random nonce
-							const nonce = generateRandomString(32);
-							// Store nonce with 5 minute expiration (using shared nonce store)
-							storeNonce(nonce);
-							return nonce;
+							// Better-auth handles nonce storage and validation internally
+							return generateRandomString(32);
 						},
 						verifyMessage: async ({ message, signature, address }) => {
 							try {
-								// Extract nonce from message for validation
-								const nonceMatch = message.match(/Nonce: ([a-zA-Z0-9]+)/);
-								const nonce = nonceMatch?.[1];
-
-								if (!nonce) {
-									return false;
-								}
-
-								// Validate and consume nonce (single use) using shared nonce store
-								if (!validateAndConsumeNonce(nonce)) {
-									return false;
-								}
-
-								// Verify the signature using viem (recommended)
+								// Verify the signature using viem
+								// Better-auth validates the nonce internally
 								const isValid = await verifyMessage({
 									address: address as `0x${string}`,
 									message,
@@ -110,6 +96,34 @@ export const auth = betterAuth({
 								return false;
 							}
 						},
+						ensLookup: async ({ walletAddress }) => {
+							try {
+							  // Optional: lookup ENS name and avatar using viem
+							  // You can use viem's ENS utilities here
+							  const client = createPublicClient({
+								chain: mainnet,
+								transport: http(),
+							  });
+							  const ensName = await client.getEnsName({
+								address: walletAddress as `0x${string}`,
+							  });
+							  const ensAvatar = ensName
+								? await client.getEnsAvatar({
+									name: ensName,
+								  })
+								: null;
+							  return {
+								name: ensName || walletAddress,
+								avatar: ensAvatar || "",
+							  };
+							} catch {
+							  return {
+								name: walletAddress,
+								avatar: "",
+							  };
+							}
+						  },
+
 					}),
 				]
 			: []),
@@ -120,3 +134,4 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;
+
