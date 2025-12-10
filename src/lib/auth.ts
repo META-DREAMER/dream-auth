@@ -22,10 +22,12 @@ export const auth = betterAuth({
 	},
 
 	session: {
-		cookieCache: {
-			enabled: true,
-			maxAge: 5 * 60, // 5 minutes
-		},
+		// Note: Cookie caching has issues with TanStack Start's SSR context
+		// Disable until better-auth fixes compatibility
+		// cookieCache: {
+		// 	enabled: true,
+		// 	maxAge: 5 * 60, // 5 minutes
+		// },
 	},
 
 	advanced: {

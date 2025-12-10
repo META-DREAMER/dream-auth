@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { getSessionFn } from "@/lib/session.server";
-import type { Session } from "@/lib/auth";
 
 import appCss from "../styles.css?url";
 
