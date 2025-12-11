@@ -1,12 +1,15 @@
-# Build stage - use Bun for fast dependency installation and building
-FROM oven/bun:1-alpine AS builder
+# Build stage - use Node.js with pnpm for dependency installation and building
+FROM node:22-alpine AS builder
 WORKDIR /app
 
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Copy package files
-COPY package.json bun.lock ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source files
 COPY . .
@@ -15,7 +18,7 @@ COPY . .
 ENV SKIP_ENV_VALIDATION=true
 
 # Build the application
-RUN bun run build
+RUN pnpm run build
 
 # Production stage - use Node.js for stable ESM module resolution
 # This is the recommended approach by TanStack Start docs for Docker deployment
