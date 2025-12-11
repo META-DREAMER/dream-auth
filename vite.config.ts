@@ -15,7 +15,9 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
-    nitro({ preset: 'bun' }),
+    // Use node-server preset for Docker/production deployment
+    // See: https://tanstack.com/start/latest/docs/framework/react/guide/hosting
+    nitro({ preset: 'node-server' }),
     viteReact(),
   ],
 })
