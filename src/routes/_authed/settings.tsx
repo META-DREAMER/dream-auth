@@ -9,10 +9,14 @@ import {
 	Wallet,
 } from "lucide-react";
 import { AddPasskeyDialog } from "@/components/auth/add-passkey-dialog";
+import { ChangeEmailDialog } from "@/components/auth/change-email-dialog";
+import { LinkEmailDialog } from "@/components/auth/link-email-dialog";
 import { LinkWalletDialog } from "@/components/auth/link-wallet-dialog";
+import { VerifyEmailDialog } from "@/components/auth/verify-email-dialog";
 import { PasskeyList } from "@/components/auth/passkey-list";
 import { WalletList } from "@/components/auth/wallet-list";
 import { PageBackground } from "@/components/shared/page-background";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -23,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { getRealEmail } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/settings")({
 	component: SettingsPage,
@@ -32,6 +37,9 @@ export const Route = createFileRoute("/_authed/settings")({
 function SettingsPage() {
 	const { session } = Route.useRouteContext();
 	const handleSignOut = useSignOut();
+	
+	// Filter out SIWE-generated placeholder emails (walletAddress@domain)
+	const realEmail = getRealEmail(session.user.email);
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
@@ -88,7 +96,7 @@ function SettingsPage() {
 								<div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
 									<span className="text-2xl font-semibold text-white">
 										{session.user.name?.charAt(0).toUpperCase() ||
-											session.user.email?.charAt(0).toUpperCase() ||
+											realEmail?.charAt(0).toUpperCase() ||
 											"U"}
 									</span>
 								</div>
@@ -96,12 +104,66 @@ function SettingsPage() {
 									<p className="text-lg font-medium text-zinc-100">
 										{session.user.name || "User"}
 									</p>
-									<p className="text-zinc-400 flex items-center gap-1">
-										<Mail className="h-4 w-4" />
-										{session.user.email}
-									</p>
+									{realEmail && (
+										<p className="text-zinc-400 flex items-center gap-1">
+											<Mail className="h-4 w-4" />
+											{realEmail}
+										</p>
+									)}
 								</div>
 							</div>
+						</CardContent>
+					</Card>
+
+					{/* Email Section */}
+					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+						<CardHeader>
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="text-zinc-100 flex items-center gap-2">
+										<Mail className="h-5 w-5 text-blue-500" />
+										Email
+									</CardTitle>
+									<CardDescription className="text-zinc-400">
+										Link an email address for account recovery
+									</CardDescription>
+								</div>
+								{realEmail && session.user.emailVerified ? (
+									<ChangeEmailDialog />
+								) : (
+									<LinkEmailDialog />
+								)}
+							</div>
+						</CardHeader>
+						<CardContent>
+							{realEmail ? (
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<Mail className="h-4 w-4 text-zinc-400" />
+										<span className="text-zinc-300">{realEmail}</span>
+										<Badge
+											variant={session.user.emailVerified ? "default" : "secondary"}
+											className={
+												session.user.emailVerified
+													? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+													: "bg-zinc-700/50 text-zinc-400 border-zinc-600"
+											}
+										>
+											{session.user.emailVerified ? "Verified" : "Unverified"}
+										</Badge>
+									</div>
+									<div className="flex items-center gap-2">
+										
+										{!session.user.emailVerified && (
+											<VerifyEmailDialog email={realEmail} />
+										)}
+									</div>
+								</div>
+							) : (
+								<p className="text-zinc-500 text-sm">
+									No email linked to your account yet. Add one for easier recovery.
+								</p>
+							)}
 						</CardContent>
 					</Card>
 
@@ -164,7 +226,7 @@ function SettingsPage() {
 										{session.user.id}
 									</dd>
 								</div>
-								{session.user.emailVerified && (
+								{realEmail && session.user.emailVerified && (
 									<div className="flex justify-between">
 										<dt className="text-zinc-500">Email Verified</dt>
 										<dd className="text-emerald-400">Yes</dd>

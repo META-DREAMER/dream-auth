@@ -1,6 +1,6 @@
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
-import { siwe } from "better-auth/plugins";
+import { emailOTP, siwe } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
 import { http, verifyMessage, createPublicClient,  } from "viem";
@@ -25,11 +25,28 @@ export const auth = betterAuth({
 		requireEmailVerification: false,
 	},
 
+	// Enable changing email address with verification link
+	user: {
+		changeEmail: {
+			enabled: true,
+			updateEmailWithoutVerification: true,
+		},
+	},
+
+	// Email verification config - used by changeEmail to send verification link
+	emailVerification: {
+		sendVerificationEmail: async ({ user, url }) => {
+			// TODO: Integrate with email service (Resend, SendGrid, etc.)
+			console.log(`[Email Verification] Send to: ${user.email}`);
+			console.log(`[Email Verification] URL: ${url}`);
+		},
+	},
+
 	// Enable account linking so users can link wallets to existing accounts
 	account: {
 		accountLinking: {
 			enabled: true,
-			trustedProviders: ["siwe", "email-password"],
+			trustedProviders: ["siwe", "email-password", "email-otp"],
 			allowDifferentEmails: true,
 		},
 	},
@@ -127,6 +144,19 @@ export const auth = betterAuth({
 					}),
 				]
 			: []),
+		// Email OTP for linking emails to accounts
+		emailOTP({
+			overrideDefaultEmailVerification: true,
+			async sendVerificationOTP({ email, otp, type }) {
+				// TODO: Integrate with email service (Resend, SendGrid, etc.)
+				console.log(
+					`[Email OTP] Send to: ${email}, OTP: ${otp}, Type: ${type}`,
+				);
+				// #region agent log
+				fetch('http://127.0.0.1:7242/ingest/6136f52c-51f2-4bdf-ae81-480aede60612',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.ts:sendVerificationOTP',message:'CORRECT CALLBACK - OTP sendVerificationOTP',data:{email,otp,type},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-H3'})}).catch(()=>{});
+				// #endregion
+			},
+		}),
 		// TanStack Start cookie handling - must be last plugin
 		tanstackStartCookies(),
 	],

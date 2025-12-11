@@ -2,6 +2,7 @@ import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
 import { injected, walletConnect  } from "wagmi/connectors";
 import { clientEnv } from "@/env.client";
+
 /**
  * Wagmi configuration for wallet connectivity.
  * Uses injected connectors (MetaMask, Coinbase Wallet, etc.)
