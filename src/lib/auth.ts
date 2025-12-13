@@ -1,12 +1,13 @@
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
-import { emailOTP, siwe } from "better-auth/plugins";
+import { emailOTP, jwt, oidcProvider, siwe } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
-import { http, verifyMessage, createPublicClient,  } from "viem";
+import { http, verifyMessage, createPublicClient } from "viem";
 import { generateSiweNonce } from "viem/siwe";
-import { serverEnv } from "@/env";
 import { mainnet } from "viem/chains";
+import { serverEnv, serverEnvWithOidc } from "@/env";
+import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
 const pool = new Pool({
 	connectionString: serverEnv.DATABASE_URL,
@@ -15,10 +16,35 @@ const pool = new Pool({
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
 const authUrl = new URL(serverEnv.BETTER_AUTH_URL);
 
+/**
+ * Get trusted OIDC clients from environment and file configuration.
+ * Transforms config to BetterAuth's expected format.
+ */
+function getTrustedClients() {
+	return serverEnvWithOidc.OIDC_CLIENTS.map((client) => ({
+		clientId: client.clientId,
+		clientSecret: client.clientSecret,
+		name: client.name,
+		redirectUrls: client.redirectURLs,
+		skipConsent: client.skipConsent,
+		disabled: client.disabled,
+		metadata: client.metadata || null,
+		icon: client.icon,
+		type: client.type,
+	}));
+}
+
+
 export const auth = betterAuth({
 	database: pool,
 	baseURL: serverEnv.BETTER_AUTH_URL,
 	secret: serverEnv.BETTER_AUTH_SECRET,
+
+	// Disable default /token endpoint when using JWT plugin for OIDC
+	// OIDC uses /oauth2/token instead
+	...(serverEnv.ENABLE_OIDC_PROVIDER && {
+		disabledPaths: ["/token"],
+	}),
 
 	emailAndPassword: {
 		enabled: true,
@@ -77,6 +103,37 @@ export const auth = betterAuth({
 	// },
 
 	plugins: [
+		// JWT plugin for asymmetric token signing (required for OIDC provider)
+		// Must come before oidcProvider plugin
+		...(serverEnv.ENABLE_OIDC_PROVIDER ? [jwt()] : []),
+
+		// OIDC Provider for SSO with Kubernetes apps (Grafana, ArgoCD, Immich, etc.)
+		...(serverEnv.ENABLE_OIDC_PROVIDER
+			? [
+					oidcProvider({
+						loginPage: "/login",
+						consentPage: "/consent",
+						// Enable JWT plugin integration for asymmetric signing
+						useJWTPlugin: true,
+						// Require PKCE for security (recommended)
+						requirePKCE: serverEnv.OIDC_REQUIRE_PKCE,
+						// Token expiration settings
+						codeExpiresIn: 600, // 10 minutes
+						accessTokenExpiresIn: 3600, // 1 hour
+						refreshTokenExpiresIn: 604800, // 7 days
+						// Supported scopes
+						scopes: ["openid", "profile", "email", "offline_access"],
+						// Store client secrets in plain text (matching our DB seeding format)
+						// If you need hashed/encrypted storage, update sync-oidc-clients.ts accordingly
+						storeClientSecret: "plain",
+						// Trusted clients from environment configuration
+						// These are also seeded to DB via sync-oidc-clients.ts for FK integrity
+						// trustedClients provides skipConsent UX; DB seeding provides FK integrity
+						trustedClients: getTrustedClients(),
+					}),
+				]
+			: []),
+
 		// Passkey/WebAuthn authentication
 		...(serverEnv.ENABLE_PASSKEYS
 			? [
@@ -115,32 +172,31 @@ export const auth = betterAuth({
 						},
 						ensLookup: async ({ walletAddress }) => {
 							try {
-							  // Optional: lookup ENS name and avatar using viem
-							  // You can use viem's ENS utilities here
-							  const client = createPublicClient({
-								chain: mainnet,
-								transport: http(),
-							  });
-							  const ensName = await client.getEnsName({
-								address: walletAddress as `0x${string}`,
-							  });
-							  const ensAvatar = ensName
-								? await client.getEnsAvatar({
-									name: ensName,
-								  })
-								: null;
-							  return {
-								name: ensName || walletAddress,
-								avatar: ensAvatar || "",
-							  };
+								// Optional: lookup ENS name and avatar using viem
+								// You can use viem's ENS utilities here
+								const client = createPublicClient({
+									chain: mainnet,
+									transport: http(),
+								});
+								const ensName = await client.getEnsName({
+									address: walletAddress as `0x${string}`,
+								});
+								const ensAvatar = ensName
+									? await client.getEnsAvatar({
+											name: ensName,
+										})
+									: null;
+								return {
+									name: ensName || walletAddress,
+									avatar: ensAvatar || "",
+								};
 							} catch {
-							  return {
-								name: walletAddress,
-								avatar: "",
-							  };
+								return {
+									name: walletAddress,
+									avatar: "",
+								};
 							}
-						  },
-
+						},
 					}),
 				]
 			: []),
@@ -152,9 +208,6 @@ export const auth = betterAuth({
 				console.log(
 					`[Email OTP] Send to: ${email}, OTP: ${otp}, Type: ${type}`,
 				);
-				// #region agent log
-				fetch('http://127.0.0.1:7242/ingest/6136f52c-51f2-4bdf-ae81-480aede60612',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.ts:sendVerificationOTP',message:'CORRECT CALLBACK - OTP sendVerificationOTP',data:{email,otp,type},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-H3'})}).catch(()=>{});
-				// #endregion
 			},
 		}),
 		// TanStack Start cookie handling - must be last plugin
@@ -164,4 +217,24 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;
+
+/**
+ * Ensure OIDC clients are seeded to DB on server startup.
+ * This runs non-blocking in the background to avoid delaying server startup.
+ * The existing ensureOidcReady() in the auth route handler ensures seeding is completed before handling auth requests.
+ *
+ * @see https://github.com/better-auth/better-auth/issues/6649
+ */
+if (serverEnv.ENABLE_OIDC_PROVIDER) {
+	// Fire-and-forget: don't await, don't block server startup
+	ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS).catch(
+		(error) => {
+			console.error(
+				"[OIDC] Failed to seed clients on server startup (non-blocking):",
+				error,
+			);
+			// Don't throw - this is a background operation
+		},
+	);
+}
 

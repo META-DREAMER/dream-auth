@@ -1,5 +1,12 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
+import type { OidcClientConfig } from "@/lib/oidc/schemas";
+import {
+	parseOidcClientsJson,
+	loadOidcClientsFromFile,
+	mergeOidcClients,
+} from "@/lib/oidc/config";
+
 
 /**
  * Server-side environment variables.
@@ -31,6 +38,32 @@ export const serverEnv = createEnv({
 			.string()
 			.default("true")
 			.transform((val) => val === "true"),
+		ENABLE_OIDC_PROVIDER: z
+			.string()
+			.default("false")
+			.transform((val) => val === "true"),
+
+		// OIDC Provider configuration
+		// JSON array of trusted OIDC clients (from environment variable)
+		// Example: '[{"clientId":"grafana","clientSecret":"secret","name":"Grafana","type":"web","redirectURLs":["https://grafana.example.com/login/generic_oauth"],"skipConsent":true}]'
+		OIDC_CLIENTS_ENV: z
+			.string()
+			.optional()
+			.transform((val) => {
+				if (!val) return [];
+				return parseOidcClientsJson(val, "OIDC_CLIENTS");
+			}),
+
+		// Path to a JSON file containing OIDC client configurations
+		// Use this for GitOps deployments where clients are mounted as a ConfigMap
+		// Example: '/config/oidc-clients.json'
+		OIDC_CLIENTS_FILE: z.string().optional(),
+
+		// OIDC PKCE requirement (recommended for security)
+		OIDC_REQUIRE_PKCE: z
+			.string()
+			.default("true")
+			.transform((val) => val === "true"),
 
 		// Admin configuration
 		ADMIN_EMAILS: z
@@ -41,8 +74,12 @@ export const serverEnv = createEnv({
 
 	/**
 	 * Server-side vars use process.env
+	 * Note: OIDC_CLIENTS env var is mapped to OIDC_CLIENTS_ENV internally
 	 */
-	runtimeEnv: process.env,
+	runtimeEnv: {
+		...process.env,
+		OIDC_CLIENTS_ENV: process.env.OIDC_CLIENTS,
+	},
 
 	/**
 	 * By default, this library will feed the environment variables directly to
@@ -64,3 +101,48 @@ export const serverEnv = createEnv({
 	 */
 	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
+
+/**
+ * Cached merged OIDC clients (computed once at startup)
+ */
+let cachedOidcClients: OidcClientConfig[] | null = null;
+
+/**
+ * Get all OIDC clients from both environment variable and mounted file.
+ * Results are cached after first access.
+ */
+function getOidcClients(): OidcClientConfig[] {
+	if (cachedOidcClients !== null) {
+		return cachedOidcClients;
+	}
+
+	const envClients = serverEnv.OIDC_CLIENTS_ENV || [];
+	const fileClients = serverEnv.OIDC_CLIENTS_FILE
+		? loadOidcClientsFromFile(serverEnv.OIDC_CLIENTS_FILE)
+		: [];
+
+	cachedOidcClients = mergeOidcClients(envClients, fileClients);
+
+	if (cachedOidcClients.length > 0) {
+		console.log(
+			`[OIDC] Loaded ${cachedOidcClients.length} client(s): ${cachedOidcClients.map((c) => c.clientId).join(", ")}`,
+		);
+	}
+
+	return cachedOidcClients;
+}
+
+/**
+ * Extended server environment with computed OIDC_CLIENTS property.
+ * Use this instead of serverEnv directly when accessing OIDC_CLIENTS.
+ */
+export const serverEnvWithOidc = {
+	...serverEnv,
+	/**
+	 * Merged OIDC clients from OIDC_CLIENTS env var and OIDC_CLIENTS_FILE.
+	 * Validated with Zod, duplicates checked, fail-fast in production.
+	 */
+	get OIDC_CLIENTS(): OidcClientConfig[] {
+		return getOidcClients();
+	},
+};

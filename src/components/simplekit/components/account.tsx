@@ -4,7 +4,6 @@ import * as React from "react";
 import { useAccount, useDisconnect, useEnsName, useBalance } from "wagmi";
 import { formatEther } from "viem";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { SimpleKitContext } from "../simplekit-context";
 import {
   SimpleKitModalBody,
