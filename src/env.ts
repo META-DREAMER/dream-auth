@@ -20,6 +20,28 @@ export const serverEnv = createEnv({
 		// BetterAuth configuration
 		BETTER_AUTH_SECRET: z.string().min(32),
 		BETTER_AUTH_URL: z.string().url(),
+		// Run Better Auth database migrations automatically on server startup.
+		// Safe for Kubernetes/GitOps deployments:
+		// - Uses PostgreSQL advisory lock to prevent concurrent migrations
+		// - Skips if no migrations needed (no lock contention when up-to-date)
+		// - Better Auth migrations are always additive (never drops columns/tables)
+		// - Detailed logging for GitOps audit trails
+		BETTER_AUTH_AUTO_MIGRATE: z
+			.string()
+			.default("false")
+			.transform((val) => val === "true"),
+		// PostgreSQL advisory lock key used to ensure only one pod migrates at a time.
+		// Change this if running multiple independent deployments on the same database.
+		BETTER_AUTH_MIGRATION_LOCK_KEY: z
+			.string()
+			.default("dream-auth:better-auth:migrations"),
+		// How long to wait for the migration lock before failing startup (in ms).
+		// Default: 10 minutes, which handles slow migrations or pod startup delays.
+		BETTER_AUTH_MIGRATION_LOCK_TIMEOUT_MS: z
+			.string()
+			.default("600000")
+			.transform((val) => Number(val))
+			.pipe(z.number().int().positive()),
 
 		// Cookie configuration - optional for local development
 		// When not set, cookies will use the current origin (works on localhost)

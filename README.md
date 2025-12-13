@@ -1,106 +1,206 @@
-Welcome to your new TanStack app!
+# Dream Auth
 
-# Getting Started
+A lightweight, self-hosted identity provider for home Kubernetes clusters. Supports modern authentication methods including passkeys (WebAuthn), Sign-In With Ethereum (SIWE), and traditional email/password — all while acting as an OIDC provider for your applications.
 
-To run this application:
+## Features
+
+- **Passkeys** — Passwordless authentication via WebAuthn/FIDO2
+- **SIWE** — Sign-In With Ethereum wallet authentication
+- **OIDC Provider** — SSO for apps like Grafana, Immich, Weave GitOps
+- **Forward Auth** — Kubernetes ingress integration for nginx/Traefik
+- **Lightweight** — ~200MB RAM, fast cold starts
+
+## Tech Stack
+
+- [TanStack Start](https://tanstack.com/start) — Full-stack React framework
+- [BetterAuth](https://better-auth.com) — Authentication library
+- [PostgreSQL](https://www.postgresql.org) — Database
+- [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com) — UI
+
+## Quick Start
 
 ```bash
+# Install dependencies
 pnpm install
-pnpm run dev
+
+# Copy environment variables
+cp .env.example .env
+# Edit .env with your DATABASE_URL, BETTER_AUTH_SECRET, etc.
+
+# Run database migrations
+pnpm dlx @better-auth/cli migrate
+
+# Start development server
+pnpm dev
 ```
 
-# Building For Production
-
-To build this application for production:
+## Development Commands
 
 ```bash
-pnpm run build
+pnpm dev          # Start dev server
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm lint         # Run linter
+pnpm format       # Format code
+pnpm check        # Run all checks
 ```
 
-## Testing
+## Database Migrations
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+BetterAuth manages the database schema. Run migrations after pulling changes or adding plugins:
 
 ```bash
-pnpm run test
+# Generate migration SQL (optional, to review)
+pnpm dlx @better-auth/cli generate
+
+# Apply migrations
+pnpm dlx @better-auth/cli migrate
 ```
 
-## Styling
+### Automatic Migrations (Kubernetes/GitOps)
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
+For Kubernetes deployments, enable automatic migrations on server startup:
 
 ```bash
-pnpm run lint
-pnpm run format
-pnpm run check
+BETTER_AUTH_AUTO_MIGRATE=true
 ```
 
-## Shadcn
+This is safe for multi-replica deployments because:
 
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+- **PostgreSQL advisory locks** prevent concurrent migrations across pods
+- **No lock contention** when database is already up-to-date (skips lock acquisition)
+- **Additive-only** — Better Auth migrations never drop columns or tables
+- **Double-checked locking** — Re-verifies migrations after acquiring lock
+- **Audit logging** — Logs exactly what tables/columns will be created
+
+Optional configuration:
+
+| Variable                                | Default                             | Description                                         |
+| --------------------------------------- | ----------------------------------- | --------------------------------------------------- |
+| `BETTER_AUTH_AUTO_MIGRATE`              | `false`                             | Enable auto-migrations on startup                   |
+| `BETTER_AUTH_MIGRATION_LOCK_KEY`        | `dream-auth:better-auth:migrations` | Advisory lock key (change for multiple deployments) |
+| `BETTER_AUTH_MIGRATION_LOCK_TIMEOUT_MS` | `600000` (10 min)                   | Timeout waiting for migration lock                  |
+
+## Docker
+
+```bash
+# Build image
+docker build -t dream-auth .
+
+# Run with docker-compose (includes PostgreSQL)
+docker-compose up -d
+```
+
+## Environment Variables
+
+| Variable               | Required | Description                                    |
+| ---------------------- | -------- | ---------------------------------------------- |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string                   |
+| `BETTER_AUTH_SECRET`   | Yes      | Secret for signing sessions (min 32 chars)     |
+| `BETTER_AUTH_URL`      | Yes      | Public URL (e.g., `https://auth.example.com`)  |
+| `COOKIE_DOMAIN`        | Yes      | Cookie domain (e.g., `.example.com`)           |
+| `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
+| `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
+| `ENABLE_OIDC_PROVIDER` | No       | Enable OIDC provider (default: `false`)        |
+| `OIDC_CLIENTS`         | No       | JSON array of OIDC client configs              |
+
+See `.env.example` for all options.
+
+## OIDC Configuration
+
+Configure OIDC clients via the `OIDC_CLIENTS` environment variable:
+
+```bash
+OIDC_CLIENTS='[{
+  "clientId": "grafana",
+  "clientSecret": "your-secret",
+  "name": "Grafana",
+  "redirectURLs": ["https://grafana.example.com/login/generic_oauth"],
+  "skipConsent": true
+}]'
+```
+
+Applications connect using:
+
+- **Issuer URL**: `https://auth.example.com`
+- **Discovery**: `https://auth.example.com/.well-known/openid-configuration`
+
+## Forward Auth (Kubernetes Ingress)
+
+For nginx ingress:
+
+```yaml
+annotations:
+  nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc:3000/api/verify"
+  nginx.ingress.kubernetes.io/auth-signin: "https://auth.example.com/login?rd=$escaped_request_uri"
+  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-User,X-Auth-Id,X-Auth-Email"
+```
+
+## API Endpoints
+
+| Endpoint                            | Purpose                  |
+| ----------------------------------- | ------------------------ |
+| `/api/auth/*`                       | BetterAuth API           |
+| `/api/verify`                       | Forward-auth check       |
+| `/api/health`                       | Health check             |
+| `/.well-known/openid-configuration` | OIDC discovery           |
+| `/oauth2/*`                         | OIDC authorization/token |
+
+## Adding UI Components
 
 ```bash
 pnpm dlx shadcn@latest add button
 ```
 
-## T3Env
+## Project Structure
 
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "@/env";
-
-console.log(env.VITE_APP_TITLE);
 ```
+src/
+├── routes/           # Pages and API routes
+├── components/       # React components
+├── lib/              # Auth config, utilities
+└── hooks/            # Custom React hooks
+```
+
+## License
+
+MIT
+
+---
+
+# TanStack Start Documentation
+
+This project is built on [TanStack Start](https://tanstack.com/start). Below is reference documentation for the framework.
 
 ## Routing
 
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
+This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
 
 ### Adding A Route
 
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
+To add a new route, add a new file in the `./src/routes` directory. TanStack will automatically generate the route content.
 
 ### Adding Links
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+Use SPA navigation with the `Link` component:
 
 ```tsx
 import { Link } from "@tanstack/react-router";
+
+<Link to="/about">About</Link>;
 ```
 
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+More information: [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
 
 ### Using A Layout
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
+The layout is located in `src/routes/__root.tsx`. Anything added to the root route appears in all routes. Route content appears where you use `<Outlet />`.
 
-Here is an example layout that includes a header:
+Example layout with header:
 
 ```tsx
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-
 import { Link } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
@@ -119,15 +219,13 @@ export const Route = createRootRoute({
 });
 ```
 
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+More information: [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
 
 ## Data Fetching
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
+You can use TanStack Query or the `loader` functionality built into TanStack Router.
 
-For example:
+### Route Loaders
 
 ```tsx
 const peopleRoute = createRoute({
@@ -136,9 +234,7 @@ const peopleRoute = createRoute({
   loader: async () => {
     const response = await fetch("https://swapi.dev/api/people");
     return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
+      results: { name: string }[];
     }>;
   },
   component: () => {
@@ -154,32 +250,25 @@ const peopleRoute = createRoute({
 });
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+More information: [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
 
-### React-Query
+### React Query
 
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
+Add dependencies:
 
 ```bash
 pnpm add @tanstack/react-query @tanstack/react-query-devtools
 ```
 
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
+Create a query client and provider in `main.tsx`:
 
 ```tsx
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// ...
-
 const queryClient = new QueryClient();
-
-// ...
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-
   root.render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
@@ -188,28 +277,10 @@ if (!rootElement.innerHTML) {
 }
 ```
 
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
+Use `useQuery` to fetch data:
 
 ```tsx
 import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
 
 function App() {
   const { data } = useQuery({
@@ -222,62 +293,48 @@ function App() {
   });
 
   return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {data.map((person) => (
+        <li key={person.name}>{person.name}</li>
+      ))}
+    </ul>
   );
 }
-
-export default App;
 ```
 
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
+More information: [React Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
 
 ## State Management
 
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
+TanStack Store provides state management:
 
 ```bash
 pnpm add @tanstack/store
 ```
 
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
+Simple counter example:
 
 ```tsx
 import { useStore } from "@tanstack/react-store";
 import { Store } from "@tanstack/store";
-import "./App.css";
 
 const countStore = new Store(0);
 
 function App() {
   const count = useStore(countStore);
   return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
+    <button onClick={() => countStore.setState((n) => n + 1)}>
+      Increment - {count}
+    </button>
   );
 }
-
-export default App;
 ```
 
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
+Derived state example:
 
 ```tsx
 import { useStore } from "@tanstack/react-store";
 import { Store, Derived } from "@tanstack/store";
-import "./App.css";
 
 const countStore = new Store(0);
 
@@ -300,20 +357,34 @@ function App() {
     </div>
   );
 }
-
-export default App;
 ```
 
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
+More information: [TanStack Store documentation](https://tanstack.com/store/latest).
 
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
+## Styling
 
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
+This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
-# Demo files
+## Linting & Formatting
 
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
+This project uses [Biome](https://biomejs.dev/) for linting and formatting:
 
-# Learn More
+```bash
+pnpm run lint
+pnpm run format
+pnpm run check
+```
 
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+## T3Env
+
+Environment variables have type safety via T3Env. Add variables to `src/env.ts`:
+
+```ts
+import { env } from "@/env";
+
+console.log(env.VITE_APP_TITLE);
+```
+
+## Learn More
+
+- [TanStack documentation](https://tanstack.com)
