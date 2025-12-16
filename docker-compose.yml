@@ -22,6 +22,7 @@ services:
       DATABASE_URL: postgresql://user:password@db:5432/auth
       BETTER_AUTH_SECRET: a-very-long-and-secure-secret-key-for-better-auth
       BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_AUTO_MIGRATE: "true"
     depends_on:
       - db
     healthcheck:

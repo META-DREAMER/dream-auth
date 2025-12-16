@@ -356,3 +356,4 @@ The OIDC client configuration now supports these fields:
 - EdDSA keys are used instead of RSA (valid for OIDC)
 - OIDC clients are automatically seeded to DB on first auth request
 - Client seeding is idempotent and safe for concurrent startup (multiple pods)
+

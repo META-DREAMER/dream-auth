@@ -154,7 +154,7 @@ export const auth = betterAuth({
 							// Better-auth handles nonce storage and validation internally
 							return generateSiweNonce();
 						},
-						verifyMessage: async ({ message, signature, address }) => {
+						verifyMessage: async ({ message, signature, address,  }) => {
 							try {
 								// Verify the signature using viem
 								// Better-auth validates the nonce internally

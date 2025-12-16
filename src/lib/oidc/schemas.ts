@@ -60,3 +60,4 @@ export const oidcClientSchema = z
 	);
 
 export type OidcClientConfig = z.infer<typeof oidcClientSchema>;
+
