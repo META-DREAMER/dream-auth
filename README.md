@@ -98,17 +98,21 @@ docker-compose up -d
 | `DATABASE_URL`         | Yes      | PostgreSQL connection string                   |
 | `BETTER_AUTH_SECRET`   | Yes      | Secret for signing sessions (min 32 chars)     |
 | `BETTER_AUTH_URL`      | Yes      | Public URL (e.g., `https://auth.example.com`)  |
-| `COOKIE_DOMAIN`        | Yes      | Cookie domain (e.g., `.example.com`)           |
+| `COOKIE_DOMAIN`        | No       | Cookie domain (e.g., `.example.com`)           |
 | `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
+| `ENABLE_PASSKEYS`      | No       | Enable Passkey support (default: `true`)       |
 | `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
 | `ENABLE_OIDC_PROVIDER` | No       | Enable OIDC provider (default: `false`)        |
 | `OIDC_CLIENTS`         | No       | JSON array of OIDC client configs              |
+| `OIDC_CLIENTS_FILE`    | No       | Path to OIDC clients JSON file (for GitOps)    |
+| `OIDC_REQUIRE_PKCE`    | No       | Enforce PKCE for OIDC (default: `true`)        |
+| `ADMIN_EMAILS`         | No       | Comma-separated admin emails                   |
 
 See `.env.example` for all options.
 
 ## OIDC Configuration
 
-Configure OIDC clients via the `OIDC_CLIENTS` environment variable:
+Configure OIDC clients via the `OIDC_CLIENTS` environment variable or `OIDC_CLIENTS_FILE` (for loading from a file/ConfigMap):
 
 ```bash
 OIDC_CLIENTS='[{

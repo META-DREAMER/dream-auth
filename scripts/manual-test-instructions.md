@@ -357,3 +357,5 @@ The OIDC client configuration now supports these fields:
 - OIDC clients are automatically seeded to DB on first auth request
 - Client seeding is idempotent and safe for concurrent startup (multiple pods)
 
+
+

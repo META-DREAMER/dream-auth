@@ -335,3 +335,5 @@ echo "   - Verify JWKS endpoint: curl $AUTH_URL/.well-known/jwks.json"
 echo "   - Verify discovery endpoint: curl $AUTH_URL/.well-known/openid-configuration"
 echo ""
 
+
+
