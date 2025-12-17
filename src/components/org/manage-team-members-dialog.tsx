@@ -1,0 +1,289 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { UsersRound, Loader2, UserPlus, UserMinus, Check } from "lucide-react";
+import { ErrorAlert } from "@/components/shared/error-alert";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { organization } from "@/lib/auth-client";
+import { orgTeamsOptions } from "@/lib/org-queries";
+
+type Team = {
+	id: string;
+	name: string;
+	organizationId: string;
+	createdAt: Date;
+};
+
+type OrgMember = {
+	id: string;
+	userId: string;
+	organizationId: string;
+	role: string;
+	createdAt: Date;
+	user: {
+		id: string;
+		name: string;
+		email: string;
+		image?: string | null;
+	};
+};
+
+interface ManageTeamMembersDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	team: Team;
+	orgId: string;
+	orgMembers: OrgMember[];
+}
+
+export function ManageTeamMembersDialog({
+	open,
+	onOpenChange,
+	team,
+	orgId,
+	orgMembers,
+}: ManageTeamMembersDialogProps) {
+	const queryClient = useQueryClient();
+	const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
+		new Set()
+	);
+	const [error, setError] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
+
+	// Fetch current team members
+	const { data: teamMembers, isPending: isPendingMembers } = useQuery({
+		queryKey: ["organization", orgId, "team", team.id, "members"],
+		queryFn: async () => {
+			const result = await organization.listTeamMembers({
+				query: { teamId: team.id },
+			});
+			return result.data ?? [];
+		},
+		enabled: open,
+	});
+
+	// Initialize selected members when team members load
+	useEffect(() => {
+		if (teamMembers) {
+			const memberUserIds = new Set(teamMembers.map((m) => m.userId));
+			setSelectedUserIds(memberUserIds);
+		}
+	}, [teamMembers]);
+
+	const addMemberMutation = useMutation({
+		mutationFn: async (userId: string) => {
+			const result = await organization.addTeamMember({
+				teamId: team.id,
+				userId,
+			});
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to add member");
+			}
+			return result;
+		},
+	});
+
+	const removeMemberMutation = useMutation({
+		mutationFn: async (userId: string) => {
+			const result = await organization.removeTeamMember({
+				teamId: team.id,
+				userId,
+			});
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to remove member");
+			}
+			return result;
+		},
+	});
+
+	const handleToggleMember = (userId: string) => {
+		setSelectedUserIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(userId)) {
+				next.delete(userId);
+			} else {
+				next.add(userId);
+			}
+			return next;
+		});
+	};
+
+	const handleSave = async () => {
+		if (!teamMembers) return;
+
+		setSaving(true);
+		setError(null);
+
+		try {
+			const currentMemberIds = new Set(teamMembers.map((m) => m.userId));
+
+			// Add new members
+			const toAdd = [...selectedUserIds].filter(
+				(id) => !currentMemberIds.has(id)
+			);
+			// Remove members
+			const toRemove = [...currentMemberIds].filter(
+				(id) => !selectedUserIds.has(id)
+			);
+
+			// Execute all operations
+			await Promise.all([
+				...toAdd.map((userId) => addMemberMutation.mutateAsync(userId)),
+				...toRemove.map((userId) => removeMemberMutation.mutateAsync(userId)),
+			]);
+
+			// Invalidate queries
+			queryClient.invalidateQueries({
+				queryKey: ["organization", orgId, "team", team.id, "members"],
+			});
+			queryClient.invalidateQueries({
+				queryKey: orgTeamsOptions(orgId).queryKey,
+			});
+
+			onOpenChange(false);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to update team members");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleOpenChange = (isOpen: boolean) => {
+		onOpenChange(isOpen);
+		if (!isOpen) {
+			setError(null);
+		}
+	};
+
+	const currentMemberIds = new Set(teamMembers?.map((m) => m.userId) ?? []);
+	const hasChanges =
+		[...selectedUserIds].some((id) => !currentMemberIds.has(id)) ||
+		[...currentMemberIds].some((id) => !selectedUserIds.has(id));
+
+	return (
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+				<DialogHeader>
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500">
+						<UsersRound className="h-6 w-6 text-white" />
+					</div>
+					<DialogTitle className="text-center text-zinc-100">
+						Manage Team Members
+					</DialogTitle>
+					<DialogDescription className="text-center text-zinc-400">
+						Add or remove members from{" "}
+						<span className="font-medium text-zinc-300">{team.name}</span>
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="py-4">
+					{error && <ErrorAlert message={error} className="mb-4" />}
+
+					{isPendingMembers ? (
+						<div className="space-y-3">
+							{[...Array(3)].map((_, i) => (
+								<Skeleton key={i} className="h-14 w-full" />
+							))}
+						</div>
+					) : orgMembers.length === 0 ? (
+						<p className="text-center text-zinc-400 py-8">
+							No organization members available
+						</p>
+					) : (
+						<ScrollArea className="h-[300px] pr-4">
+							<div className="space-y-2">
+								{orgMembers.map((member) => (
+									<label
+										key={member.userId}
+										className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600 cursor-pointer transition-colors"
+									>
+										<Checkbox
+											checked={selectedUserIds.has(member.userId)}
+											onCheckedChange={() => handleToggleMember(member.userId)}
+											className="border-zinc-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+										/>
+										<Avatar className="h-9 w-9">
+											{member.user.image && (
+												<AvatarImage src={member.user.image} />
+											)}
+											<AvatarFallback className="bg-zinc-700 text-zinc-300">
+												{member.user.name?.charAt(0).toUpperCase() ||
+													member.user.email?.charAt(0).toUpperCase() ||
+													"?"}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 min-w-0">
+											<div className="font-medium text-zinc-100 truncate">
+												{member.user.name || "Unknown"}
+											</div>
+											<div className="text-sm text-zinc-400 truncate">
+												{member.user.email}
+											</div>
+										</div>
+										{selectedUserIds.has(member.userId) &&
+											currentMemberIds.has(member.userId) && (
+												<Check className="h-4 w-4 text-cyan-400" />
+											)}
+										{selectedUserIds.has(member.userId) &&
+											!currentMemberIds.has(member.userId) && (
+												<UserPlus className="h-4 w-4 text-emerald-400" />
+											)}
+										{!selectedUserIds.has(member.userId) &&
+											currentMemberIds.has(member.userId) && (
+												<UserMinus className="h-4 w-4 text-red-400" />
+											)}
+									</label>
+								))}
+							</div>
+						</ScrollArea>
+					)}
+				</div>
+
+				<DialogFooter>
+					<div className="flex items-center justify-between w-full">
+						<span className="text-sm text-zinc-400">
+							{selectedUserIds.size}{" "}
+							{selectedUserIds.size === 1 ? "member" : "members"} selected
+						</span>
+						<div className="flex gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => handleOpenChange(false)}
+								className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleSave}
+								disabled={saving || !hasChanges}
+								className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
+							>
+								{saving ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Saving...
+									</>
+								) : (
+									"Save Changes"
+								)}
+							</Button>
+						</div>
+					</div>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+

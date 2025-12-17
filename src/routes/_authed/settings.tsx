@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
+	Building2,
 	Fingerprint,
 	LogOut,
 	Mail,
@@ -69,14 +70,26 @@ function SettingsPage() {
 							</p>
 						</div>
 					</div>
-					<Button
-						onClick={handleSignOut}
-						variant="outline"
-						className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
-					>
-						<LogOut className="mr-2 h-4 w-4" />
-						Sign out
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button
+							asChild
+							variant="outline"
+							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+						>
+							<Link to="/org">
+								<Building2 className="mr-2 h-4 w-4" />
+								Organizations
+							</Link>
+						</Button>
+						<Button
+							onClick={handleSignOut}
+							variant="outline"
+							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							Sign out
+						</Button>
+					</div>
 				</div>
 
 				<div className="space-y-6">

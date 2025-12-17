@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Users, Mail, UsersRound, Plus } from "lucide-react";
-import { authClient, organization } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
+import {
+	orgMembersOptions,
+	orgInvitationsOptions,
+	orgFullOptions,
+	orgTeamsOptions,
+} from "@/lib/org-queries";
+import { formatDateLong } from "@/lib/format";
+import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -20,49 +28,15 @@ function OrgOverview() {
 	const { data: activeOrg, isPending: isPendingOrg } =
 		authClient.useActiveOrganization();
 
-	const { data: fullOrg, isPending: isPendingFull } = useQuery({
-		queryKey: [
-			"organization",
-			activeOrg?.id,
-			"full",
-		],
-		queryFn: async () => {
-			if (!activeOrg) return null;
-			const result = await organization.getFullOrganization();
-			return result.data ?? null;
-		},
-		enabled: !!activeOrg,
-	});
+	const { data: fullOrg, isPending: isPendingFull } = useQuery(
+		orgFullOptions(activeOrg?.id)
+	);
 
-	const { data: membersData } = useQuery({
-		queryKey: ["organization", activeOrg?.id, "members"],
-		queryFn: async () => {
-			if (!activeOrg) return null;
-			const result = await organization.listMembers();
-			return result.data ?? null;
-		},
-		enabled: !!activeOrg,
-	});
+	const { data: membersData } = useQuery(orgMembersOptions(activeOrg?.id));
 
-	const { data: teams } = useQuery({
-		queryKey: ["organization", activeOrg?.id, "teams"],
-		queryFn: async () => {
-			if (!activeOrg) return null;
-			const result = await organization.listTeams();
-			return result.data ?? null;
-		},
-		enabled: !!activeOrg,
-	});
+	const { data: teams } = useQuery(orgTeamsOptions(activeOrg?.id));
 
-	const { data: invitations } = useQuery({
-		queryKey: ["organization", activeOrg?.id, "invitations"],
-		queryFn: async () => {
-			if (!activeOrg) return null;
-			const result = await organization.listInvitations();
-			return result.data ?? null;
-		},
-		enabled: !!activeOrg,
-	});
+	const { data: invitations } = useQuery(orgInvitationsOptions(activeOrg?.id));
 
 	if (isPendingOrg) {
 		return (
@@ -78,20 +52,7 @@ function OrgOverview() {
 	}
 
 	if (!activeOrg) {
-		return (
-			<div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
-				<div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-800">
-					<Building2 className="h-8 w-8 text-zinc-400" />
-				</div>
-				<h2 className="text-2xl font-semibold text-zinc-100">
-					Select an organization to get started
-				</h2>
-				<p className="text-zinc-400 max-w-md">
-					Use the organization switcher in the sidebar to select an organization
-					or create a new one.
-				</p>
-			</div>
-		);
+		return <SelectOrgPrompt />;
 	}
 
 	const memberCount = membersData?.members?.length ?? 0;
@@ -100,11 +61,7 @@ function OrgOverview() {
 		invitations?.filter((inv) => inv.status === "pending").length ?? 0;
 
 	const createdDate = fullOrg?.createdAt
-		? new Date(fullOrg.createdAt).toLocaleDateString("en-US", {
-				year: "numeric",
-				month: "long",
-				day: "numeric",
-			})
+		? formatDateLong(fullOrg.createdAt)
 		: null;
 
 	return (

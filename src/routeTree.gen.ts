@@ -24,6 +24,10 @@ import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.
 import { Route as DotwellKnownJwksDotjsonRouteImport } from './routes/[.]well-known/jwks[.]json'
 import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthedOrgTeamsRouteImport } from './routes/_authed/org/teams'
+import { Route as AuthedOrgSettingsRouteImport } from './routes/_authed/org/settings'
+import { Route as AuthedOrgMembersRouteImport } from './routes/_authed/org/members'
+import { Route as AuthedOrgInvitationsRouteImport } from './routes/_authed/org/invitations'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -100,6 +104,26 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedOrgTeamsRoute = AuthedOrgTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => AuthedOrgRoute,
+} as any)
+const AuthedOrgSettingsRoute = AuthedOrgSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedOrgRoute,
+} as any)
+const AuthedOrgMembersRoute = AuthedOrgMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AuthedOrgRoute,
+} as any)
+const AuthedOrgInvitationsRoute = AuthedOrgInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
+  getParentRoute: () => AuthedOrgRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +138,10 @@ export interface FileRoutesByFullPath {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
+  '/org/invitations': typeof AuthedOrgInvitationsRoute
+  '/org/members': typeof AuthedOrgMembersRoute
+  '/org/settings': typeof AuthedOrgSettingsRoute
+  '/org/teams': typeof AuthedOrgTeamsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org/': typeof AuthedOrgIndexRoute
 }
@@ -129,6 +157,10 @@ export interface FileRoutesByTo {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
+  '/org/invitations': typeof AuthedOrgInvitationsRoute
+  '/org/members': typeof AuthedOrgMembersRoute
+  '/org/settings': typeof AuthedOrgSettingsRoute
+  '/org/teams': typeof AuthedOrgTeamsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/org': typeof AuthedOrgIndexRoute
 }
@@ -147,6 +179,10 @@ export interface FileRoutesById {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
+  '/_authed/org/invitations': typeof AuthedOrgInvitationsRoute
+  '/_authed/org/members': typeof AuthedOrgMembersRoute
+  '/_authed/org/settings': typeof AuthedOrgSettingsRoute
+  '/_authed/org/teams': typeof AuthedOrgTeamsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authed/org/': typeof AuthedOrgIndexRoute
 }
@@ -165,6 +201,10 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
+    | '/org/invitations'
+    | '/org/members'
+    | '/org/settings'
+    | '/org/teams'
     | '/api/auth/$'
     | '/org/'
   fileRoutesByTo: FileRoutesByTo
@@ -180,6 +220,10 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
+    | '/org/invitations'
+    | '/org/members'
+    | '/org/settings'
+    | '/org/teams'
     | '/api/auth/$'
     | '/org'
   id:
@@ -197,6 +241,10 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
+    | '/_authed/org/invitations'
+    | '/_authed/org/members'
+    | '/_authed/org/settings'
+    | '/_authed/org/teams'
     | '/api/auth/$'
     | '/_authed/org/'
   fileRoutesById: FileRoutesById
@@ -323,14 +371,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/org/teams': {
+      id: '/_authed/org/teams'
+      path: '/teams'
+      fullPath: '/org/teams'
+      preLoaderRoute: typeof AuthedOrgTeamsRouteImport
+      parentRoute: typeof AuthedOrgRoute
+    }
+    '/_authed/org/settings': {
+      id: '/_authed/org/settings'
+      path: '/settings'
+      fullPath: '/org/settings'
+      preLoaderRoute: typeof AuthedOrgSettingsRouteImport
+      parentRoute: typeof AuthedOrgRoute
+    }
+    '/_authed/org/members': {
+      id: '/_authed/org/members'
+      path: '/members'
+      fullPath: '/org/members'
+      preLoaderRoute: typeof AuthedOrgMembersRouteImport
+      parentRoute: typeof AuthedOrgRoute
+    }
+    '/_authed/org/invitations': {
+      id: '/_authed/org/invitations'
+      path: '/invitations'
+      fullPath: '/org/invitations'
+      preLoaderRoute: typeof AuthedOrgInvitationsRouteImport
+      parentRoute: typeof AuthedOrgRoute
+    }
   }
 }
 
 interface AuthedOrgRouteChildren {
+  AuthedOrgInvitationsRoute: typeof AuthedOrgInvitationsRoute
+  AuthedOrgMembersRoute: typeof AuthedOrgMembersRoute
+  AuthedOrgSettingsRoute: typeof AuthedOrgSettingsRoute
+  AuthedOrgTeamsRoute: typeof AuthedOrgTeamsRoute
   AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
 }
 
 const AuthedOrgRouteChildren: AuthedOrgRouteChildren = {
+  AuthedOrgInvitationsRoute: AuthedOrgInvitationsRoute,
+  AuthedOrgMembersRoute: AuthedOrgMembersRoute,
+  AuthedOrgSettingsRoute: AuthedOrgSettingsRoute,
+  AuthedOrgTeamsRoute: AuthedOrgTeamsRoute,
   AuthedOrgIndexRoute: AuthedOrgIndexRoute,
 }
 

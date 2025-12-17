@@ -1,0 +1,156 @@
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Shield, Loader2 } from "lucide-react";
+import { ErrorAlert } from "@/components/shared/error-alert";
+import { RoleSelect } from "@/components/org/role-select";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { organization } from "@/lib/auth-client";
+import { orgMembersOptions } from "@/lib/org-queries";
+
+type Member = {
+	id: string;
+	userId: string;
+	organizationId: string;
+	role: string;
+	createdAt: Date;
+	user: {
+		id: string;
+		name: string;
+		email: string;
+		image?: string | null;
+	};
+};
+
+interface EditMemberRoleDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	member: Member | null;
+	orgId: string;
+}
+
+export function EditMemberRoleDialog({
+	open,
+	onOpenChange,
+	member,
+	orgId,
+}: EditMemberRoleDialogProps) {
+	const queryClient = useQueryClient();
+	const [role, setRole] = useState<"member" | "admin">("member");
+	const [error, setError] = useState<string | null>(null);
+
+	// Initialize role when member changes
+	useEffect(() => {
+		if (member) {
+			setRole((member.role as "member" | "admin") || "member");
+		}
+	}, [member]);
+
+	const updateRoleMutation = useMutation({
+		mutationFn: async () => {
+			if (!member) throw new Error("No member selected");
+			const result = await organization.updateMemberRole({
+				memberId: member.id,
+				role: role as "member" | "admin" | "owner",
+			});
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to update role");
+			}
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: orgMembersOptions(orgId).queryKey,
+			});
+			handleOpenChange(false);
+		},
+		onError: (err: Error) => {
+			setError(err.message);
+		},
+	});
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		setError(null);
+		updateRoleMutation.mutate();
+	};
+
+	const handleOpenChange = (isOpen: boolean) => {
+		onOpenChange(isOpen);
+		if (!isOpen) {
+			setError(null);
+		}
+	};
+
+	if (!member) return null;
+
+	const hasChanged = role !== member.role;
+
+	return (
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+				<DialogHeader>
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500">
+						<Shield className="h-6 w-6 text-white" />
+					</div>
+					<DialogTitle className="text-center text-zinc-100">
+						Change Member Role
+					</DialogTitle>
+					<DialogDescription className="text-center text-zinc-400">
+						Update the role for{" "}
+						<span className="font-medium text-zinc-300">
+							{member.user.name || member.user.email}
+						</span>
+					</DialogDescription>
+				</DialogHeader>
+
+				<form onSubmit={handleSubmit}>
+					<div className="space-y-4 py-4">
+						{error && <ErrorAlert message={error} />}
+
+						<div className="space-y-2">
+							<RoleSelect
+								value={role}
+								onValueChange={setRole}
+								showDescriptions
+							/>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleOpenChange(false)}
+							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
+						>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							disabled={updateRoleMutation.isPending || !hasChanged}
+							className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+						>
+							{updateRoleMutation.isPending ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Saving...
+								</>
+							) : (
+								"Save Changes"
+							)}
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}
+

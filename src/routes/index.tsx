@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { KeyRound, LogOut, Settings, Shield, User } from "lucide-react";
+import { Building2, KeyRound, LogOut, Settings, Shield, User } from "lucide-react";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,20 +113,30 @@ function HomePage() {
 								asChild
 								className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
 							>
+								<Link to="/org">
+									<Building2 className="mr-2 h-4 w-4" />
+									Organizations
+								</Link>
+							</Button>
+							<Button
+								asChild
+								variant="outline"
+								className="flex-1 border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+							>
 								<Link to="/settings">
 									<Settings className="mr-2 h-4 w-4" />
 									Settings
 								</Link>
 							</Button>
-							<Button
-								onClick={handleSignOut}
-								variant="outline"
-								className="flex-1 border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
-							>
-								<LogOut className="mr-2 h-4 w-4" />
-								Sign out
-							</Button>
 						</div>
+						<Button
+							onClick={handleSignOut}
+							variant="outline"
+							className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							Sign out
+						</Button>
 					</CardContent>
 				</Card>
 			</div>
