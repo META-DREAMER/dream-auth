@@ -1,11 +1,18 @@
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
-import { emailOTP, jwt, oidcProvider, siwe } from "better-auth/plugins";
+import { APIError } from "better-auth/api";
+import {
+	emailOTP,
+	jwt,
+	oidcProvider,
+	organization,
+	siwe,
+} from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { Pool } from "pg";
-import { http, verifyMessage, createPublicClient } from "viem";
-import { generateSiweNonce } from "viem/siwe";
+import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
+import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
@@ -49,6 +56,9 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
+		// Disable public email/password signup when ENABLE_REGISTRATION is false
+		// Users can still sign up via organization invitations
+		disableSignUp: !serverEnv.ENABLE_REGISTRATION,
 	},
 
 	// Enable changing email address with verification link
@@ -86,6 +96,37 @@ export const auth = betterAuth({
 		// },
 	},
 
+	// Block non-invitation signups when ENABLE_REGISTRATION is false
+	// This catches SIWE and other providers not covered by disableSignUp
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user) => {
+					// Allow if public registration is enabled
+					if (serverEnv.ENABLE_REGISTRATION) return;
+
+					// Check if user email matches a pending invitation
+					// This allows signup via invitation acceptance
+					const pendingInvitation = await pool.query(
+						`SELECT id FROM invitation WHERE email = $1 AND status = 'pending' AND "expiresAt" > NOW() LIMIT 1`,
+						[user.email.toLowerCase()],
+					);
+
+					if (pendingInvitation.rows.length > 0) {
+						// Allow signup - user has a pending invitation
+						return;
+					}
+
+					// Block signup - no valid invitation found
+					throw new APIError("FORBIDDEN", {
+						message:
+							"Registration is disabled. Please contact an administrator for an invitation.",
+					});
+				},
+			},
+		},
+	},
+
 	// advanced: {
 		// cookiePrefix: "auth",
 		// cookies: {
@@ -121,8 +162,8 @@ export const auth = betterAuth({
 						codeExpiresIn: 600, // 10 minutes
 						accessTokenExpiresIn: 3600, // 1 hour
 						refreshTokenExpiresIn: 604800, // 7 days
-						// Supported scopes
-						scopes: ["openid", "profile", "email", "offline_access"],
+						// Supported scopes - includes 'groups' for org membership claims
+						scopes: ["openid", "profile", "email", "groups", "offline_access"],
 						// Store client secrets in plain text (matching our DB seeding format)
 						// If you need hashed/encrypted storage, update sync-oidc-clients.ts accordingly
 						storeClientSecret: "plain",
@@ -130,6 +171,26 @@ export const auth = betterAuth({
 						// These are also seeded to DB via sync-oidc-clients.ts for FK integrity
 						// trustedClients provides skipConsent UX; DB seeding provides FK integrity
 						trustedClients: getTrustedClients(),
+						// Add custom claims to UserInfo endpoint and ID token
+						getAdditionalUserInfoClaim: async (user, scopes) => {
+							const claims: Record<string, unknown> = {};
+
+							// Add groups claim when 'groups' scope is requested
+							// Returns organization slugs for RBAC in downstream apps (ArgoCD, Grafana, etc.)
+							if (scopes.includes("groups")) {
+								const memberships = await pool.query(
+									`SELECT o.slug FROM member m 
+									 JOIN organization o ON m."organizationId" = o.id 
+									 WHERE m."userId" = $1`,
+									[user.id],
+								);
+								claims.groups = memberships.rows.map(
+									(row: { slug: string }) => row.slug,
+								);
+							}
+
+							return claims;
+						},
 					}),
 				]
 			: []),
@@ -209,6 +270,86 @@ export const auth = betterAuth({
 					`[Email OTP] Send to: ${email}, OTP: ${otp}, Type: ${type}`,
 				);
 			},
+		}),
+		// Organization plugin for invitation-based access control
+		organization({
+			teams: {
+				enabled: true,
+			},
+			// Extend invitation schema with wallet address for SIWE-based invitations
+			schema: {
+				invitation: {
+					additionalFields: {
+						// Optional wallet address for wallet-based invitations
+						// When set, user must sign in with SIWE using this wallet to accept
+						walletAddress: {
+							type: "string",
+							required: false,
+							input: true,
+						},
+					},
+				},
+			},
+
+			// Lifecycle hooks for invitation management
+			organizationHooks: {
+				// Verify wallet ownership before accepting wallet-based invitations
+				beforeAcceptInvitation: async ({ invitation, user }) => {
+					// Skip verification for email-only invitations
+					const walletAddress = (
+						invitation as typeof invitation & { walletAddress?: string }
+					).walletAddress;
+					if (!walletAddress) return;
+
+					// Verify user has SIWE account linked with the invited wallet
+					const accounts = await pool.query(
+						`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
+						[user.id],
+					);
+
+					// SIWE accountId format is "walletAddress:chainId"
+					const hasMatchingWallet = accounts.rows.some(
+						(row: { accountId: string }) =>
+							row.accountId
+								.toLowerCase()
+								.startsWith(walletAddress.toLowerCase()),
+					);
+
+					if (!hasMatchingWallet) {
+						throw new APIError("FORBIDDEN", {
+							message:
+								"You must sign in with the invited wallet address to accept this invitation.",
+						});
+					}
+				},
+			},
+
+			// Send invitation notifications
+			async sendInvitationEmail(data) {
+				const inviteLink = `${serverEnv.BETTER_AUTH_URL}/invite/${data.id}`;
+				const walletAddress = (
+					data as typeof data & { walletAddress?: string }
+				).walletAddress;
+
+				if (walletAddress) {
+					// Wallet invitation - log for now, could integrate with push notification service
+					console.log(`[Wallet Invitation] Wallet: ${walletAddress}`);
+					console.log(`[Wallet Invitation] Organization: ${data.organization.name}`);
+					console.log(`[Wallet Invitation] Role: ${data.role}`);
+					console.log(`[Wallet Invitation] Link: ${inviteLink}`);
+				} else {
+					// Email invitation - integrate with email service
+					// TODO: Integrate with Resend, SendGrid, etc.
+					console.log(`[Email Invitation] To: ${data.email}`);
+					console.log(`[Email Invitation] Organization: ${data.organization.name}`);
+					console.log(`[Email Invitation] Role: ${data.role}`);
+					console.log(`[Email Invitation] Invited by: ${data.inviter.user.email}`);
+					console.log(`[Email Invitation] Link: ${inviteLink}`);
+				}
+			},
+
+			// Invitation expires in 7 days
+			invitationExpiresIn: 60 * 60 * 24 * 7,
 		}),
 		// TanStack Start cookie handling - must be last plugin
 		tanstackStartCookies(),

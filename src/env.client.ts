@@ -9,7 +9,7 @@ export const clientEnv = createEnv({
 	clientPrefix: "VITE_",
 
 	client: {
-		VITE_APP_TITLE: z.string().min(1).optional(),
+		VITE_APP_TITLE: z.string().min(1).optional().default("Dream Auth"),
 		// Auth URL for the client - used by better-auth client
 		// Optional: if not set, better-auth uses relative paths (same-origin)
 		VITE_AUTH_URL: z.string().url().optional(),

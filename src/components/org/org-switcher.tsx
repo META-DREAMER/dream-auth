@@ -1,0 +1,92 @@
+import { ChevronsUpDown, Plus, Building2 } from "lucide-react";
+import { useState } from "react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	useSidebar,
+} from "@/components/ui/sidebar";
+import { authClient, organization } from "@/lib/auth-client";
+import { RoleBadge } from "./role-badge";
+import { CreateOrgDialog } from "./create-org-dialog";
+
+export function OrgSwitcher() {
+	const { isMobile } = useSidebar();
+	const { data: activeOrg } = authClient.useActiveOrganization();
+	const { data: organizations } = authClient.useListOrganizations();
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+	const handleSetActive = async (orgId: string) => {
+		await organization.setActive({ organizationId: orgId });
+	};
+
+	return (
+		<>
+			<SidebarMenu>
+				<SidebarMenuItem>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<SidebarMenuButton
+								size="lg"
+								className="data-[state=open]:bg-sidebar-accent"
+							>
+								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-emerald-500">
+									<Building2 className="size-4 text-white" />
+								</div>
+								<div className="grid flex-1 text-left text-sm leading-tight">
+									<span className="truncate font-medium">
+										{activeOrg?.name ?? "Select Organization"}
+									</span>
+									{activeOrg && (
+										<span className="truncate text-xs text-muted-foreground">
+											{activeOrg.slug}
+										</span>
+									)}
+								</div>
+								<ChevronsUpDown className="ml-auto" />
+							</SidebarMenuButton>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+							align="start"
+							side={isMobile ? "bottom" : "right"}
+						>
+							<DropdownMenuLabel>Organizations</DropdownMenuLabel>
+							{organizations?.map((org) => (
+								<DropdownMenuItem
+									key={org.id}
+									onClick={() => handleSetActive(org.id)}
+									className="gap-2 p-2"
+								>
+									<Building2 className="size-4" />
+									<span className="flex-1">{org.name}</span>
+									{"role" in org && <RoleBadge role={org.role as string} />}
+								</DropdownMenuItem>
+							))}
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								onClick={() => setCreateDialogOpen(true)}
+								className="gap-2 p-2"
+							>
+								<Plus className="size-4" />
+								<span>Create Organization</span>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</SidebarMenuItem>
+			</SidebarMenu>
+			<CreateOrgDialog
+				open={createDialogOpen}
+				onOpenChange={setCreateDialogOpen}
+			/>
+		</>
+	);
+}

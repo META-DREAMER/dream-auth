@@ -15,11 +15,14 @@ import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Oauth2SplatRouteImport } from './routes/oauth2/$'
+import { Route as InviteIdRouteImport } from './routes/invite.$id'
 import { Route as ApiVerifyRouteImport } from './routes/api/verify'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedOrgRouteImport } from './routes/_authed/org'
 import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
 import { Route as DotwellKnownJwksDotjsonRouteImport } from './routes/[.]well-known/jwks[.]json'
+import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -51,6 +54,11 @@ const Oauth2SplatRoute = Oauth2SplatRouteImport.update({
   path: '/oauth2/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteIdRoute = InviteIdRouteImport.update({
+  id: '/invite/$id',
+  path: '/invite/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVerifyRoute = ApiVerifyRouteImport.update({
   id: '/api/verify',
   path: '/api/verify',
@@ -66,6 +74,11 @@ const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedOrgRoute = AuthedOrgRouteImport.update({
+  id: '/org',
+  path: '/org',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const DotwellKnownOpenidConfigurationRoute =
   DotwellKnownOpenidConfigurationRouteImport.update({
     id: '/.well-known/openid-configuration',
@@ -76,6 +89,11 @@ const DotwellKnownJwksDotjsonRoute = DotwellKnownJwksDotjsonRouteImport.update({
   id: '/.well-known/jwks.json',
   path: '/.well-known/jwks.json',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedOrgIndexRoute = AuthedOrgIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedOrgRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -90,11 +108,14 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/.well-known/jwks.json': typeof DotwellKnownJwksDotjsonRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/org': typeof AuthedOrgRouteWithChildren
   '/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
+  '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/org/': typeof AuthedOrgIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,8 +127,10 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
+  '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/org': typeof AuthedOrgIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,11 +141,14 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/.well-known/jwks.json': typeof DotwellKnownJwksDotjsonRoute
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/_authed/org': typeof AuthedOrgRouteWithChildren
   '/_authed/settings': typeof AuthedSettingsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/verify': typeof ApiVerifyRoute
+  '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_authed/org/': typeof AuthedOrgIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,11 +159,14 @@ export interface FileRouteTypes {
     | '/register'
     | '/.well-known/jwks.json'
     | '/.well-known/openid-configuration'
+    | '/org'
     | '/settings'
     | '/api/health'
     | '/api/verify'
+    | '/invite/$id'
     | '/oauth2/$'
     | '/api/auth/$'
+    | '/org/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -149,8 +178,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/health'
     | '/api/verify'
+    | '/invite/$id'
     | '/oauth2/$'
     | '/api/auth/$'
+    | '/org'
   id:
     | '__root__'
     | '/'
@@ -160,11 +191,14 @@ export interface FileRouteTypes {
     | '/register'
     | '/.well-known/jwks.json'
     | '/.well-known/openid-configuration'
+    | '/_authed/org'
     | '/_authed/settings'
     | '/api/health'
     | '/api/verify'
+    | '/invite/$id'
     | '/oauth2/$'
     | '/api/auth/$'
+    | '/_authed/org/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -177,6 +211,7 @@ export interface RootRouteChildren {
   DotwellKnownOpenidConfigurationRoute: typeof DotwellKnownOpenidConfigurationRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiVerifyRoute: typeof ApiVerifyRoute
+  InviteIdRoute: typeof InviteIdRoute
   Oauth2SplatRoute: typeof Oauth2SplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -225,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Oauth2SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite/$id': {
+      id: '/invite/$id'
+      path: '/invite/$id'
+      fullPath: '/invite/$id'
+      preLoaderRoute: typeof InviteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/verify': {
       id: '/api/verify'
       path: '/api/verify'
@@ -246,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedSettingsRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/org': {
+      id: '/_authed/org'
+      path: '/org'
+      fullPath: '/org'
+      preLoaderRoute: typeof AuthedOrgRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/.well-known/openid-configuration': {
       id: '/.well-known/openid-configuration'
       path: '/.well-known/openid-configuration'
@@ -260,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownJwksDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/org/': {
+      id: '/_authed/org/'
+      path: '/'
+      fullPath: '/org/'
+      preLoaderRoute: typeof AuthedOrgIndexRouteImport
+      parentRoute: typeof AuthedOrgRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -270,11 +326,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthedOrgRouteChildren {
+  AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
+}
+
+const AuthedOrgRouteChildren: AuthedOrgRouteChildren = {
+  AuthedOrgIndexRoute: AuthedOrgIndexRoute,
+}
+
+const AuthedOrgRouteWithChildren = AuthedOrgRoute._addFileChildren(
+  AuthedOrgRouteChildren,
+)
+
 interface AuthedRouteChildren {
+  AuthedOrgRoute: typeof AuthedOrgRouteWithChildren
   AuthedSettingsRoute: typeof AuthedSettingsRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedOrgRoute: AuthedOrgRouteWithChildren,
   AuthedSettingsRoute: AuthedSettingsRoute,
 }
 
@@ -291,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownOpenidConfigurationRoute: DotwellKnownOpenidConfigurationRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiVerifyRoute: ApiVerifyRoute,
+  InviteIdRoute: InviteIdRoute,
   Oauth2SplatRoute: Oauth2SplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
