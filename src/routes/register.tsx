@@ -87,16 +87,16 @@ function RegisterPage() {
 
 	if (success) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
-				<Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+				<Card className="w-full max-w-md">
 					<CardContent className="pt-6 text-center">
-						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20">
-							<CheckCircle className="h-6 w-6 text-emerald-400" />
-						</div>
-						<h2 className="text-xl font-semibold text-zinc-100 mb-2">
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
+						<CheckCircle className="h-6 w-6 text-success" />
+					</div>
+						<h2 className="text-xl font-semibold mb-2">
 							Account created!
 						</h2>
-						<p className="text-zinc-400">Redirecting you now...</p>
+						<p className="text-muted-foreground">Redirecting you now...</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -104,18 +104,18 @@ function RegisterPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+		<div className="min-h-screen flex items-center justify-center bg-background p-4">
 			<PageBackground />
 
-			<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<UserPlus className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<UserPlus className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<CardTitle className="text-2xl font-bold tracking-tight text-zinc-100">
+					<CardTitle className="text-2xl font-bold tracking-tight">
 						Create an account
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						Enter your details to get started
 					</CardDescription>
 				</CardHeader>
@@ -136,17 +136,17 @@ function RegisterPage() {
 
 						<div className="relative">
 							<div className="absolute inset-0 flex items-center">
-								<Separator className="w-full bg-zinc-800" />
+								<Separator className="w-full" />
 							</div>
 							<div className="relative flex justify-center text-xs uppercase">
-								<span className="bg-zinc-900 px-2 text-zinc-500">
+								<span className="bg-background px-2 text-muted-foreground">
 									or register with email
 								</span>
 							</div>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="name" className="text-zinc-300">
+							<Label htmlFor="name">
 								Name
 							</Label>
 							<Input
@@ -157,12 +157,11 @@ function RegisterPage() {
 								onChange={(e) => setName(e.target.value)}
 								required
 								autoComplete="name"
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="email" className="text-zinc-300">
+							<Label htmlFor="email">
 								Email
 							</Label>
 							<Input
@@ -173,12 +172,11 @@ function RegisterPage() {
 								onChange={(e) => setEmail(e.target.value)}
 								required
 								autoComplete="email"
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="password" className="text-zinc-300">
+							<Label htmlFor="password">
 								Password
 							</Label>
 							<Input
@@ -189,12 +187,11 @@ function RegisterPage() {
 								onChange={(e) => setPassword(e.target.value)}
 								required
 								autoComplete="new-password"
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="confirmPassword" className="text-zinc-300">
+							<Label htmlFor="confirmPassword">
 								Confirm Password
 							</Label>
 							<Input
@@ -205,7 +202,6 @@ function RegisterPage() {
 								onChange={(e) => setConfirmPassword(e.target.value)}
 								required
 								autoComplete="new-password"
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 					</CardContent>
@@ -214,7 +210,7 @@ function RegisterPage() {
 						<Button
 							type="submit"
 							disabled={isLoading}
-							className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+							className="w-full"
 						>
 							{isLoading ? (
 								<>
@@ -226,15 +222,15 @@ function RegisterPage() {
 							)}
 						</Button>
 
-						<p className="text-center text-sm text-zinc-500">
-							Already have an account?{" "}
-							<Link
-								to="/login"
-								search={{ redirect: redirectTo }}
-								className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-							>
-								Sign in
-							</Link>
+						<p className="text-center text-sm text-muted-foreground">
+						Already have an account?{" "}
+						<Link
+							to="/login"
+							search={{ redirect: redirectTo }}
+							className="text-primary hover:text-primary/80 font-medium transition-colors"
+						>
+							Sign in
+						</Link>
 						</p>
 					</CardFooter>
 				</form>

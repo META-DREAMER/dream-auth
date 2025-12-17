@@ -90,25 +90,24 @@ export function WalletList() {
 	return (
 		<Table>
 			<TableHeader>
-				<TableRow className="border-zinc-800 hover:bg-transparent">
-					<TableHead className="text-zinc-400">Address</TableHead>
-					<TableHead className="text-zinc-400">Linked</TableHead>
-					<TableHead className="text-zinc-400 w-[100px]">Actions</TableHead>
+				<TableRow className="hover:bg-transparent">
+					<TableHead>Address</TableHead>
+					<TableHead>Linked</TableHead>
+					<TableHead className="w-[100px]">Actions</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
 				{walletAccounts.map((account) => (
 					<TableRow
 						key={account.id}
-						className="border-zinc-800 hover:bg-zinc-800/50"
 					>
-						<TableCell className="font-mono text-zinc-300 text-sm">
+						<TableCell className="font-mono text-sm">
 							<span className="flex items-center gap-2">
 								<Wallet className="h-4 w-4 text-orange-500" />
 								{account.accountId.slice(0, 6)}...{account.accountId.slice(-4)}
 							</span>
 						</TableCell>
-						<TableCell className="text-zinc-400 text-sm">
+						<TableCell className="text-muted-foreground text-sm">
 							{new Date(account.createdAt).toLocaleDateString()}
 						</TableCell>
 						<TableCell>
@@ -117,7 +116,7 @@ export function WalletList() {
 								description={
 									<>
 										This will remove the wallet{" "}
-										<span className="font-mono text-zinc-300">
+										<span className="font-mono">
 											{account.accountId.slice(0, 6)}...
 											{account.accountId.slice(-4)}
 										</span>{" "}

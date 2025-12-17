@@ -67,7 +67,7 @@ function OrgOverview() {
 	return (
 		<div className="space-y-6">
 			{/* Organization Overview Card */}
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
 					<div className="flex items-start justify-between">
 						<div className="flex items-center gap-4">
@@ -78,17 +78,17 @@ function OrgOverview() {
 									className="h-16 w-16 rounded-lg object-cover"
 								/>
 							) : (
-								<div className="flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-500">
-									<Building2 className="h-8 w-8 text-white" />
+								<div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary">
+									<Building2 className="h-8 w-8 text-primary-foreground" />
 								</div>
 							)}
 							<div>
-								<CardTitle className="text-zinc-100">{activeOrg.name}</CardTitle>
-								<CardDescription className="text-zinc-400">
+								<CardTitle>{activeOrg.name}</CardTitle>
+								<CardDescription>
 									{activeOrg.slug}
 								</CardDescription>
 								{createdDate && (
-									<p className="text-xs text-zinc-500 mt-1">
+									<p className="text-xs text-muted-foreground mt-1">
 										Created {createdDate}
 									</p>
 								)}
@@ -100,87 +100,87 @@ function OrgOverview() {
 
 			{/* Stats Grid */}
 			<div className="grid gap-4 md:grid-cols-3">
-				<Card className="bg-zinc-900 border-zinc-800">
+				<Card>
 					<CardHeader className="pb-3">
-						<CardTitle className="text-sm font-medium text-zinc-400">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
 							Members
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="flex items-center justify-between">
-							<div className="text-2xl font-bold text-zinc-100">
+							<div className="text-2xl font-bold">
 								{isPendingFull ? (
 									<Skeleton className="h-8 w-12" />
 								) : (
 									memberCount
 								)}
 							</div>
-							<Users className="h-5 w-5 text-zinc-500" />
+							<Users className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="bg-zinc-900 border-zinc-800">
+				<Card>
 					<CardHeader className="pb-3">
-						<CardTitle className="text-sm font-medium text-zinc-400">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
 							Teams
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="flex items-center justify-between">
-							<div className="text-2xl font-bold text-zinc-100">
+							<div className="text-2xl font-bold">
 								{isPendingFull ? (
 									<Skeleton className="h-8 w-12" />
 								) : (
 									teamCount
 								)}
 							</div>
-							<UsersRound className="h-5 w-5 text-zinc-500" />
+							<UsersRound className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="bg-zinc-900 border-zinc-800">
+				<Card>
 					<CardHeader className="pb-3">
-						<CardTitle className="text-sm font-medium text-zinc-400">
+						<CardTitle className="text-sm font-medium text-muted-foreground">
 							Pending Invitations
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="flex items-center justify-between">
-							<div className="text-2xl font-bold text-zinc-100">
+							<div className="text-2xl font-bold">
 								{isPendingFull ? (
 									<Skeleton className="h-8 w-12" />
 								) : (
 									pendingInvitationsCount
 								)}
 							</div>
-							<Mail className="h-5 w-5 text-zinc-500" />
+							<Mail className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
 			</div>
 
 			{/* Quick Actions */}
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
-					<CardTitle className="text-zinc-100">Quick Actions</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardTitle>Quick Actions</CardTitle>
+					<CardDescription>
 						Common organization management tasks
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-wrap gap-3">
-						<Button variant="outline" className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100" disabled>
+						<Button variant="outline" disabled>
 							<Users className="mr-2 h-4 w-4" />
 							Invite Member
 						</Button>
-						<Button variant="outline" className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100" disabled>
+						<Button variant="outline" disabled>
 							<Plus className="mr-2 h-4 w-4" />
 							Create Team
 						</Button>
 					</div>
-					<p className="text-xs text-zinc-500 mt-2">
+					<p className="text-xs text-muted-foreground mt-2">
 						These features will be available once the members and teams pages are implemented.
 					</p>
 				</CardContent>

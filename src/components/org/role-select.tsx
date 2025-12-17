@@ -19,18 +19,15 @@ export function RoleSelect({
 }: RoleSelectProps) {
 	return (
 		<Select value={value} onValueChange={onValueChange}>
-			<SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-100">
+			<SelectTrigger>
 				<SelectValue placeholder="Select a role" />
 			</SelectTrigger>
-			<SelectContent className="bg-zinc-900 border-zinc-800">
-				<SelectItem
-					value="member"
-					className="text-zinc-300 focus:text-zinc-100 focus:bg-zinc-800"
-				>
+			<SelectContent>
+				<SelectItem value="member">
 					{showDescriptions ? (
 						<div className="flex flex-col">
 							<span>Member</span>
-							<span className="text-xs text-zinc-500">
+							<span className="text-xs text-muted-foreground">
 								Can view organization resources
 							</span>
 						</div>
@@ -38,14 +35,11 @@ export function RoleSelect({
 						"Member"
 					)}
 				</SelectItem>
-				<SelectItem
-					value="admin"
-					className="text-zinc-300 focus:text-zinc-100 focus:bg-zinc-800"
-				>
+				<SelectItem value="admin">
 					{showDescriptions ? (
 						<div className="flex flex-col">
 							<span>Admin</span>
-							<span className="text-xs text-zinc-500">
+							<span className="text-xs text-muted-foreground">
 								Can manage members and invitations
 							</span>
 						</div>

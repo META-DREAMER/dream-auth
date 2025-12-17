@@ -173,17 +173,17 @@ export function ManageTeamMembersDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500">
-						<UsersRound className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<UsersRound className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Manage Team Members
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Add or remove members from{" "}
-						<span className="font-medium text-zinc-300">{team.name}</span>
+						<span className="font-medium">{team.name}</span>
 					</DialogDescription>
 				</DialogHeader>
 
@@ -197,7 +197,7 @@ export function ManageTeamMembersDialog({
 							))}
 						</div>
 					) : orgMembers.length === 0 ? (
-						<p className="text-center text-zinc-400 py-8">
+						<p className="text-center text-muted-foreground py-8">
 							No organization members available
 						</p>
 					) : (
@@ -206,42 +206,41 @@ export function ManageTeamMembersDialog({
 								{orgMembers.map((member) => (
 									<label
 										key={member.userId}
-										className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-zinc-700 hover:border-zinc-600 cursor-pointer transition-colors"
+										className="flex items-center gap-3 p-3 rounded-lg bg-muted border cursor-pointer transition-colors hover:bg-muted/80"
 									>
 										<Checkbox
 											checked={selectedUserIds.has(member.userId)}
 											onCheckedChange={() => handleToggleMember(member.userId)}
-											className="border-zinc-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
 										/>
 										<Avatar className="h-9 w-9">
 											{member.user.image && (
 												<AvatarImage src={member.user.image} />
 											)}
-											<AvatarFallback className="bg-zinc-700 text-zinc-300">
+											<AvatarFallback>
 												{member.user.name?.charAt(0).toUpperCase() ||
 													member.user.email?.charAt(0).toUpperCase() ||
 													"?"}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex-1 min-w-0">
-											<div className="font-medium text-zinc-100 truncate">
+											<div className="font-medium truncate">
 												{member.user.name || "Unknown"}
 											</div>
-											<div className="text-sm text-zinc-400 truncate">
+											<div className="text-sm text-muted-foreground truncate">
 												{member.user.email}
 											</div>
 										</div>
 										{selectedUserIds.has(member.userId) &&
 											currentMemberIds.has(member.userId) && (
-												<Check className="h-4 w-4 text-cyan-400" />
+												<Check className="h-4 w-4 text-primary" />
 											)}
-										{selectedUserIds.has(member.userId) &&
-											!currentMemberIds.has(member.userId) && (
-												<UserPlus className="h-4 w-4 text-emerald-400" />
-											)}
+									{selectedUserIds.has(member.userId) &&
+										!currentMemberIds.has(member.userId) && (
+											<UserPlus className="h-4 w-4 text-success" />
+										)}
 										{!selectedUserIds.has(member.userId) &&
 											currentMemberIds.has(member.userId) && (
-												<UserMinus className="h-4 w-4 text-red-400" />
+												<UserMinus className="h-4 w-4 text-red-500" />
 											)}
 									</label>
 								))}
@@ -252,7 +251,7 @@ export function ManageTeamMembersDialog({
 
 				<DialogFooter>
 					<div className="flex items-center justify-between w-full">
-						<span className="text-sm text-zinc-400">
+						<span className="text-sm text-muted-foreground">
 							{selectedUserIds.size}{" "}
 							{selectedUserIds.size === 1 ? "member" : "members"} selected
 						</span>
@@ -261,14 +260,12 @@ export function ManageTeamMembersDialog({
 								type="button"
 								variant="outline"
 								onClick={() => handleOpenChange(false)}
-								className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 							>
 								Cancel
 							</Button>
 							<Button
 								onClick={handleSave}
 								disabled={saving || !hasChanges}
-								className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
 							>
 								{saving ? (
 									<>

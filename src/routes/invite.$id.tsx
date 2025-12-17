@@ -230,9 +230,9 @@ function InvitePage() {
 	// Loading state while checking session or fetching preview
 	if (isSessionLoading || isLoadingPreview) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-4">
 						<Skeleton className="h-12 w-12 rounded-full mx-auto" />
 						<Skeleton className="h-6 w-48 mx-auto" />
@@ -250,28 +250,27 @@ function InvitePage() {
 	// Invitation not found (pre-auth check)
 	if (previewError || !invitationPreview) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
 							<X className="h-6 w-6 text-red-400" />
 						</div>
-						<CardTitle className="text-xl text-zinc-100">
+						<CardTitle className="text-xl">
 							Invitation Not Found
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							This invitation may have expired, been canceled, or doesn't exist.
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-						<Button
-							asChild
-							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-						>
-							<Link to="/">Go Home</Link>
-						</Button>
+					<Button
+						asChild
+						variant="outline"
+					>
+						<Link to="/">Go Home</Link>
+					</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -284,30 +283,29 @@ function InvitePage() {
 
 	if (isExpired || isNotPending) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20">
 							<Clock className="h-6 w-6 text-amber-400" />
 						</div>
-						<CardTitle className="text-xl text-zinc-100">
+						<CardTitle className="text-xl">
 							{isExpired ? "Invitation Expired" : "Invitation No Longer Available"}
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							{isExpired
 								? `This invitation to join ${invitationPreview.organizationName} has expired.`
 								: `This invitation to join ${invitationPreview.organizationName} is no longer available (status: ${invitationPreview.status}).`}
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-						<Button
-							asChild
-							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-						>
-							<Link to="/">Go Home</Link>
-						</Button>
+					<Button
+						asChild
+						variant="outline"
+					>
+						<Link to="/">Go Home</Link>
+					</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -317,50 +315,50 @@ function InvitePage() {
 	// Not logged in - show invitation preview with login prompt
 	if (!session) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-1 text-center">
-						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
+						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
 							<Building2 className="h-6 w-6 text-white" />
 						</div>
-						<CardTitle className="text-xl font-bold tracking-tight text-zinc-100">
+						<CardTitle className="text-xl font-bold tracking-tight">
 							Join {invitationPreview.organizationName}
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							You've been invited to join as{" "}
-							<Badge
-								variant="outline"
-								className="ml-1 border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-							>
-								{invitationPreview.role}
-							</Badge>
+						<Badge
+							variant="outline"
+							className="ml-1 border-success/30 text-success bg-success/10"
+						>
+							{invitationPreview.role}
+						</Badge>
 						</CardDescription>
 					</CardHeader>
 
 					<CardContent className="space-y-4">
 						{/* Invitation preview details */}
-						<div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-4 space-y-3">
+						<div className="rounded-lg bg-muted border p-4 space-y-3">
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-zinc-400">Organization</span>
-								<span className="text-sm font-medium text-zinc-200">
+								<span className="text-sm text-muted-foreground">Organization</span>
+								<span className="text-sm font-medium">
 									{invitationPreview.organizationName}
 								</span>
 							</div>
-							<Separator className="bg-zinc-700/50" />
+							<Separator />
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-zinc-400">Expires</span>
-								<span className="text-sm text-zinc-300 flex items-center gap-1">
+								<span className="text-sm text-muted-foreground">Expires</span>
+								<span className="text-sm flex items-center gap-1">
 									<Clock className="h-3 w-3" />
 									{new Date(invitationPreview.expiresAt).toLocaleDateString()}
 								</span>
 							</div>
 							{invitationPreview.isWalletInvitation && (
 								<>
-									<Separator className="bg-zinc-700/50" />
+									<Separator />
 									<div className="flex items-center justify-between">
-										<span className="text-sm text-zinc-400">Required Wallet</span>
-										<span className="text-sm font-mono text-zinc-300 flex items-center gap-1">
+										<span className="text-sm text-muted-foreground">Required Wallet</span>
+										<span className="text-sm font-mono flex items-center gap-1">
 											<Wallet className="h-3 w-3" />
 											{invitationPreview.walletAddressPreview}
 										</span>
@@ -370,8 +368,8 @@ function InvitePage() {
 						</div>
 
 						{/* Sign in prompt */}
-						<div className="rounded-lg bg-zinc-800/30 border border-zinc-700/30 p-3">
-							<p className="text-sm text-zinc-400 text-center">
+						<div className="rounded-lg bg-muted/50 border p-3">
+							<p className="text-sm text-muted-foreground text-center">
 								Sign in to accept or decline this invitation
 							</p>
 						</div>
@@ -381,18 +379,18 @@ function InvitePage() {
 								<ConnectSIWEButton />
 								<div className="relative">
 									<div className="absolute inset-0 flex items-center">
-										<Separator className="w-full bg-zinc-800" />
+										<Separator className="w-full" />
 									</div>
 									<div className="relative flex justify-center text-xs uppercase">
-										<span className="bg-zinc-900 px-2 text-zinc-500">
+										<span className="bg-background px-2 text-muted-foreground">
 											or sign in with email first
 										</span>
 									</div>
 								</div>
-								<Button
-									asChild
-									variant="outline"
-									className="w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800"
+							<Button
+								asChild
+								variant="outline"
+								className="w-full"
 								>
 									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
 										<Mail className="mr-2 h-4 w-4" />
@@ -404,7 +402,7 @@ function InvitePage() {
 							<>
 								<Button
 									asChild
-									className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+									className="w-full font-medium"
 								>
 									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
 										<Mail className="mr-2 h-4 w-4" />
@@ -413,10 +411,10 @@ function InvitePage() {
 								</Button>
 								<div className="relative">
 									<div className="absolute inset-0 flex items-center">
-										<Separator className="w-full bg-zinc-800" />
+										<Separator className="w-full" />
 									</div>
 									<div className="relative flex justify-center text-xs uppercase">
-										<span className="bg-zinc-900 px-2 text-zinc-500">
+										<span className="bg-background px-2 text-muted-foreground">
 											or connect wallet
 										</span>
 									</div>
@@ -427,12 +425,12 @@ function InvitePage() {
 					</CardContent>
 
 					<CardFooter className="flex flex-col">
-						<p className="text-center text-sm text-zinc-500">
+						<p className="text-center text-sm text-muted-foreground">
 							Don't have an account?{" "}
 							<Link
 								to="/register"
 								search={{ redirect: `/invite/${invitationId}` }}
-								className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+								className="text-primary hover:text-primary/80 font-medium transition-colors"
 							>
 								Create one
 							</Link>
@@ -446,9 +444,9 @@ function InvitePage() {
 	// Loading invitation details
 	if (isLoadingInvitation) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-4">
 						<Skeleton className="h-12 w-12 rounded-full mx-auto" />
 						<Skeleton className="h-6 w-48 mx-auto" />
@@ -466,30 +464,29 @@ function InvitePage() {
 	// Error loading invitation (and no cached data)
 	if (invitationError && !invitation) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
 							<X className="h-6 w-6 text-red-400" />
 						</div>
-						<CardTitle className="text-xl text-zinc-100">
+						<CardTitle className="text-xl">
 							Invitation Not Found
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							{invitationError instanceof Error
 								? invitationError.message
 								: "Failed to load invitation. It may have expired or been canceled."}
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-						<Button
-							asChild
-							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-						>
-							<Link to="/">Go Home</Link>
-						</Button>
+					<Button
+						asChild
+						variant="outline"
+					>
+						<Link to="/">Go Home</Link>
+					</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -499,17 +496,17 @@ function InvitePage() {
 	// Success state
 	if (acceptMutation.isSuccess) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
-						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20">
-							<Check className="h-6 w-6 text-emerald-400" />
+						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
+							<Check className="h-6 w-6 text-success" />
 						</div>
-						<CardTitle className="text-xl text-zinc-100">
+						<CardTitle className="text-xl">
 							Welcome to {invitation?.organizationName}!
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							You've successfully joined as {invitation?.role}. Redirecting...
 						</CardDescription>
 					</CardHeader>
@@ -520,25 +517,25 @@ function InvitePage() {
 
 	// Show invitation details
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+		<div className="min-h-screen flex items-center justify-center bg-background p-4">
 			<PageBackground />
 
-			<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<Building2 className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Building2 className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<CardTitle className="text-xl font-bold tracking-tight text-zinc-100">
+					<CardTitle className="text-xl font-bold tracking-tight">
 						Join {invitation?.organizationName}
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						You've been invited to join as{" "}
-						<Badge
-							variant="outline"
-							className="ml-1 border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-						>
-							{invitation?.role}
-						</Badge>
+					<Badge
+						variant="outline"
+						className="ml-1 border-success/30 text-success bg-success/10"
+					>
+						{invitation?.role}
+					</Badge>
 					</CardDescription>
 				</CardHeader>
 
@@ -546,24 +543,24 @@ function InvitePage() {
 					{error && <ErrorAlert message={error} />}
 
 					{/* Invitation details */}
-					<div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-4 space-y-3">
+					<div className="rounded-lg bg-muted border p-4 space-y-3">
 						<div className="flex items-center justify-between">
-							<span className="text-sm text-zinc-400">Organization</span>
-							<span className="text-sm font-medium text-zinc-200">
+							<span className="text-sm text-muted-foreground">Organization</span>
+							<span className="text-sm font-medium">
 								{invitation?.organizationName}
 							</span>
 						</div>
-						<Separator className="bg-zinc-700/50" />
+						<Separator />
 						<div className="flex items-center justify-between">
-							<span className="text-sm text-zinc-400">Invited by</span>
-							<span className="text-sm font-medium text-zinc-200">
+							<span className="text-sm text-muted-foreground">Invited by</span>
+							<span className="text-sm font-medium">
 								{invitation?.inviterEmail}
 							</span>
 						</div>
-						<Separator className="bg-zinc-700/50" />
+						<Separator />
 						<div className="flex items-center justify-between">
-							<span className="text-sm text-zinc-400">Expires</span>
-							<span className="text-sm text-zinc-300 flex items-center gap-1">
+							<span className="text-sm text-muted-foreground">Expires</span>
+							<span className="text-sm flex items-center gap-1">
 								<Clock className="h-3 w-3" />
 								{invitation?.expiresAt
 									? new Date(invitation.expiresAt).toLocaleDateString()
@@ -574,10 +571,10 @@ function InvitePage() {
 						{/* Wallet invitation indicator */}
 						{isWalletInvite && (
 							<>
-								<Separator className="bg-zinc-700/50" />
+								<Separator />
 								<div className="flex items-center justify-between">
-									<span className="text-sm text-zinc-400">Required Wallet</span>
-									<span className="text-sm font-mono text-zinc-300 flex items-center gap-1">
+									<span className="text-sm text-muted-foreground">Required Wallet</span>
+									<span className="text-sm font-mono flex items-center gap-1">
 										<Wallet className="h-3 w-3" />
 										{invitationWallet?.slice(0, 6)}...
 										{invitationWallet?.slice(-4)}
@@ -616,7 +613,7 @@ function InvitePage() {
 						onClick={() => rejectMutation.mutate()}
 						disabled={acceptMutation.isPending || rejectMutation.isPending}
 						variant="outline"
-						className="flex-1 border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+						className="flex-1 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
 					>
 						{rejectMutation.isPending ? (
 							<>
@@ -637,7 +634,7 @@ function InvitePage() {
 							rejectMutation.isPending ||
 							(isWalletInvite && !walletMatches)
 						}
-						className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+						className="flex-1 font-medium"
 					>
 						{acceptMutation.isPending ? (
 							<>

@@ -88,36 +88,35 @@ export function PasskeyList() {
 	}
 
 	return (
-		<div className="rounded-lg border border-zinc-700 overflow-hidden">
+		<div className="rounded-lg border overflow-hidden">
 			<Table>
 				<TableHeader>
-					<TableRow className="border-zinc-700 hover:bg-transparent">
-						<TableHead className="text-zinc-400">Name</TableHead>
-						<TableHead className="text-zinc-400">Created</TableHead>
-						<TableHead className="text-zinc-400 text-right">Actions</TableHead>
+					<TableRow className="hover:bg-transparent">
+						<TableHead>Name</TableHead>
+						<TableHead>Created</TableHead>
+						<TableHead className="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{passkeys.map((key) => (
 						<TableRow
 							key={key.id}
-							className="border-zinc-700 hover:bg-zinc-800/50"
 						>
-							<TableCell className="font-medium text-zinc-200">
+							<TableCell className="font-medium">
 								<div className="flex items-center gap-2">
-									<Fingerprint className="h-4 w-4 text-emerald-500" />
+									<Fingerprint className="h-4 w-4 text-success" />
 									{key.name || "Unnamed Passkey"}
 									{key.deviceType && (
 										<Badge
 											variant="outline"
-											className="ml-2 border-zinc-600 text-zinc-400 text-xs"
+											className="ml-2 text-xs"
 										>
 											{key.deviceType}
 										</Badge>
 									)}
 								</div>
 							</TableCell>
-							<TableCell className="text-zinc-400">
+							<TableCell className="text-muted-foreground">
 								{formatDate(key.createdAt)}
 							</TableCell>
 							<TableCell className="text-right">

@@ -41,7 +41,7 @@ export function DeleteConfirmDialog({
 					variant="ghost"
 					size={buttonSize}
 					disabled={isDeleting}
-					className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
+					className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
 				>
 					{isDeleting ? (
 						<Loader2 className="h-4 w-4 animate-spin" />
@@ -50,20 +50,20 @@ export function DeleteConfirmDialog({
 					)}
 				</Button>
 			</AlertDialogTrigger>
-			<AlertDialogContent className="bg-zinc-900 border-zinc-800">
+			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle className="text-zinc-100">{title}</AlertDialogTitle>
-					<AlertDialogDescription className="text-zinc-400">
+					<AlertDialogTitle>{title}</AlertDialogTitle>
+					<AlertDialogDescription>
 						{description}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+					<AlertDialogCancel>
 						Cancel
 					</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={onConfirm}
-						className="bg-red-500 text-white hover:bg-red-600"
+						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 					>
 						{confirmText}
 					</AlertDialogAction>

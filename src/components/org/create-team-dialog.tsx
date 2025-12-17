@@ -70,15 +70,15 @@ export function CreateTeamDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500">
-						<UsersRound className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<UsersRound className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Create Team
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Create a new team to organize members and manage access.
 					</DialogDescription>
 				</DialogHeader>
@@ -88,7 +88,7 @@ export function CreateTeamDialog({
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="team-name" className="text-zinc-300">
+							<Label htmlFor="team-name">
 								Team Name
 							</Label>
 							<Input
@@ -97,7 +97,6 @@ export function CreateTeamDialog({
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								required
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-cyan-500/50 focus-visible:border-cyan-500"
 							/>
 						</div>
 					</div>
@@ -107,14 +106,12 @@ export function CreateTeamDialog({
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={createMutation.isPending || !name}
-							className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
 						>
 							{createMutation.isPending ? (
 								<>

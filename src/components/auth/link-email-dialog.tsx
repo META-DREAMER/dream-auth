@@ -82,24 +82,20 @@ export function LinkEmailDialog() {
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button
-					variant="outline"
-					size="sm"
-					className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
-				>
+				<Button variant="outline" size="sm">
 					<Plus className="mr-2 h-4 w-4" />
 					Link Email
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<Mail className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Mail className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						{step === "email" ? "Link Email Address" : "Verify Your Email"}
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						{step === "email"
 							? "Add an email address to your account for easier recovery and notifications."
 							: isLoading && !hasSentOtp
@@ -114,7 +110,7 @@ export function LinkEmailDialog() {
 							{error && <ErrorAlert message={error} />}
 
 							<div className="space-y-2">
-								<Label htmlFor="email" className="text-zinc-300">
+								<Label htmlFor="email">
 									Email Address
 								</Label>
 								<Input
@@ -125,9 +121,8 @@ export function LinkEmailDialog() {
 									onChange={(e) => setEmail(e.target.value)}
 									required
 									autoComplete="email"
-									className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 								/>
-								<p className="text-xs text-zinc-500">
+								<p className="text-xs text-muted-foreground">
 									We'll send a verification code to this email
 								</p>
 							</div>
@@ -138,14 +133,12 @@ export function LinkEmailDialog() {
 								type="button"
 								variant="outline"
 								onClick={handleClose}
-								className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 							>
 								Cancel
 							</Button>
 							<Button
 								type="submit"
 								disabled={isLoading || !email}
-								className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 							>
 								{isLoading ? (
 									<>
@@ -177,14 +170,12 @@ export function LinkEmailDialog() {
 								type="button"
 								variant="outline"
 								onClick={handleBackToEmail}
-								className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 							>
 								Back
 							</Button>
 							<Button
 								type="submit"
 								disabled={isLoading || otp.length !== 6}
-								className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 							>
 								{isLoading ? (
 									<>

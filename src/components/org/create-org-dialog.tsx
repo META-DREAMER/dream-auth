@@ -95,15 +95,15 @@ export function CreateOrgDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500">
-						<Building2 className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Building2 className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Create Organization
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Create a new organization to collaborate with your team.
 					</DialogDescription>
 				</DialogHeader>
@@ -113,7 +113,7 @@ export function CreateOrgDialog({
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="org-name" className="text-zinc-300">
+							<Label htmlFor="org-name">
 								Organization Name
 							</Label>
 							<Input
@@ -122,12 +122,11 @@ export function CreateOrgDialog({
 								value={name}
 								onChange={(e) => handleNameChange(e.target.value)}
 								required
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="org-slug" className="text-zinc-300">
+							<Label htmlFor="org-slug">
 								Slug
 							</Label>
 							<Input
@@ -136,15 +135,14 @@ export function CreateOrgDialog({
 								value={slug}
 								onChange={(e) => setSlug(e.target.value)}
 								required
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
-							<p className="text-xs text-zinc-500">
+							<p className="text-xs text-muted-foreground">
 								Used in URLs. Auto-generated from name if left empty.
 							</p>
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="org-logo" className="text-zinc-300">
+							<Label htmlFor="org-logo">
 								Logo URL (optional)
 							</Label>
 							<Input
@@ -153,7 +151,6 @@ export function CreateOrgDialog({
 								placeholder="https://example.com/logo.png"
 								value={logo}
 								onChange={(e) => setLogo(e.target.value)}
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
 						</div>
 					</div>
@@ -163,14 +160,12 @@ export function CreateOrgDialog({
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={createMutation.isPending || !name}
-							className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 						>
 							{createMutation.isPending ? (
 								<>

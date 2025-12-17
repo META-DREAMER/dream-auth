@@ -82,15 +82,15 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 					Verify
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<Mail className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Mail className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Verify Your Email
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						{isLoading && !hasSentOtp
 							? `Sending verification code to ${email}...`
 							: `We sent a 6-digit code to ${email}. Enter it below to verify.`}
@@ -115,14 +115,12 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 							type="button"
 							variant="outline"
 							onClick={handleClose}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={isLoading || otp.length !== 6}
-							className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 						>
 							{isLoading ? (
 								<>

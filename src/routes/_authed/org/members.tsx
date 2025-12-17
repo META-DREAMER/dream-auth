@@ -156,13 +156,13 @@ function MembersPage() {
 				description={`Manage members of ${activeOrg.name}`}
 			/>
 
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
-					<CardTitle className="text-zinc-100 flex items-center gap-2">
+					<CardTitle className="flex items-center gap-2">
 						<Users className="h-5 w-5" />
 						Organization Members
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						{members.length} {members.length === 1 ? "member" : "members"} in
 						this organization
 					</CardDescription>
@@ -175,18 +175,18 @@ function MembersPage() {
 							))}
 						</div>
 					) : members.length === 0 ? (
-						<div className="text-center py-8 text-zinc-400">
+						<div className="text-center py-8 text-muted-foreground">
 							No members found
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
-								<TableRow className="border-zinc-800 hover:bg-transparent">
-									<TableHead className="text-zinc-400">Member</TableHead>
-									<TableHead className="text-zinc-400">Role</TableHead>
-									<TableHead className="text-zinc-400">Joined</TableHead>
+								<TableRow className="hover:bg-transparent">
+									<TableHead>Member</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Joined</TableHead>
 									{isOwnerOrAdmin && (
-										<TableHead className="text-zinc-400 text-right">
+										<TableHead className="text-right">
 											Actions
 										</TableHead>
 									)}
@@ -199,32 +199,29 @@ function MembersPage() {
 									const canModify = isOwnerOrAdmin && !isCurrentUser;
 
 									return (
-										<TableRow
-											key={member.id}
-											className="border-zinc-800"
-										>
+										<TableRow key={member.id}>
 											<TableCell>
 												<div className="flex items-center gap-3">
 													<Avatar className="h-9 w-9">
 														{member.user.image && (
 															<AvatarImage src={member.user.image} />
 														)}
-														<AvatarFallback className="bg-zinc-700 text-zinc-300">
+														<AvatarFallback>
 															{member.user.name?.charAt(0).toUpperCase() ||
 																member.user.email?.charAt(0).toUpperCase() ||
 																"?"}
 														</AvatarFallback>
 													</Avatar>
 													<div>
-														<div className="font-medium text-zinc-100">
+														<div className="font-medium">
 															{member.user.name || "Unknown"}
 															{isCurrentUser && (
-																<span className="ml-2 text-xs text-zinc-500">
+																<span className="ml-2 text-xs text-muted-foreground">
 																	(you)
 																</span>
 															)}
 														</div>
-														<div className="text-sm text-zinc-400">
+														<div className="text-sm text-muted-foreground">
 															{member.user.email}
 														</div>
 													</div>
@@ -233,7 +230,7 @@ function MembersPage() {
 											<TableCell>
 												<RoleBadge role={member.role} />
 											</TableCell>
-											<TableCell className="text-zinc-400">
+											<TableCell className="text-muted-foreground">
 												{formatDate(member.createdAt)}
 											</TableCell>
 											{isOwnerOrAdmin && (
@@ -244,28 +241,24 @@ function MembersPage() {
 																<Button
 																	variant="ghost"
 																	size="icon"
-																	className="h-8 w-8 text-zinc-400 hover:text-zinc-100"
+																	className="h-8 w-8"
 																>
 																	<MoreVertical className="h-4 w-4" />
 																</Button>
 															</DropdownMenuTrigger>
-															<DropdownMenuContent
-																align="end"
-																className="bg-zinc-900 border-zinc-800"
-															>
+															<DropdownMenuContent align="end">
 																{!isOwner && (
 																	<DropdownMenuItem
 																		onClick={() => handleEditRole(member)}
-																		className="text-zinc-300 focus:text-zinc-100 focus:bg-zinc-800"
 																	>
 																		<Shield className="mr-2 h-4 w-4" />
 																		Change Role
 																	</DropdownMenuItem>
 																)}
-																<DropdownMenuSeparator className="bg-zinc-800" />
+																<DropdownMenuSeparator />
 																<DropdownMenuItem
 																	onClick={() => setRemoveMember(member)}
-																	className="text-red-400 focus:text-red-300 focus:bg-red-500/10"
+																	className="text-destructive focus:text-destructive"
 																>
 																	<UserMinus className="mr-2 h-4 w-4" />
 																	Remove Member
@@ -286,10 +279,10 @@ function MembersPage() {
 
 			{/* Edit Role Dialog */}
 			<Dialog open={!!editMember} onOpenChange={() => setEditMember(null)}>
-				<DialogContent className="bg-zinc-900 border-zinc-800">
+				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="text-zinc-100">Change Member Role</DialogTitle>
-						<DialogDescription className="text-zinc-400">
+						<DialogTitle>Change Member Role</DialogTitle>
+						<DialogDescription>
 							Update the role for {editMember?.user.name || editMember?.user.email}
 						</DialogDescription>
 					</DialogHeader>
@@ -304,14 +297,12 @@ function MembersPage() {
 						<Button
 							variant="outline"
 							onClick={() => setEditMember(null)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							onClick={handleSaveRole}
 							disabled={updateRoleMutation.isPending || !editRole}
-							className="bg-emerald-600 hover:bg-emerald-700"
 						>
 							{updateRoleMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -324,27 +315,27 @@ function MembersPage() {
 
 			{/* Remove Member Confirmation */}
 			<AlertDialog open={!!removeMember} onOpenChange={() => setRemoveMember(null)}>
-				<AlertDialogContent className="bg-zinc-900 border-zinc-800">
+				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle className="text-zinc-100">
+						<AlertDialogTitle>
 							Remove Member
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-zinc-400">
+						<AlertDialogDescription>
 							Are you sure you want to remove{" "}
-							<span className="font-medium text-zinc-300">
+							<span className="font-medium text-foreground">
 								{removeMember?.user.name || removeMember?.user.email}
 							</span>{" "}
 							from this organization? This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+						<AlertDialogCancel>
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleRemoveMember}
 							disabled={removeMemberMutation.isPending}
-							className="bg-red-500 text-white hover:bg-red-600"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{removeMemberMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />

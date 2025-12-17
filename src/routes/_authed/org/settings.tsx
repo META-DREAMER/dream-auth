@@ -135,13 +135,13 @@ function OrgSettingsPage() {
 			/>
 
 			{/* Organization Details */}
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
-					<CardTitle className="text-zinc-100 flex items-center gap-2">
+					<CardTitle className="flex items-center gap-2">
 						<Settings className="h-5 w-5" />
 						Organization Details
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						Update your organization's information
 					</CardDescription>
 				</CardHeader>
@@ -155,7 +155,7 @@ function OrgSettingsPage() {
 					) : (
 						<div className="space-y-4">
 							<div className="space-y-2">
-								<Label htmlFor="name" className="text-zinc-300">
+								<Label htmlFor="name">
 									Organization Name
 								</Label>
 								<Input
@@ -163,13 +163,12 @@ function OrgSettingsPage() {
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									disabled={!canEdit}
-									className="bg-zinc-800 border-zinc-700 text-zinc-100 disabled:opacity-50"
 									placeholder="My Organization"
 								/>
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="slug" className="text-zinc-300">
+								<Label htmlFor="slug">
 									Organization Slug
 								</Label>
 								<Input
@@ -177,17 +176,17 @@ function OrgSettingsPage() {
 									value={slug}
 									onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
 									disabled={!canEdit}
-									className="bg-zinc-800 border-zinc-700 text-zinc-100 disabled:opacity-50 font-mono"
+									className="font-mono"
 									placeholder="my-organization"
 								/>
-								<p className="text-xs text-zinc-500">
+								<p className="text-xs text-muted-foreground">
 									URL-friendly identifier. Only lowercase letters, numbers, and
 									hyphens allowed.
 								</p>
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="logo" className="text-zinc-300">
+								<Label htmlFor="logo">
 									Logo URL
 								</Label>
 								<Input
@@ -196,16 +195,15 @@ function OrgSettingsPage() {
 									value={logo}
 									onChange={(e) => setLogo(e.target.value)}
 									disabled={!canEdit}
-									className="bg-zinc-800 border-zinc-700 text-zinc-100 disabled:opacity-50"
 									placeholder="https://example.com/logo.png"
 								/>
 								{logo && (
 									<div className="mt-2 flex items-center gap-3">
-										<span className="text-xs text-zinc-500">Preview:</span>
+										<span className="text-xs text-muted-foreground">Preview:</span>
 										<img
 											src={logo}
 											alt="Logo preview"
-											className="h-10 w-10 rounded-lg object-cover bg-zinc-800"
+											className="h-10 w-10 rounded-lg object-cover bg-muted"
 											onError={(e) => {
 												e.currentTarget.style.display = "none";
 											}}
@@ -217,11 +215,10 @@ function OrgSettingsPage() {
 					)}
 				</CardContent>
 				{canEdit && (
-					<CardFooter className="border-t border-zinc-800 pt-4">
+					<CardFooter className="border-t pt-4">
 						<Button
 							onClick={handleSave}
 							disabled={!hasChanges || updateMutation.isPending}
-							className="bg-emerald-600 hover:bg-emerald-700"
 						>
 							{updateMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -234,47 +231,44 @@ function OrgSettingsPage() {
 
 			{/* Danger Zone - Only visible to owners */}
 			{isOwner && (
-				<Card className="bg-zinc-900 border-red-900/50">
+				<Card className="border-destructive/50">
 					<CardHeader>
-						<CardTitle className="text-red-400 flex items-center gap-2">
+						<CardTitle className="text-destructive flex items-center gap-2">
 							<AlertTriangle className="h-5 w-5" />
 							Danger Zone
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							Irreversible and destructive actions
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="rounded-lg border border-red-900/50 p-4">
+						<div className="rounded-lg border border-destructive/50 p-4">
 							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 								<div>
-									<h4 className="font-medium text-zinc-100">
+									<h4 className="font-medium">
 										Delete Organization
 									</h4>
-									<p className="text-sm text-zinc-400 mt-1">
+									<p className="text-sm text-muted-foreground mt-1">
 										Permanently delete this organization and all of its data.
 										This action cannot be undone.
 									</p>
 								</div>
 								<AlertDialog>
 									<AlertDialogTrigger asChild>
-										<Button
-											variant="destructive"
-											className="bg-red-500 hover:bg-red-600 shrink-0"
-										>
+										<Button variant="destructive" className="shrink-0">
 											Delete Organization
 										</Button>
 									</AlertDialogTrigger>
-									<AlertDialogContent className="bg-zinc-900 border-zinc-800">
+									<AlertDialogContent>
 										<AlertDialogHeader>
-											<AlertDialogTitle className="text-zinc-100">
+											<AlertDialogTitle>
 												Delete Organization
 											</AlertDialogTitle>
-											<AlertDialogDescription className="text-zinc-400 space-y-3">
+											<AlertDialogDescription className="space-y-3">
 												<p>
 													This action cannot be undone. This will permanently
 													delete the{" "}
-													<span className="font-semibold text-zinc-300">
+													<span className="font-semibold text-foreground">
 														{activeOrg.name}
 													</span>{" "}
 													organization and remove all associated data including:
@@ -287,7 +281,7 @@ function OrgSettingsPage() {
 												</ul>
 												<p className="pt-2">
 													Please type{" "}
-													<span className="font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-red-400">
+													<span className="font-mono bg-muted px-1.5 py-0.5 rounded text-destructive">
 														{activeOrg.name}
 													</span>{" "}
 													to confirm.
@@ -298,21 +292,17 @@ function OrgSettingsPage() {
 											<Input
 												value={deleteConfirmText}
 												onChange={(e) => setDeleteConfirmText(e.target.value)}
-												className="bg-zinc-800 border-zinc-700 text-zinc-100"
 												placeholder={activeOrg.name}
 											/>
 										</div>
 										<AlertDialogFooter>
-											<AlertDialogCancel
-												onClick={() => setDeleteConfirmText("")}
-												className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
-											>
+											<AlertDialogCancel onClick={() => setDeleteConfirmText("")}>
 												Cancel
 											</AlertDialogCancel>
 											<AlertDialogAction
 												onClick={() => deleteMutation.mutate()}
 												disabled={!canDelete || deleteMutation.isPending}
-												className="bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+												className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 											>
 												{deleteMutation.isPending && (
 													<Loader2 className="mr-2 h-4 w-4 animate-spin" />

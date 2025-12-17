@@ -72,25 +72,24 @@ export function ChangeEmailDialog() {
 				<Button
 					variant="outline"
 					size="sm"
-					className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
 				>
 					<Pencil className="mr-2 h-4 w-4" />
 					Change Email
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
 						{emailSent ? (
-							<CheckCircle className="h-6 w-6 text-white" />
+							<CheckCircle className="h-6 w-6 text-primary-foreground" />
 						) : (
-							<Mail className="h-6 w-6 text-white" />
+							<Mail className="h-6 w-6 text-primary-foreground" />
 						)}
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						{emailSent ? "Check Your Email" : "Change Email Address"}
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						{emailSent
 							? `We've sent a verification link to ${email}. Click the link in the email to confirm your new address.`
 							: "Enter your new email address. We'll send a verification link to confirm."}
@@ -99,17 +98,17 @@ export function ChangeEmailDialog() {
 
 				{emailSent ? (
 					<div className="space-y-4 py-4">
-						<div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
-							<p className="text-sm text-zinc-300">
+						<div className="rounded-lg border bg-muted p-4">
+							<p className="text-sm">
 								<strong>Next steps:</strong>
 							</p>
-							<ol className="mt-2 list-decimal list-inside text-sm text-zinc-400 space-y-1">
-								<li>Check your inbox at <strong className="text-zinc-300">{email}</strong></li>
+							<ol className="mt-2 list-decimal list-inside text-sm text-muted-foreground space-y-1">
+								<li>Check your inbox at <strong className="text-foreground">{email}</strong></li>
 								<li>Click the verification link in the email</li>
 								<li>Your email will be updated automatically</li>
 							</ol>
 						</div>
-						<p className="text-xs text-zinc-500 text-center">
+						<p className="text-xs text-muted-foreground text-center">
 							Didn't receive the email? Check your spam folder or close this dialog and try again.
 						</p>
 					</div>
@@ -119,7 +118,7 @@ export function ChangeEmailDialog() {
 							{error && <ErrorAlert message={error} />}
 
 							<div className="space-y-2">
-								<Label htmlFor="email" className="text-zinc-300">
+								<Label htmlFor="email">
 									New Email Address
 								</Label>
 								<Input
@@ -130,9 +129,8 @@ export function ChangeEmailDialog() {
 									onChange={(e) => setEmail(e.target.value)}
 									required
 									autoComplete="email"
-									className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 								/>
-								<p className="text-xs text-zinc-500">
+								<p className="text-xs text-muted-foreground">
 									We'll send a verification link to this email
 								</p>
 							</div>
@@ -143,14 +141,12 @@ export function ChangeEmailDialog() {
 								type="button"
 								variant="outline"
 								onClick={handleClose}
-								className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 							>
 								Cancel
 							</Button>
 							<Button
 								type="submit"
 								disabled={isLoading || !email}
-								className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 							>
 								{isLoading ? (
 									<>
@@ -169,8 +165,9 @@ export function ChangeEmailDialog() {
 					<DialogFooter>
 						<Button
 							type="button"
+							variant="outline"
 							onClick={handleClose}
-							className="w-full bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
+							className="w-full"
 						>
 							Done
 						</Button>

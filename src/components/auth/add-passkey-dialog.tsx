@@ -60,20 +60,20 @@ export function AddPasskeyDialog() {
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white">
+				<Button>
 					<Plus className="mr-2 h-4 w-4" />
 					Add Passkey
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<Fingerprint className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Fingerprint className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Register a Passkey
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Passkeys let you sign in securely without a password using your
 						device's biometrics or security key.
 					</DialogDescription>
@@ -84,7 +84,7 @@ export function AddPasskeyDialog() {
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="passkey-name" className="text-zinc-300">
+							<Label htmlFor="passkey-name">
 								Passkey Name (optional)
 							</Label>
 							<Input
@@ -92,9 +92,8 @@ export function AddPasskeyDialog() {
 								placeholder="e.g., MacBook Touch ID"
 								value={name}
 								onChange={(e) => setName(e.target.value)}
-								className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 							/>
-							<p className="text-xs text-zinc-500">
+							<p className="text-xs text-muted-foreground">
 								Give your passkey a name to identify it later
 							</p>
 						</div>
@@ -105,14 +104,12 @@ export function AddPasskeyDialog() {
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={addMutation.isPending}
-							className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 						>
 							{addMutation.isPending ? (
 								<>

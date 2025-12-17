@@ -7,8 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function ListSkeleton() {
 	return (
 		<div className="space-y-3">
-			<Skeleton className="h-12 w-full bg-zinc-800" />
-			<Skeleton className="h-12 w-full bg-zinc-800" />
+			<Skeleton className="h-12 w-full" />
+			<Skeleton className="h-12 w-full" />
 		</div>
 	);
 }
@@ -47,16 +47,16 @@ export function EmptyState({
 }: EmptyStateProps) {
 	if (variant === "card") {
 		return (
-			<div className="rounded-lg bg-zinc-800/50 border border-zinc-700 p-8 text-center">
-				<Icon className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
-				<p className="text-zinc-400 mb-2">{title}</p>
-				{description && <p className="text-sm text-zinc-500">{description}</p>}
+			<div className="rounded-lg bg-muted border p-8 text-center">
+				<Icon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+				<p className="mb-2">{title}</p>
+				{description && <p className="text-sm text-muted-foreground">{description}</p>}
 			</div>
 		);
 	}
 
 	return (
-		<div className="text-center py-6 text-zinc-500">
+		<div className="text-center py-6 text-muted-foreground">
 			<Icon className="h-8 w-8 mx-auto mb-2 opacity-50" />
 			<p>{title}</p>
 			{description && <p className="text-xs mt-1">{description}</p>}

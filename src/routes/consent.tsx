@@ -76,17 +76,17 @@ function ConsentPage() {
 	// Handle missing required parameters
 	if (!consent_code || !client_id) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+			<div className="min-h-screen flex items-center justify-center bg-background p-4">
 				<PageBackground />
-				<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
 							<X className="h-6 w-6 text-red-400" />
 						</div>
-						<CardTitle className="text-xl text-zinc-100">
+						<CardTitle className="text-xl">
 							Invalid Authorization Request
 						</CardTitle>
-						<CardDescription className="text-zinc-400">
+						<CardDescription>
 							Missing required parameters. Please try the authorization flow again.
 						</CardDescription>
 					</CardHeader>
@@ -94,7 +94,6 @@ function ConsentPage() {
 						<Button
 							onClick={() => navigate({ to: "/" })}
 							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
 						>
 							Go Home
 						</Button>
@@ -140,19 +139,19 @@ function ConsentPage() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-4">
+		<div className="min-h-screen flex items-center justify-center bg-background p-4">
 			<PageBackground />
 
-			<Card className="w-full max-w-md relative bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-						<Shield className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Shield className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<CardTitle className="text-xl font-bold tracking-tight text-zinc-100">
+					<CardTitle className="text-xl font-bold tracking-tight">
 						Authorization Request
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
-						<span className="font-medium text-zinc-200">{client_id}</span> wants
+					<CardDescription>
+						<span className="font-medium">{client_id}</span> wants
 						to access your account
 					</CardDescription>
 				</CardHeader>
@@ -161,38 +160,38 @@ function ConsentPage() {
 					{error && <ErrorAlert message={error} />}
 
 					{/* User info */}
-					<div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
-							<span className="text-lg font-semibold text-emerald-400">
+					<div className="flex items-center gap-3 p-3 rounded-lg bg-muted border">
+						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+							<span className="text-lg font-semibold text-primary">
 								{session.user.name?.charAt(0).toUpperCase() ||
 									session.user.email?.charAt(0).toUpperCase() ||
 									"U"}
 							</span>
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="text-sm font-medium text-zinc-100 truncate">
+							<p className="text-sm font-medium truncate">
 								{session.user.name || "User"}
 							</p>
 							{session.user.email && (
-								<p className="text-xs text-zinc-400 truncate">
+								<p className="text-xs text-muted-foreground truncate">
 									{session.user.email}
 								</p>
 							)}
 						</div>
-						<Badge
-							variant="outline"
-							className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-						>
-							<KeyRound className="h-3 w-3 mr-1" />
-							You
-						</Badge>
+					<Badge
+						variant="outline"
+						className="border-success/30 text-success bg-success/10"
+					>
+						<KeyRound className="h-3 w-3 mr-1" />
+						You
+					</Badge>
 					</div>
 
-					<Separator className="bg-zinc-800" />
+					<Separator />
 
 					{/* Requested permissions */}
 					<div className="space-y-3">
-						<h3 className="text-sm font-medium text-zinc-300">
+						<h3 className="text-sm font-medium">
 							This application is requesting access to:
 						</h3>
 						<ul className="space-y-2">
@@ -202,18 +201,18 @@ function ConsentPage() {
 									description: `Access to ${scopeKey}`,
 								};
 								return (
-									<li
-										key={scopeKey}
-										className="flex items-start gap-3 p-2 rounded-md bg-zinc-800/30"
-									>
-										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 mt-0.5">
-											<Check className="h-3 w-3 text-emerald-400" />
-										</div>
+								<li
+									key={scopeKey}
+									className="flex items-start gap-3 p-2 rounded-md bg-muted/50"
+								>
+									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/20 mt-0.5">
+										<Check className="h-3 w-3 text-success" />
+									</div>
 										<div className="flex-1 min-w-0">
-											<p className="text-sm font-medium text-zinc-200">
+											<p className="text-sm font-medium">
 												{scopeInfo.label}
 											</p>
-											<p className="text-xs text-zinc-400">
+											<p className="text-xs text-muted-foreground">
 												{scopeInfo.description}
 											</p>
 										</div>
@@ -221,17 +220,17 @@ function ConsentPage() {
 								);
 							})}
 							{scopes.length === 0 && (
-								<li className="text-sm text-zinc-400 italic">
+								<li className="text-sm text-muted-foreground italic">
 									No specific permissions requested
 								</li>
 							)}
 						</ul>
 					</div>
 
-					<Separator className="bg-zinc-800" />
+					<Separator />
 
 					{/* Security notice */}
-					<p className="text-xs text-zinc-500 text-center">
+					<p className="text-xs text-muted-foreground text-center">
 						By authorizing, you allow this application to access your account
 						information. You can revoke access at any time from your settings.
 					</p>
@@ -242,7 +241,7 @@ function ConsentPage() {
 						onClick={() => handleConsent(false)}
 						disabled={isLoading || isDenying}
 						variant="outline"
-						className="flex-1 border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+						className="flex-1 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive"
 					>
 						{isDenying ? (
 							<>
@@ -259,7 +258,7 @@ function ConsentPage() {
 					<Button
 						onClick={() => handleConsent(true)}
 						disabled={isLoading || isDenying}
-						className="flex-1 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+						className="flex-1 font-medium"
 					>
 						{isLoading ? (
 							<>

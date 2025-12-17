@@ -34,49 +34,31 @@ export function EmailOTPInput({
 					className="gap-2"
 				>
 					<InputOTPGroup>
-						<InputOTPSlot
-							index={0}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
-						<InputOTPSlot
-							index={1}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
-						<InputOTPSlot
-							index={2}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
+						<InputOTPSlot index={0} />
+						<InputOTPSlot index={1} />
+						<InputOTPSlot index={2} />
 					</InputOTPGroup>
-					<InputOTPSeparator className="text-zinc-600" />
+					<InputOTPSeparator />
 					<InputOTPGroup>
-						<InputOTPSlot
-							index={3}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
-						<InputOTPSlot
-							index={4}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
-						<InputOTPSlot
-							index={5}
-							className="bg-zinc-800/50 border-zinc-700 text-zinc-100"
-						/>
+						<InputOTPSlot index={3} />
+						<InputOTPSlot index={4} />
+						<InputOTPSlot index={5} />
 					</InputOTPGroup>
 				</InputOTP>
 			</div>
 			{onResend && (
-				<p className="text-xs text-zinc-500 text-center">
+				<p className="text-xs text-muted-foreground text-center">
 					Didn't receive a code?{" "}
 					{canResend ? (
 						<button
 							type="button"
 							onClick={onResend}
-							className="text-emerald-400 hover:text-emerald-300"
+							className="text-primary hover:text-primary/80"
 						>
 							Try again
 						</button>
 					) : (
-						<span className="text-zinc-400">
+						<span>
 							Resend in {secondsUntilResend}s
 						</span>
 					)}

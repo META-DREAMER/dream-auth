@@ -82,7 +82,7 @@ export function ConnectSIWEButton({
 		<Button
 			onClick={authenticate}
 			disabled={isAuthenticating}
-			className={cn("w-full border-zinc-700 bg-zinc-800/50 text-zinc-100 hover:bg-zinc-800 hover:text-zinc-50", className)}
+			className={cn("w-full", className)}
 			variant="outline"
 		>
 			{isAuthenticating ? (

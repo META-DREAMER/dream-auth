@@ -95,17 +95,17 @@ export function EditMemberRoleDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-500">
-						<Shield className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<Shield className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Change Member Role
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Update the role for{" "}
-						<span className="font-medium text-zinc-300">
+						<span className="font-medium">
 							{member.user.name || member.user.email}
 						</span>
 					</DialogDescription>
@@ -129,14 +129,12 @@ export function EditMemberRoleDialog({
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={updateRoleMutation.isPending || !hasChanged}
-							className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
 						>
 							{updateRoleMutation.isPending ? (
 								<>

@@ -113,10 +113,7 @@ function TeamsPage() {
 				description={`Organize members of ${activeOrg.name} into teams`}
 				action={
 					isOwnerOrAdmin ? (
-						<Button
-							onClick={() => setCreateDialogOpen(true)}
-							className="bg-emerald-600 hover:bg-emerald-700"
-						>
+						<Button onClick={() => setCreateDialogOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Create Team
 						</Button>
@@ -124,13 +121,13 @@ function TeamsPage() {
 				}
 			/>
 
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
-					<CardTitle className="text-zinc-100 flex items-center gap-2">
+					<CardTitle className="flex items-center gap-2">
 						<UsersRound className="h-5 w-5" />
 						Organization Teams
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						{teamList.length} {teamList.length === 1 ? "team" : "teams"} in this
 						organization
 					</CardDescription>
@@ -144,16 +141,15 @@ function TeamsPage() {
 						</div>
 					) : teamList.length === 0 ? (
 						<div className="text-center py-12">
-							<UsersRound className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
-							<p className="text-zinc-400 mb-2">No teams yet</p>
-							<p className="text-sm text-zinc-500 mb-4">
+							<UsersRound className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+							<p className="text-muted-foreground mb-2">No teams yet</p>
+							<p className="text-sm text-muted-foreground mb-4">
 								Create teams to organize members and manage access
 							</p>
 							{isOwnerOrAdmin && (
 								<Button
 									onClick={() => setCreateDialogOpen(true)}
 									variant="outline"
-									className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 								>
 									<Plus className="mr-2 h-4 w-4" />
 									Create First Team
@@ -197,27 +193,27 @@ function TeamsPage() {
 
 			{/* Delete Team Confirmation */}
 			<AlertDialog open={!!deleteTeam} onOpenChange={() => setDeleteTeam(null)}>
-				<AlertDialogContent className="bg-zinc-900 border-zinc-800">
+				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle className="text-zinc-100">
+						<AlertDialogTitle>
 							Delete Team
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-zinc-400">
+						<AlertDialogDescription>
 							Are you sure you want to delete the team{" "}
-							<span className="font-medium text-zinc-300">
+							<span className="font-medium text-foreground">
 								{deleteTeam?.name}
 							</span>
 							? This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+						<AlertDialogCancel>
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteTeam}
 							disabled={deleteTeamMutation.isPending}
-							className="bg-red-500 text-white hover:bg-red-600"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteTeamMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -284,18 +280,18 @@ function TeamCard({
 	}));
 
 	return (
-		<Card className="bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 transition-colors">
+		<Card className="bg-card/50 hover:border-border/80 transition-colors">
 			<CardHeader className="pb-3">
 				<div className="flex items-start justify-between">
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
 							<UsersRound className="h-5 w-5" />
 						</div>
 						<div>
-							<CardTitle className="text-zinc-100 text-base">
+							<CardTitle className="text-base">
 								{team.name}
 							</CardTitle>
-							<CardDescription className="text-zinc-500 text-xs">
+							<CardDescription className="text-xs">
 								Created {formatDate(team.createdAt)}
 							</CardDescription>
 						</div>
@@ -306,25 +302,19 @@ function TeamCard({
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 text-zinc-400 hover:text-zinc-100"
+									className="h-8 w-8"
 								>
 									<MoreVertical className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="bg-zinc-900 border-zinc-800"
-							>
-								<DropdownMenuItem
-									onClick={onManage}
-									className="text-zinc-300 focus:text-zinc-100 focus:bg-zinc-800"
-								>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={onManage}>
 									<UserPlus className="mr-2 h-4 w-4" />
 									Manage Members
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onClick={onDelete}
-									className="text-red-400 focus:text-red-300 focus:bg-red-500/10"
+									className="text-destructive focus:text-destructive"
 								>
 									<Trash2 className="mr-2 h-4 w-4" />
 									Delete Team
@@ -335,7 +325,7 @@ function TeamCard({
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-center gap-2 text-sm text-zinc-400 mb-3">
+				<div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
 					<Users className="h-4 w-4" />
 					<span>
 						{isPending ? "..." : memberCount}{" "}
@@ -354,9 +344,9 @@ function TeamCard({
 						{teamMembersWithDetails?.slice(0, 5).map((member) => (
 							<Avatar
 								key={member.id}
-								className="h-8 w-8 border-2 border-zinc-800"
+								className="h-8 w-8 border-2 border-background"
 							>
-								<AvatarFallback className="bg-zinc-700 text-zinc-300 text-xs">
+								<AvatarFallback className="text-xs">
 									{member.orgMember?.user.name?.charAt(0).toUpperCase() ||
 										member.orgMember?.user.email?.charAt(0).toUpperCase() ||
 										"?"}
@@ -364,13 +354,13 @@ function TeamCard({
 							</Avatar>
 						))}
 						{memberCount > 5 && (
-							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700 border-2 border-zinc-800 text-xs text-zinc-300">
+							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted border-2 border-background text-xs text-muted-foreground">
 								+{memberCount - 5}
 							</div>
 						)}
 					</div>
 				) : (
-					<p className="text-xs text-zinc-500">No members yet</p>
+					<p className="text-xs text-muted-foreground">No members yet</p>
 				)}
 
 				{isOwnerOrAdmin && (
@@ -378,7 +368,7 @@ function TeamCard({
 						variant="ghost"
 						size="sm"
 						onClick={onManage}
-						className="w-full mt-3 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700"
+						className="w-full mt-3"
 					>
 						<UserPlus className="mr-2 h-4 w-4" />
 						Manage Members

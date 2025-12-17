@@ -209,10 +209,7 @@ function InvitationsPage() {
 				description={`Manage invitations for ${activeOrg.name}`}
 				action={
 					isOwnerOrAdmin ? (
-						<Button
-							onClick={() => setInviteDialogOpen(true)}
-							className="bg-emerald-600 hover:bg-emerald-700"
-						>
+						<Button onClick={() => setInviteDialogOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
 							Invite Member
 						</Button>
@@ -220,13 +217,13 @@ function InvitationsPage() {
 				}
 			/>
 
-			<Card className="bg-zinc-900 border-zinc-800">
+			<Card>
 				<CardHeader>
-					<CardTitle className="text-zinc-100 flex items-center gap-2">
+					<CardTitle className="flex items-center gap-2">
 						<Mail className="h-5 w-5" />
 						Pending Invitations
 					</CardTitle>
-					<CardDescription className="text-zinc-400">
+					<CardDescription>
 						{pendingInvitations.length} pending{" "}
 						{pendingInvitations.length === 1 ? "invitation" : "invitations"}
 					</CardDescription>
@@ -239,20 +236,20 @@ function InvitationsPage() {
 							))}
 						</div>
 					) : invitations?.length === 0 ? (
-						<div className="text-center py-8 text-zinc-400">
+						<div className="text-center py-8 text-muted-foreground">
 							No invitations found. Click "Invite Member" to add new members.
 						</div>
 					) : (
 						<Table>
 							<TableHeader>
-								<TableRow className="border-zinc-800 hover:bg-transparent">
-									<TableHead className="text-zinc-400">Invitee</TableHead>
-									<TableHead className="text-zinc-400">Type</TableHead>
-									<TableHead className="text-zinc-400">Role</TableHead>
-									<TableHead className="text-zinc-400">Status</TableHead>
-									<TableHead className="text-zinc-400">Expires</TableHead>
+								<TableRow className="hover:bg-transparent">
+									<TableHead>Invitee</TableHead>
+									<TableHead>Type</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Expires</TableHead>
 									{isOwnerOrAdmin && (
-										<TableHead className="text-zinc-400 text-right">
+										<TableHead className="text-right">
 											Actions
 										</TableHead>
 									)}
@@ -265,16 +262,16 @@ function InvitationsPage() {
 									const expired = isExpired(invitation.expiresAt);
 
 									return (
-										<TableRow key={invitation.id} className="border-zinc-800">
+										<TableRow key={invitation.id}>
 											<TableCell>
 												<div className="flex flex-col">
-													<span className="font-medium text-zinc-100">
+													<span className="font-medium">
 														{isWallet
 															? `${invitation.walletAddress?.slice(0, 6)}...${invitation.walletAddress?.slice(-4)}`
 															: invitation.email}
 													</span>
 													{isWallet && (
-														<span className="text-xs text-zinc-500">
+														<span className="text-xs text-muted-foreground">
 															{invitation.email}
 														</span>
 													)}
@@ -311,7 +308,7 @@ function InvitationsPage() {
 													expired={expired && isPending}
 												/>
 											</TableCell>
-											<TableCell className="text-zinc-400">
+											<TableCell className="text-muted-foreground">
 												{formatDate(invitation.expiresAt)}
 											</TableCell>
 											{isOwnerOrAdmin && (
@@ -322,19 +319,15 @@ function InvitationsPage() {
 																<Button
 																	variant="ghost"
 																	size="icon"
-																	className="h-8 w-8 text-zinc-400 hover:text-zinc-100"
+																	className="h-8 w-8"
 																>
 																	<MoreVertical className="h-4 w-4" />
 																</Button>
 															</DropdownMenuTrigger>
-															<DropdownMenuContent
-																align="end"
-																className="bg-zinc-900 border-zinc-800"
-															>
+															<DropdownMenuContent align="end">
 																<DropdownMenuItem
 																	onClick={() => resendMutation.mutate(invitation)}
 																	disabled={resendingId === invitation.id}
-																	className="text-zinc-300 focus:text-zinc-100 focus:bg-zinc-800"
 																>
 																	{resendingId === invitation.id ? (
 																		<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -345,7 +338,7 @@ function InvitationsPage() {
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={() => setCancelInvitation(invitation)}
-																	className="text-red-400 focus:text-red-300 focus:bg-red-500/10"
+																	className="text-destructive focus:text-destructive"
 																>
 																	<XCircle className="mr-2 h-4 w-4" />
 																	Cancel Invitation
@@ -366,10 +359,10 @@ function InvitationsPage() {
 
 			{/* Invite Member Dialog */}
 			<Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-				<DialogContent className="bg-zinc-900 border-zinc-800">
+				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className="text-zinc-100">Invite Member</DialogTitle>
-						<DialogDescription className="text-zinc-400">
+						<DialogTitle>Invite Member</DialogTitle>
+						<DialogDescription>
 							Invite someone to join {activeOrg.name}
 						</DialogDescription>
 					</DialogHeader>
@@ -378,18 +371,12 @@ function InvitationsPage() {
 							value={inviteType}
 							onValueChange={(v) => setInviteType(v as "email" | "wallet")}
 						>
-							<TabsList className="grid w-full grid-cols-2 bg-zinc-800">
-								<TabsTrigger
-									value="email"
-									className="data-[state=active]:bg-zinc-700"
-								>
+							<TabsList className="grid w-full grid-cols-2">
+								<TabsTrigger value="email">
 									<Mail className="mr-2 h-4 w-4" />
 									Email
 								</TabsTrigger>
-								<TabsTrigger
-									value="wallet"
-									className="data-[state=active]:bg-zinc-700"
-								>
+								<TabsTrigger value="wallet">
 									<Wallet className="mr-2 h-4 w-4" />
 									Wallet
 								</TabsTrigger>
@@ -398,7 +385,7 @@ function InvitationsPage() {
 
 						{inviteType === "email" ? (
 							<div className="space-y-2">
-								<Label htmlFor="email" className="text-zinc-300">
+								<Label htmlFor="email">
 									Email Address
 								</Label>
 								<Input
@@ -407,12 +394,11 @@ function InvitationsPage() {
 									placeholder="colleague@example.com"
 									value={inviteEmail}
 									onChange={(e) => setInviteEmail(e.target.value)}
-									className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
 								/>
 							</div>
 						) : (
 							<div className="space-y-2">
-								<Label htmlFor="wallet" className="text-zinc-300">
+								<Label htmlFor="wallet">
 									Wallet Address
 								</Label>
 								<Input
@@ -421,9 +407,9 @@ function InvitationsPage() {
 									placeholder="0x..."
 									value={inviteWallet}
 									onChange={(e) => setInviteWallet(e.target.value)}
-									className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 font-mono"
+									className="font-mono"
 								/>
-								<p className="text-xs text-zinc-500">
+								<p className="text-xs text-muted-foreground">
 									The user must sign in with SIWE using this wallet address to
 									accept the invitation.
 								</p>
@@ -431,7 +417,7 @@ function InvitationsPage() {
 						)}
 
 						<div className="space-y-2">
-							<Label htmlFor="role" className="text-zinc-300">
+							<Label htmlFor="role">
 								Role
 							</Label>
 							<RoleSelect
@@ -444,7 +430,6 @@ function InvitationsPage() {
 						<Button
 							variant="outline"
 							onClick={() => setInviteDialogOpen(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
@@ -454,7 +439,6 @@ function InvitationsPage() {
 								inviteMutation.isPending ||
 								(inviteType === "email" ? !inviteEmail.trim() : !inviteWallet.trim())
 							}
-							className="bg-emerald-600 hover:bg-emerald-700"
 						>
 							{inviteMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -470,14 +454,14 @@ function InvitationsPage() {
 				open={!!cancelInvitation}
 				onOpenChange={() => setCancelInvitation(null)}
 			>
-				<AlertDialogContent className="bg-zinc-900 border-zinc-800">
+				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle className="text-zinc-100">
+						<AlertDialogTitle>
 							Cancel Invitation
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-zinc-400">
+						<AlertDialogDescription>
 							Are you sure you want to cancel the invitation for{" "}
-							<span className="font-medium text-zinc-300">
+							<span className="font-medium text-foreground">
 								{isWalletInvitation(cancelInvitation ?? {})
 									? cancelInvitation?.walletAddress
 									: cancelInvitation?.email}
@@ -486,13 +470,13 @@ function InvitationsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100">
+						<AlertDialogCancel>
 							Keep Invitation
 						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleCancelInvitation}
 							disabled={cancelMutation.isPending}
-							className="bg-red-500 text-white hover:bg-red-600"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{cancelMutation.isPending && (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />

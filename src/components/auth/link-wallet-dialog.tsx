@@ -83,8 +83,6 @@ export function LinkWalletDialog() {
 		autoTriggeredRef.current = false;
 	};
 
-	const buttonClasses = "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100";
-
 	// State: Connected and in linking flow - show sign button with cancel option
 	if (isConnected && isLinkingFlow) {
 		return (
@@ -92,7 +90,6 @@ export function LinkWalletDialog() {
 				<Button
 					variant="outline"
 					size="sm"
-					className={buttonClasses}
 					onClick={handleSignToLink}
 					disabled={isAuthenticating}
 				>
@@ -112,7 +109,6 @@ export function LinkWalletDialog() {
 					<Button
 						variant="ghost"
 						size="sm"
-						className="text-zinc-400 hover:text-zinc-300"
 						onClick={handleCancel}
 					>
 						Cancel
@@ -127,7 +123,6 @@ export function LinkWalletDialog() {
 		<Button
 			variant="outline"
 			size="sm"
-			className={buttonClasses}
 			onClick={handleStartLinking}
 			disabled={isAuthenticating}
 		>

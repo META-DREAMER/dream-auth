@@ -89,15 +89,15 @@ export function InviteMemberDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="bg-zinc-900 border-zinc-800 sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500">
-						<UserPlus className="h-6 w-6 text-white" />
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
+						<UserPlus className="h-6 w-6 text-primary-foreground" />
 					</div>
-					<DialogTitle className="text-center text-zinc-100">
+					<DialogTitle className="text-center">
 						Invite Member
 					</DialogTitle>
-					<DialogDescription className="text-center text-zinc-400">
+					<DialogDescription className="text-center">
 						Invite someone to join {orgName}
 					</DialogDescription>
 				</DialogHeader>
@@ -110,18 +110,12 @@ export function InviteMemberDialog({
 							value={inviteType}
 							onValueChange={(v) => setInviteType(v as "email" | "wallet")}
 						>
-							<TabsList className="grid w-full grid-cols-2 bg-zinc-800">
-								<TabsTrigger
-									value="email"
-									className="data-[state=active]:bg-zinc-700"
-								>
+							<TabsList className="grid w-full grid-cols-2">
+								<TabsTrigger value="email">
 									<Mail className="mr-2 h-4 w-4" />
 									Email
 								</TabsTrigger>
-								<TabsTrigger
-									value="wallet"
-									className="data-[state=active]:bg-zinc-700"
-								>
+								<TabsTrigger value="wallet">
 									<Wallet className="mr-2 h-4 w-4" />
 									Wallet
 								</TabsTrigger>
@@ -130,7 +124,7 @@ export function InviteMemberDialog({
 
 						{inviteType === "email" ? (
 							<div className="space-y-2">
-								<Label htmlFor="invite-email" className="text-zinc-300">
+								<Label htmlFor="invite-email">
 									Email Address
 								</Label>
 								<Input
@@ -139,12 +133,11 @@ export function InviteMemberDialog({
 									placeholder="colleague@example.com"
 									value={inviteEmail}
 									onChange={(e) => setInviteEmail(e.target.value)}
-									className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
 								/>
 							</div>
 						) : (
 							<div className="space-y-2">
-								<Label htmlFor="invite-wallet" className="text-zinc-300">
+								<Label htmlFor="invite-wallet">
 									Wallet Address
 								</Label>
 								<Input
@@ -153,9 +146,9 @@ export function InviteMemberDialog({
 									placeholder="0x..."
 									value={inviteWallet}
 									onChange={(e) => setInviteWallet(e.target.value)}
-									className="bg-zinc-800/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 font-mono"
+									className="font-mono"
 								/>
-								<p className="text-xs text-zinc-500">
+								<p className="text-xs text-muted-foreground">
 									The user must sign in with SIWE using this wallet address to
 									accept the invitation.
 								</p>
@@ -163,7 +156,7 @@ export function InviteMemberDialog({
 						)}
 
 						<div className="space-y-2">
-							<Label htmlFor="invite-role" className="text-zinc-300">
+							<Label htmlFor="invite-role">
 								Role
 							</Label>
 							<RoleSelect value={inviteRole} onValueChange={setInviteRole} />
@@ -175,7 +168,6 @@ export function InviteMemberDialog({
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
-							className="bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100"
 						>
 							Cancel
 						</Button>
@@ -187,7 +179,6 @@ export function InviteMemberDialog({
 									? !inviteEmail.trim()
 									: !inviteWallet.trim())
 							}
-							className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white"
 						>
 							{inviteMutation.isPending ? (
 								<>

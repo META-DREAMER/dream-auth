@@ -43,7 +43,7 @@ function SettingsPage() {
 	const realEmail = getRealEmail(session.user.email);
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+		<div className="min-h-screen bg-background">
 			<PageBackground />
 
 			<div className="relative max-w-3xl mx-auto px-4 py-8">
@@ -54,18 +54,17 @@ function SettingsPage() {
 							asChild
 							variant="ghost"
 							size="icon"
-							className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
 						>
 							<Link to="/">
 								<ArrowLeft className="h-5 w-5" />
 							</Link>
 						</Button>
 						<div>
-							<h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
+							<h1 className="text-2xl font-bold flex items-center gap-2">
 								<Settings className="h-6 w-6" />
 								Settings
 							</h1>
-							<p className="text-zinc-400 text-sm">
+							<p className="text-muted-foreground text-sm">
 								Manage your account and security
 							</p>
 						</div>
@@ -74,7 +73,6 @@ function SettingsPage() {
 						<Button
 							asChild
 							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
 						>
 							<Link to="/org">
 								<Building2 className="mr-2 h-4 w-4" />
@@ -84,7 +82,7 @@ function SettingsPage() {
 						<Button
 							onClick={handleSignOut}
 							variant="outline"
-							className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
+							className="hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive-foreground"
 						>
 							<LogOut className="mr-2 h-4 w-4" />
 							Sign out
@@ -94,31 +92,31 @@ function SettingsPage() {
 
 				<div className="space-y-6">
 					{/* Profile Section */}
-					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<Card>
 						<CardHeader>
-							<CardTitle className="text-zinc-100 flex items-center gap-2">
-								<User className="h-5 w-5 text-emerald-500" />
-								Profile
-							</CardTitle>
-							<CardDescription className="text-zinc-400">
+						<CardTitle className="flex items-center gap-2">
+							<User className="h-5 w-5 text-success" />
+							Profile
+						</CardTitle>
+							<CardDescription>
 								Your account information
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="flex items-center gap-4">
-								<div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500">
-									<span className="text-2xl font-semibold text-white">
-										{session.user.name?.charAt(0).toUpperCase() ||
-											realEmail?.charAt(0).toUpperCase() ||
-											"U"}
-									</span>
-								</div>
+							<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary">
+								<span className="text-2xl font-semibold text-primary-foreground">
+									{session.user.name?.charAt(0).toUpperCase() ||
+										realEmail?.charAt(0).toUpperCase() ||
+										"U"}
+								</span>
+							</div>
 								<div>
-									<p className="text-lg font-medium text-zinc-100">
+									<p className="text-lg font-medium">
 										{session.user.name || "User"}
 									</p>
 									{realEmail && (
-										<p className="text-zinc-400 flex items-center gap-1">
+										<p className="text-muted-foreground flex items-center gap-1">
 											<Mail className="h-4 w-4" />
 											{realEmail}
 										</p>
@@ -129,15 +127,15 @@ function SettingsPage() {
 					</Card>
 
 					{/* Email Section */}
-					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<Card>
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div>
-									<CardTitle className="text-zinc-100 flex items-center gap-2">
+									<CardTitle className="flex items-center gap-2">
 										<Mail className="h-5 w-5 text-blue-500" />
 										Email
 									</CardTitle>
-									<CardDescription className="text-zinc-400">
+									<CardDescription>
 										Link an email address for account recovery
 									</CardDescription>
 								</div>
@@ -152,14 +150,14 @@ function SettingsPage() {
 							{realEmail ? (
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<Mail className="h-4 w-4 text-zinc-400" />
-										<span className="text-zinc-300">{realEmail}</span>
+										<Mail className="h-4 w-4 text-muted-foreground" />
+										<span>{realEmail}</span>
 										<Badge
 											variant={session.user.emailVerified ? "default" : "secondary"}
 											className={
 												session.user.emailVerified
-													? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-													: "bg-zinc-700/50 text-zinc-400 border-zinc-600"
+													? "bg-success/20 text-success border-success/30"
+													: ""
 											}
 										>
 											{session.user.emailVerified ? "Verified" : "Unverified"}
@@ -173,7 +171,7 @@ function SettingsPage() {
 									</div>
 								</div>
 							) : (
-								<p className="text-zinc-500 text-sm">
+								<p className="text-muted-foreground text-sm">
 									No email linked to your account yet. Add one for easier recovery.
 								</p>
 							)}
@@ -181,15 +179,15 @@ function SettingsPage() {
 					</Card>
 
 					{/* Passkeys Section */}
-					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<Card>
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div>
-									<CardTitle className="text-zinc-100 flex items-center gap-2">
-										<Fingerprint className="h-5 w-5 text-emerald-500" />
-										Passkeys
-									</CardTitle>
-									<CardDescription className="text-zinc-400">
+								<CardTitle className="flex items-center gap-2">
+									<Fingerprint className="h-5 w-5 text-success" />
+									Passkeys
+								</CardTitle>
+									<CardDescription>
 										Sign in securely without a password
 									</CardDescription>
 								</div>
@@ -202,15 +200,15 @@ function SettingsPage() {
 					</Card>
 
 					{/* Wallets Section */}
-					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<Card>
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div>
-									<CardTitle className="text-zinc-100 flex items-center gap-2">
+									<CardTitle className="flex items-center gap-2">
 										<Wallet className="h-5 w-5 text-orange-500" />
 										Linked Wallets
 									</CardTitle>
-									<CardDescription className="text-zinc-400">
+									<CardDescription>
 										Sign in with your Ethereum wallet
 									</CardDescription>
 								</div>
@@ -222,28 +220,28 @@ function SettingsPage() {
 						</CardContent>
 					</Card>
 
-					<Separator className="bg-zinc-800" />
+					<Separator />
 
 					{/* Session Info */}
-					<Card className="bg-zinc-900/80 backdrop-blur-sm border-zinc-800">
+					<Card>
 						<CardHeader>
-							<CardTitle className="text-zinc-100 text-sm">
+							<CardTitle className="text-sm">
 								Session Information
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
-									<dt className="text-zinc-500">User ID</dt>
-									<dd className="text-zinc-300 font-mono text-xs">
+									<dt className="text-muted-foreground">User ID</dt>
+									<dd className="font-mono text-xs">
 										{session.user.id}
 									</dd>
 								</div>
 								{realEmail && session.user.emailVerified && (
-									<div className="flex justify-between">
-										<dt className="text-zinc-500">Email Verified</dt>
-										<dd className="text-emerald-400">Yes</dd>
-									</div>
+								<div className="flex justify-between">
+									<dt className="text-muted-foreground">Email Verified</dt>
+									<dd className="text-success">Yes</dd>
+								</div>
 								)}
 							</dl>
 						</CardContent>

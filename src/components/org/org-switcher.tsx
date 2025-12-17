@@ -38,9 +38,9 @@ export function OrgSwitcher() {
 								size="lg"
 								className="data-[state=open]:bg-sidebar-accent"
 							>
-								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-emerald-500">
-									<Building2 className="size-4 text-white" />
-								</div>
+							<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary">
+								<Building2 className="size-4 text-primary-foreground" />
+							</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
 										{activeOrg?.name ?? "Select Organization"}
