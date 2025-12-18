@@ -1,14 +1,13 @@
 import { CheckCircle, Loader2, Mail, Pencil } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -77,24 +76,16 @@ export function ChangeEmailDialog() {
 					Change Email
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						{emailSent ? (
-							<CheckCircle className="h-6 w-6 text-primary-foreground" />
-						) : (
-							<Mail className="h-6 w-6 text-primary-foreground" />
-						)}
-					</div>
-					<DialogTitle className="text-center">
-						{emailSent ? "Check Your Email" : "Change Email Address"}
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						{emailSent
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={emailSent ? CheckCircle : Mail}
+					title={emailSent ? "Check Your Email" : "Change Email Address"}
+					description={
+						emailSent
 							? `We've sent a verification link to ${email}. Click the link in the email to confirm your new address.`
-							: "Enter your new email address. We'll send a verification link to confirm."}
-					</DialogDescription>
-				</DialogHeader>
+							: "Enter your new email address. We'll send a verification link to confirm."
+					}
+				/>
 
 				{emailSent ? (
 					<div className="space-y-4 py-4">
@@ -137,13 +128,9 @@ export function ChangeEmailDialog() {
 						</div>
 
 						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleClose}
-							>
-								Cancel
-							</Button>
+							<DialogClose asChild>
+								<Button variant="outline">Cancel</Button>
+							</DialogClose>
 							<Button
 								type="submit"
 								disabled={isLoading || !email}
@@ -163,14 +150,11 @@ export function ChangeEmailDialog() {
 
 				{emailSent && (
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleClose}
-							className="w-full"
-						>
-							Done
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline" className="w-full">
+								Done
+							</Button>
+						</DialogClose>
 					</DialogFooter>
 				)}
 			</DialogContent>

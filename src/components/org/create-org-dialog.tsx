@@ -2,14 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,18 +94,12 @@ export function CreateOrgDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Building2 className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Create Organization
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Create a new organization to collaborate with your team.
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={Building2}
+					title="Create Organization"
+					description="Create a new organization to collaborate with your team."
+				/>
 
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4 py-4">
@@ -156,13 +149,9 @@ export function CreateOrgDialog({
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleOpenChange(false)}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={createMutation.isPending || !name}

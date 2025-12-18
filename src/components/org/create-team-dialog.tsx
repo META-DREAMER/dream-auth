@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UsersRound, Loader2 } from "lucide-react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,18 +69,12 @@ export function CreateTeamDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<UsersRound className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Create Team
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Create a new team to organize members and manage access.
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={UsersRound}
+					title="Create Team"
+					description="Create a new team to organize members and manage access."
+				/>
 
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4 py-4">
@@ -102,13 +95,9 @@ export function CreateTeamDialog({
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleOpenChange(false)}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={createMutation.isPending || !name}

@@ -2,19 +2,18 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mail, Wallet, Loader2, UserPlus } from "lucide-react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { RoleSelect } from "@/components/org/role-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { inviteByEmail, inviteByWallet } from "@/lib/invite-helpers";
 import { orgInvitationsOptions } from "@/lib/org-queries";
 
@@ -89,18 +88,12 @@ export function InviteMemberDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<UserPlus className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Invite Member
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Invite someone to join {orgName}
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={UserPlus}
+					title="Invite Member"
+					description={`Invite someone to join ${orgName}`}
+				/>
 
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4 py-4">
@@ -120,10 +113,7 @@ export function InviteMemberDialog({
 									Wallet
 								</TabsTrigger>
 							</TabsList>
-						</Tabs>
-
-						{inviteType === "email" ? (
-							<div className="space-y-2">
+							<TabsContent value="email" className="space-y-2 mt-4">
 								<Label htmlFor="invite-email">
 									Email Address
 								</Label>
@@ -134,9 +124,8 @@ export function InviteMemberDialog({
 									value={inviteEmail}
 									onChange={(e) => setInviteEmail(e.target.value)}
 								/>
-							</div>
-						) : (
-							<div className="space-y-2">
+							</TabsContent>
+							<TabsContent value="wallet" className="space-y-2 mt-4">
 								<Label htmlFor="invite-wallet">
 									Wallet Address
 								</Label>
@@ -152,8 +141,8 @@ export function InviteMemberDialog({
 									The user must sign in with SIWE using this wallet address to
 									accept the invitation.
 								</p>
-							</div>
-						)}
+							</TabsContent>
+						</Tabs>
 
 						<div className="space-y-2">
 							<Label htmlFor="invite-role">
@@ -164,13 +153,9 @@ export function InviteMemberDialog({
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleOpenChange(false)}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={

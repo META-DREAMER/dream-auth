@@ -1,4 +1,6 @@
 import { AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { errorStyles } from "@/lib/semantic-variants";
 
 interface ErrorAlertProps {
 	message: string;
@@ -6,14 +8,12 @@ interface ErrorAlertProps {
 }
 
 /**
- * Standardized error display component.
+ * Standardized error display component using semantic error styling.
  */
 export function ErrorAlert({ message, className }: ErrorAlertProps) {
 	return (
-		<div
-			className={`flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive-foreground ${className ?? ""}`}
-		>
-			<AlertCircle className="h-4 w-4 shrink-0" />
+		<div className={cn("flex items-center gap-2", errorStyles.container, className)}>
+			<AlertCircle className={errorStyles.icon} />
 			<span>{message}</span>
 		</div>
 	);

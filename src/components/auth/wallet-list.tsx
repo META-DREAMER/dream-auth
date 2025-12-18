@@ -88,50 +88,54 @@ export function WalletList() {
 	}
 
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow className="hover:bg-transparent">
-					<TableHead>Address</TableHead>
-					<TableHead>Linked</TableHead>
-					<TableHead className="w-[100px]">Actions</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{walletAccounts.map((account) => (
-					<TableRow
-						key={account.id}
-					>
-						<TableCell className="font-mono text-sm">
-							<span className="flex items-center gap-2">
-								<Wallet className="h-4 w-4 text-orange-500" />
-								{account.accountId.slice(0, 6)}...{account.accountId.slice(-4)}
-							</span>
-						</TableCell>
-						<TableCell className="text-muted-foreground text-sm">
-							{new Date(account.createdAt).toLocaleDateString()}
-						</TableCell>
-						<TableCell>
-							<DeleteConfirmDialog
-								title="Unlink wallet?"
-								description={
-									<>
-										This will remove the wallet{" "}
-										<span className="font-mono">
-											{account.accountId.slice(0, 6)}...
-											{account.accountId.slice(-4)}
-										</span>{" "}
-										from your account. You can link it again later.
-									</>
-								}
-								onConfirm={() => handleUnlink(account.accountId)}
-								isDeleting={deletingId === account.accountId}
-								confirmText="Unlink"
-								buttonSize="icon"
-							/>
-						</TableCell>
+		<div className="rounded-lg border overflow-hidden">
+			<Table>
+				<TableHeader>
+					<TableRow className="hover:bg-transparent">
+						<TableHead>Address</TableHead>
+						<TableHead>Linked</TableHead>
+						<TableHead className="w-[100px] text-right">Actions</TableHead>
 					</TableRow>
-				))}
-			</TableBody>
-		</Table>
+				</TableHeader>
+				<TableBody>
+					{walletAccounts.map((account) => (
+						<TableRow
+							key={account.id}
+						>
+							<TableCell className="font-mono text-sm">
+								<span className="flex items-center gap-2">
+									<Wallet className="h-4 w-4 text-orange-500 shrink-0" />
+									<span className="truncate">
+										{account.accountId.slice(0, 6)}...{account.accountId.slice(-4)}
+									</span>
+								</span>
+							</TableCell>
+							<TableCell className="text-muted-foreground text-sm">
+								{new Date(account.createdAt).toLocaleDateString()}
+							</TableCell>
+							<TableCell className="text-right">
+								<DeleteConfirmDialog
+									title="Unlink Wallet"
+									description={
+										<>
+											This will remove the wallet{" "}
+											<span className="font-mono">
+												{account.accountId.slice(0, 6)}...
+												{account.accountId.slice(-4)}
+											</span>{" "}
+											from your account. You can link it again later.
+										</>
+									}
+									onConfirm={() => handleUnlink(account.accountId)}
+									isDeleting={deletingId === account.accountId}
+									confirmText="Unlink"
+									buttonSize="icon"
+								/>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
+		</div>
 	);
 }

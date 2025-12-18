@@ -2,14 +2,13 @@ import { Loader2, Mail, Plus } from "lucide-react";
 import { useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -87,22 +86,18 @@ export function LinkEmailDialog() {
 					Link Email
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Mail className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						{step === "email" ? "Link Email Address" : "Verify Your Email"}
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						{step === "email"
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={Mail}
+					title={step === "email" ? "Link Email Address" : "Verify Your Email"}
+					description={
+						step === "email"
 							? "Add an email address to your account for easier recovery and notifications."
 							: isLoading && !hasSentOtp
 								? `Sending verification code to ${email}...`
-								: `We sent a 6-digit code to ${email}. Enter it below to verify.`}
-					</DialogDescription>
-				</DialogHeader>
+								: `We sent a 6-digit code to ${email}. Enter it below to verify.`
+					}
+				/>
 
 				{step === "email" ? (
 					<form onSubmit={handleEmailSubmit}>
@@ -129,13 +124,9 @@ export function LinkEmailDialog() {
 						</div>
 
 						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleClose}
-							>
-								Cancel
-							</Button>
+							<DialogClose asChild>
+								<Button variant="outline">Cancel</Button>
+							</DialogClose>
 							<Button
 								type="submit"
 								disabled={isLoading || !email}
@@ -165,7 +156,7 @@ export function LinkEmailDialog() {
 							/>
 						</div>
 
-						<DialogFooter className="flex-col sm:flex-row gap-2">
+						<DialogFooter className="flex-col-reverse sm:flex-row gap-2">
 							<Button
 								type="button"
 								variant="outline"

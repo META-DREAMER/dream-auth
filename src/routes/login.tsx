@@ -140,7 +140,7 @@ function LoginPage() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-background p-4">
+		<div className="min-h-screen flex items-center justify-center p-4">
 			<PageBackground />
 
 			<Card className="w-full max-w-md relative">
@@ -191,7 +191,7 @@ function LoginPage() {
 							<Separator className="w-full" />
 						</div>
 						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-background px-2 text-muted-foreground">
+							<span className="px-2 text-muted-foreground">
 								or continue with email
 							</span>
 						</div>

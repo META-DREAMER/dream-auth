@@ -89,7 +89,7 @@ const SimpleKitModalContent = ({
   return (
     <SimpleKitModalContentComponent
       className={cn(
-        "rounded-t-3xl sm:rounded-3xl md:max-w-[360px] [&>button]:right-[26px] [&>button]:top-[26px]",
+        "rounded-t-3xl sm:rounded-3xl md:max-w-[360px]",
         className,
       )}
       onOpenAutoFocus={(e) => e.preventDefault()}
@@ -178,7 +178,7 @@ const SimpleKitModalFooter = ({
 
   return (
     <SimpleKitModalFooterComponent
-      className={cn("py-3.5 md:py-0", className)}
+      className={cn("py-3.5 bg-transparent border-t-0 md:py-0", className)}
       {...props}
     >
       {children}

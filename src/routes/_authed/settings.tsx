@@ -43,7 +43,7 @@ function SettingsPage() {
 	const realEmail = getRealEmail(session.user.email);
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="min-h-screen">
 			<PageBackground />
 
 			<div className="relative max-w-3xl mx-auto px-4 py-8">

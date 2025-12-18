@@ -11,6 +11,7 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface DeleteConfirmDialogProps {
 	title: string;
@@ -19,36 +20,49 @@ interface DeleteConfirmDialogProps {
 	isDeleting?: boolean;
 	/** Action button text (default: "Delete") */
 	confirmText?: string;
-	/** Button size variant */
+	/** Custom trigger element (default: trash icon button) */
+	trigger?: React.ReactNode;
+	/** Button size variant for default trigger (default: "sm") */
 	buttonSize?: "sm" | "icon";
 }
 
 /**
  * Reusable delete confirmation dialog with consistent styling.
+ * 
+ * Features:
+ * - Supports custom trigger or default trash icon button
+ * - Disables and animates confirm action while pending
+ * - Uses shadcn destructive variant for destructive actions
+ * - Prevents double-submission during pending state
  */
 export function DeleteConfirmDialog({
 	title,
 	description,
 	onConfirm,
-	isDeleting,
+	isDeleting = false,
 	confirmText = "Delete",
+	trigger,
 	buttonSize = "sm",
 }: DeleteConfirmDialogProps) {
+	const defaultTrigger = (
+		<Button
+			variant="ghost"
+			size={buttonSize}
+			disabled={isDeleting}
+			className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+		>
+			{isDeleting ? (
+				<Loader2 className="h-4 w-4 animate-spin" />
+			) : (
+				<Trash2 className="h-4 w-4" />
+			)}
+		</Button>
+	);
+
 	return (
 		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button
-					variant="ghost"
-					size={buttonSize}
-					disabled={isDeleting}
-					className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-				>
-					{isDeleting ? (
-						<Loader2 className="h-4 w-4 animate-spin" />
-					) : (
-						<Trash2 className="h-4 w-4" />
-					)}
-				</Button>
+			<AlertDialogTrigger asChild disabled={isDeleting}>
+				{trigger ?? defaultTrigger}
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>
@@ -58,14 +72,25 @@ export function DeleteConfirmDialog({
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel>
+					<AlertDialogCancel disabled={isDeleting}>
 						Cancel
 					</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={onConfirm}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						disabled={isDeleting}
+						className={cn(
+							"bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-opacity",
+							isDeleting && "opacity-75 cursor-not-allowed"
+						)}
 					>
-						{confirmText}
+						{isDeleting ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								{confirmText}
+							</>
+						) : (
+							confirmText
+						)}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

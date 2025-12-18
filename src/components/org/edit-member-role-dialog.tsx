@@ -2,15 +2,14 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, Loader2 } from "lucide-react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { RoleSelect } from "@/components/org/role-select";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 } from "@/components/ui/dialog";
 import { organization } from "@/lib/auth-client";
 import { orgMembersOptions } from "@/lib/org-queries";
@@ -95,21 +94,19 @@ export function EditMemberRoleDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Shield className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Change Member Role
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Update the role for{" "}
-						<span className="font-medium">
-							{member.user.name || member.user.email}
-						</span>
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={Shield}
+					title="Change Member Role"
+					description={
+						<>
+							Update the role for{" "}
+							<span className="font-medium">
+								{member.user.name || member.user.email}
+							</span>
+						</>
+					}
+				/>
 
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4 py-4">
@@ -125,13 +122,9 @@ export function EditMemberRoleDialog({
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleOpenChange(false)}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={updateRoleMutation.isPending || !hasChanged}

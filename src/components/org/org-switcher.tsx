@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Plus, Building2 } from "lucide-react";
+import { ChevronsUpDown, Plus, Building2, Loader2, Check } from "lucide-react";
 import { useState } from "react";
 import {
 	DropdownMenu,
@@ -17,15 +17,22 @@ import {
 import { authClient, organization } from "@/lib/auth-client";
 import { RoleBadge } from "./role-badge";
 import { CreateOrgDialog } from "./create-org-dialog";
+import { cn } from "@/lib/utils";
 
 export function OrgSwitcher() {
 	const { isMobile } = useSidebar();
 	const { data: activeOrg } = authClient.useActiveOrganization();
 	const { data: organizations } = authClient.useListOrganizations();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
 
 	const handleSetActive = async (orgId: string) => {
-		await organization.setActive({ organizationId: orgId });
+		setSwitchingOrgId(orgId);
+		try {
+			await organization.setActive({ organizationId: orgId });
+		} finally {
+			setSwitchingOrgId(null);
+		}
 	};
 
 	return (
@@ -60,17 +67,31 @@ export function OrgSwitcher() {
 							side={isMobile ? "bottom" : "right"}
 						>
 							<DropdownMenuLabel>Organizations</DropdownMenuLabel>
-							{organizations?.map((org) => (
-								<DropdownMenuItem
-									key={org.id}
-									onClick={() => handleSetActive(org.id)}
-									className="gap-2 p-2"
-								>
-									<Building2 className="size-4" />
-									<span className="flex-1">{org.name}</span>
-									{"role" in org && <RoleBadge role={org.role as string} />}
-								</DropdownMenuItem>
-							))}
+							{organizations?.map((org) => {
+								const isActive = activeOrg?.id === org.id;
+								const isSwitching = switchingOrgId === org.id;
+								return (
+									<DropdownMenuItem
+										key={org.id}
+										onClick={() => handleSetActive(org.id)}
+										disabled={isSwitching || isActive}
+										className={cn(
+											"gap-2 p-2",
+											isActive && "bg-accent"
+										)}
+									>
+										<Building2 className="size-4" />
+										<span className="flex-1">{org.name}</span>
+										{isSwitching ? (
+											<Loader2 className="size-4 animate-spin text-muted-foreground" />
+										) : isActive ? (
+											<Check className="size-4 text-primary" />
+										) : (
+											"role" in org && <RoleBadge role={org.role as string} />
+										)}
+									</DropdownMenuItem>
+								);
+							})}
 							<DropdownMenuSeparator />
 							<DropdownMenuItem
 								onClick={() => setCreateDialogOpen(true)}

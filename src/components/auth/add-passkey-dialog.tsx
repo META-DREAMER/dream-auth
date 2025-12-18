@@ -2,14 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fingerprint, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -65,19 +64,12 @@ export function AddPasskeyDialog() {
 					Add Passkey
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Fingerprint className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Register a Passkey
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Passkeys let you sign in securely without a password using your
-						device's biometrics or security key.
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={Fingerprint}
+					title="Register a Passkey"
+					description="Passkeys let you sign in securely without a password using your device's biometrics or security key."
+				/>
 
 				<form onSubmit={handleSubmit}>
 					<div className="space-y-4 py-4">
@@ -100,13 +92,9 @@ export function AddPasskeyDialog() {
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleOpenChange(false)}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={addMutation.isPending}

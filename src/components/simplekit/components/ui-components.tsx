@@ -29,6 +29,7 @@ export function CopyAddressButton() {
       ) : (
         <Copy className="size-4" strokeWidth={4} />
       )}
+      <span className="sr-only">{copied ? "Copied" : "Copy address"}</span>
     </button>
   );
 }

@@ -2,14 +2,13 @@ import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { useEmailVerification } from "@/hooks/use-email-verification";
@@ -76,26 +75,22 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 				<Button
 					variant="outline"
 					size="sm"
-					className="border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+					className="border-warning/30 bg-warning/10 text-warning-foreground hover:bg-warning/20 hover:text-warning-foreground"
 				>
 					<ShieldCheck className="mr-2 h-4 w-4" />
 					Verify
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Mail className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Verify Your Email
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						{isLoading && !hasSentOtp
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={Mail}
+					title="Verify Your Email"
+					description={
+						isLoading && !hasSentOtp
 							? `Sending verification code to ${email}...`
-							: `We sent a 6-digit code to ${email}. Enter it below to verify.`}
-					</DialogDescription>
-				</DialogHeader>
+							: `We sent a 6-digit code to ${email}. Enter it below to verify.`
+					}
+				/>
 
 				<form onSubmit={handleVerifyOtp}>
 					<div className="space-y-4 py-4">
@@ -111,13 +106,9 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 					</div>
 
 					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleClose}
-						>
-							Cancel
-						</Button>
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
 						<Button
 							type="submit"
 							disabled={isLoading || otp.length !== 6}

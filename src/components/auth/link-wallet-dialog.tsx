@@ -88,6 +88,7 @@ export function LinkWalletDialog() {
 		return (
 			<div className="flex gap-2">
 				<Button
+					type="button"
 					variant="outline"
 					size="sm"
 					onClick={handleSignToLink}
@@ -107,6 +108,7 @@ export function LinkWalletDialog() {
 				</Button>
 				{!isAuthenticating && (
 					<Button
+						type="button"
 						variant="ghost"
 						size="sm"
 						onClick={handleCancel}
@@ -121,6 +123,7 @@ export function LinkWalletDialog() {
 	// Default state: Always show "Link Wallet" to start fresh connection
 	return (
 		<Button
+			type="button"
 			variant="outline"
 			size="sm"
 			onClick={handleStartLinking}

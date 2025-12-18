@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
 import { Loader2, Wallet, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSimpleKit } from "@/components/simplekit";
-import { useSiweAuth } from "@/hooks/use-siwe-auth";
-import { useAccount, useEnsName, useEnsAvatar } from "wagmi";
+import { useSiweAutoTrigger } from "@/hooks/use-siwe-auto-trigger";
+import { useAccount, useEnsName } from "wagmi";
+import { EnsAvatar } from "@/components/shared/ens-avatar";
 import { cn } from "@/lib/utils";
 
 interface ConnectSIWEButtonProps {
@@ -27,41 +27,13 @@ export function ConnectSIWEButton({
 	const { open: openConnectModal, isConnected, isModalOpen, formattedAddress } = useSimpleKit();
 	const { address } = useAccount();
 	const { data: ensName } = useEnsName({ address });
-	const { data: ensAvatar } = useEnsAvatar({ name: ensName! });
 	
-	const { authenticate, isAuthenticating } = useSiweAuth({
+	const { authenticate, isAuthenticating } = useSiweAutoTrigger({
+		isConnected: isConnected ?? false,
+		isModalOpen: isModalOpen ?? false,
 		onSuccess,
 		onError,
 	});
-
-	// Track which address we've auto-triggered for to prevent loops
-	const autoTriggeredForRef = useRef<string | null>(null);
-
-	// Auto-trigger SIWE when wallet connects (once per address)
-	useEffect(() => {
-		if (
-			isConnected &&
-			address &&
-			!isModalOpen &&
-			!isAuthenticating &&
-			autoTriggeredForRef.current !== address
-		) {
-			// Mark this address as auto-triggered
-			autoTriggeredForRef.current = address;
-			// Small delay to let modal close animation complete
-			const timer = setTimeout(() => {
-				authenticate();
-			}, 300);
-			return () => clearTimeout(timer);
-		}
-	}, [isConnected, address, isModalOpen, isAuthenticating, authenticate]);
-
-	// Reset auto-trigger tracking when disconnected
-	useEffect(() => {
-		if (!isConnected) {
-			autoTriggeredForRef.current = null;
-		}
-	}, [isConnected]);
 
 	// State 1: Not connected - show connect wallet button
 	if (!isConnected) {
@@ -92,13 +64,7 @@ export function ConnectSIWEButton({
 				</>
 			) : (
 				<>
-					{ensAvatar && (
-						<img 
-							src={ensAvatar} 
-							alt="ENS Avatar" 
-							className="mr-2 h-4 w-4 rounded-full"
-						/>
-					)}
+					<EnsAvatar address={address} ensName={ensName} className="mr-2" />
 					<PenLine className="mr-2 h-4 w-4" />
 					Sign In as {ensName || formattedAddress}
 				</>

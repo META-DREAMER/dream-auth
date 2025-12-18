@@ -1,29 +1,45 @@
 import type { LucideIcon } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { loadingStyles, emptyStateStyles, errorStyles } from "@/lib/semantic-variants";
 
 /**
  * Loading skeleton for lists - displays two placeholder rows.
  */
 export function ListSkeleton() {
 	return (
-		<div className="space-y-3">
-			<Skeleton className="h-12 w-full" />
-			<Skeleton className="h-12 w-full" />
+		<div className={loadingStyles.list}>
+			<Skeleton className={loadingStyles.item} />
+			<Skeleton className={loadingStyles.item} />
 		</div>
 	);
 }
 
 interface ListErrorProps {
 	message: string;
+	/** Optional retry action */
+	retry?: () => void;
+	className?: string;
 }
 
 /**
- * Error state for lists.
+ * Error state for lists using semantic error styling.
  */
-export function ListError({ message }: ListErrorProps) {
+export function ListError({ message, retry, className }: ListErrorProps) {
 	return (
-		<div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-			{message}
+		<div className={cn("flex items-center gap-2", errorStyles.container, className)}>
+			<AlertCircle className={errorStyles.icon} />
+			<span className="flex-1">{message}</span>
+			{retry && (
+				<button
+					type="button"
+					onClick={retry}
+					className="text-xs underline underline-offset-2 hover:text-destructive/80"
+				>
+					Retry
+				</button>
+			)}
 		</div>
 	);
 }
@@ -37,7 +53,7 @@ interface EmptyStateProps {
 }
 
 /**
- * Empty state display for lists.
+ * Empty state display for lists using semantic styling.
  */
 export function EmptyState({
 	icon: Icon,
@@ -47,17 +63,17 @@ export function EmptyState({
 }: EmptyStateProps) {
 	if (variant === "card") {
 		return (
-			<div className="rounded-lg bg-muted border p-8 text-center">
-				<Icon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-				<p className="mb-2">{title}</p>
+			<div className={emptyStateStyles.card}>
+				<Icon className={emptyStateStyles.icon.card} />
+				<p className="mb-2 font-medium">{title}</p>
 				{description && <p className="text-sm text-muted-foreground">{description}</p>}
 			</div>
 		);
 	}
 
 	return (
-		<div className="text-center py-6 text-muted-foreground">
-			<Icon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+		<div className={emptyStateStyles.default}>
+			<Icon className={emptyStateStyles.icon.default} />
 			<p>{title}</p>
 			{description && <p className="text-xs mt-1">{description}</p>}
 		</div>

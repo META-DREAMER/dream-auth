@@ -2,19 +2,19 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UsersRound, Loader2, UserPlus, UserMinus, Check } from "lucide-react";
 import { ErrorAlert } from "@/components/shared/error-alert";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import { organization } from "@/lib/auth-client";
 import { orgTeamsOptions } from "@/lib/org-queries";
 
@@ -173,19 +173,17 @@ export function ManageTeamMembersDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<UsersRound className="h-6 w-6 text-primary-foreground" />
-					</div>
-					<DialogTitle className="text-center">
-						Manage Team Members
-					</DialogTitle>
-					<DialogDescription className="text-center">
-						Add or remove members from{" "}
-						<span className="font-medium">{team.name}</span>
-					</DialogDescription>
-				</DialogHeader>
+			<DialogContent>
+				<DialogHeaderScaffold
+					icon={UsersRound}
+					title="Manage Team Members"
+					description={
+						<>
+							Add or remove members from{" "}
+							<span className="font-medium">{team.name}</span>
+						</>
+					}
+				/>
 
 				<div className="py-4">
 					{error && <ErrorAlert message={error} className="mb-4" />}
@@ -204,9 +202,9 @@ export function ManageTeamMembersDialog({
 						<ScrollArea className="h-[300px] pr-4">
 							<div className="space-y-2">
 								{orgMembers.map((member) => (
-									<label
+									<Label
 										key={member.userId}
-										className="flex items-center gap-3 p-3 rounded-lg bg-muted border cursor-pointer transition-colors hover:bg-muted/80"
+										className="flex items-center gap-3 p-3 rounded-lg bg-muted border cursor-pointer transition-colors hover:bg-muted/80 font-normal"
 									>
 										<Checkbox
 											checked={selectedUserIds.has(member.userId)}
@@ -234,51 +232,46 @@ export function ManageTeamMembersDialog({
 											currentMemberIds.has(member.userId) && (
 												<Check className="h-4 w-4 text-primary" />
 											)}
-									{selectedUserIds.has(member.userId) &&
-										!currentMemberIds.has(member.userId) && (
-											<UserPlus className="h-4 w-4 text-success" />
-										)}
+										{selectedUserIds.has(member.userId) &&
+											!currentMemberIds.has(member.userId) && (
+												<UserPlus className="h-4 w-4 text-success" />
+											)}
 										{!selectedUserIds.has(member.userId) &&
 											currentMemberIds.has(member.userId) && (
 												<UserMinus className="h-4 w-4 text-red-500" />
 											)}
-									</label>
+									</Label>
 								))}
 							</div>
 						</ScrollArea>
 					)}
 				</div>
 
-				<DialogFooter>
-					<div className="flex items-center justify-between w-full">
-						<span className="text-sm text-muted-foreground">
-							{selectedUserIds.size}{" "}
-							{selectedUserIds.size === 1 ? "member" : "members"} selected
-						</span>
-						<div className="flex gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => handleOpenChange(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleSave}
-								disabled={saving || !hasChanges}
-							>
-								{saving ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Saving...
-									</>
-								) : (
-									"Save Changes"
-								)}
-							</Button>
-						</div>
-					</div>
-				</DialogFooter>
+			<DialogFooter className="flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<span className="text-sm text-muted-foreground text-center sm:text-left">
+					{selectedUserIds.size}{" "}
+					{selectedUserIds.size === 1 ? "member" : "members"} selected
+				</span>
+				<div className="flex flex-col-reverse gap-2 sm:flex-row">
+					<DialogClose asChild>
+						<Button variant="outline">Cancel</Button>
+					</DialogClose>
+					<Button
+						type="button"
+						onClick={handleSave}
+						disabled={saving || !hasChanges}
+					>
+						{saving ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Saving...
+							</>
+						) : (
+							"Save Changes"
+						)}
+					</Button>
+				</div>
+			</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

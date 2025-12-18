@@ -230,7 +230,7 @@ function InvitePage() {
 	// Loading state while checking session or fetching preview
 	if (isSessionLoading || isLoadingPreview) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-4">
@@ -250,7 +250,7 @@ function InvitePage() {
 	// Invitation not found (pre-auth check)
 	if (previewError || !invitationPreview) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
@@ -283,7 +283,7 @@ function InvitePage() {
 
 	if (isExpired || isNotPending) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
@@ -315,7 +315,7 @@ function InvitePage() {
 	// Not logged in - show invitation preview with login prompt
 	if (!session) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-1 text-center">
@@ -444,7 +444,7 @@ function InvitePage() {
 	// Loading invitation details
 	if (isLoadingInvitation) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-4">
@@ -464,7 +464,7 @@ function InvitePage() {
 	// Error loading invitation (and no cached data)
 	if (invitationError && !invitation) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
@@ -496,7 +496,7 @@ function InvitePage() {
 	// Success state
 	if (acceptMutation.isSuccess) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-background p-4">
+			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
@@ -517,7 +517,7 @@ function InvitePage() {
 
 	// Show invitation details
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-background p-4">
+		<div className="min-h-screen flex items-center justify-center p-4">
 			<PageBackground />
 
 			<Card className="w-full max-w-md relative">
