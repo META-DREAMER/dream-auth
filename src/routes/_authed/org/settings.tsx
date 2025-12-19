@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Settings, Loader2, AlertTriangle } from "lucide-react";
+import { GearIcon, SpinnerIcon, WarningIcon } from "@phosphor-icons/react";
 import { authClient, organization } from "@/lib/auth-client";
 import { orgFullOptions } from "@/lib/org-queries";
 import { useOrgPermissions } from "@/hooks/use-org-permissions";
@@ -138,7 +138,7 @@ function OrgSettingsPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<Settings className="h-5 w-5" />
+						<GearIcon className="h-5 w-5" />
 						Organization Details
 					</CardTitle>
 					<CardDescription>
@@ -221,7 +221,7 @@ function OrgSettingsPage() {
 							disabled={!hasChanges || updateMutation.isPending}
 						>
 							{updateMutation.isPending && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 							)}
 							Save Changes
 						</Button>
@@ -234,7 +234,7 @@ function OrgSettingsPage() {
 				<Card className="border-destructive/50">
 					<CardHeader>
 						<CardTitle className="text-destructive flex items-center gap-2">
-							<AlertTriangle className="h-5 w-5" />
+							<WarningIcon className="h-5 w-5" />
 							Danger Zone
 						</CardTitle>
 						<CardDescription>
@@ -305,7 +305,7 @@ function OrgSettingsPage() {
 												className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 											>
 												{deleteMutation.isPending && (
-													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+													<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 												)}
 												Delete Organization
 											</AlertDialogAction>

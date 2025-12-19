@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Users, Mail, UsersRound, Plus } from "lucide-react";
+import { BuildingIcon, UsersIcon, EnvelopeIcon, UsersThreeIcon, PlusIcon } from "@phosphor-icons/react";
 import { authClient } from "@/lib/auth-client";
 import {
 	orgMembersOptions,
@@ -79,7 +79,7 @@ function OrgOverview() {
 								/>
 							) : (
 								<div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary">
-									<Building2 className="h-8 w-8 text-primary-foreground" />
+									<BuildingIcon className="h-8 w-8 text-primary-foreground" />
 								</div>
 							)}
 							<div>
@@ -115,7 +115,7 @@ function OrgOverview() {
 									memberCount
 								)}
 							</div>
-							<Users className="h-5 w-5 text-muted-foreground" />
+							<UsersIcon className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
@@ -135,7 +135,7 @@ function OrgOverview() {
 									teamCount
 								)}
 							</div>
-							<UsersRound className="h-5 w-5 text-muted-foreground" />
+							<UsersThreeIcon className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
@@ -155,7 +155,7 @@ function OrgOverview() {
 									pendingInvitationsCount
 								)}
 							</div>
-							<Mail className="h-5 w-5 text-muted-foreground" />
+							<EnvelopeIcon className="h-5 w-5 text-muted-foreground" />
 						</div>
 					</CardContent>
 				</Card>
@@ -172,11 +172,11 @@ function OrgOverview() {
 				<CardContent>
 					<div className="flex flex-wrap gap-3">
 						<Button variant="outline" disabled>
-							<Users className="mr-2 h-4 w-4" />
+							<UsersIcon className="mr-2 h-4 w-4" />
 							Invite Member
 						</Button>
 						<Button variant="outline" disabled>
-							<Plus className="mr-2 h-4 w-4" />
+							<PlusIcon className="mr-2 h-4 w-4" />
 							Create Team
 						</Button>
 					</div>

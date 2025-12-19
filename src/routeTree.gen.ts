@@ -28,7 +28,6 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthedOrgTeamsRouteImport } from './routes/_authed/org/teams'
 import { Route as AuthedOrgSettingsRouteImport } from './routes/_authed/org/settings'
 import { Route as AuthedOrgMembersRouteImport } from './routes/_authed/org/members'
-import { Route as AuthedOrgInvitationsRouteImport } from './routes/_authed/org/invitations'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -125,11 +124,6 @@ const AuthedOrgMembersRoute = AuthedOrgMembersRouteImport.update({
   path: '/members',
   getParentRoute: () => AuthedOrgRoute,
 } as any)
-const AuthedOrgInvitationsRoute = AuthedOrgInvitationsRouteImport.update({
-  id: '/invitations',
-  path: '/invitations',
-  getParentRoute: () => AuthedOrgRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,7 +139,6 @@ export interface FileRoutesByFullPath {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
-  '/org/invitations': typeof AuthedOrgInvitationsRoute
   '/org/members': typeof AuthedOrgMembersRoute
   '/org/settings': typeof AuthedOrgSettingsRoute
   '/org/teams': typeof AuthedOrgTeamsRoute
@@ -165,7 +158,6 @@ export interface FileRoutesByTo {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
-  '/org/invitations': typeof AuthedOrgInvitationsRoute
   '/org/members': typeof AuthedOrgMembersRoute
   '/org/settings': typeof AuthedOrgSettingsRoute
   '/org/teams': typeof AuthedOrgTeamsRoute
@@ -188,7 +180,6 @@ export interface FileRoutesById {
   '/api/verify': typeof ApiVerifyRoute
   '/invite/$id': typeof InviteIdRoute
   '/oauth2/$': typeof Oauth2SplatRoute
-  '/_authed/org/invitations': typeof AuthedOrgInvitationsRoute
   '/_authed/org/members': typeof AuthedOrgMembersRoute
   '/_authed/org/settings': typeof AuthedOrgSettingsRoute
   '/_authed/org/teams': typeof AuthedOrgTeamsRoute
@@ -211,7 +202,6 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
-    | '/org/invitations'
     | '/org/members'
     | '/org/settings'
     | '/org/teams'
@@ -231,7 +221,6 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
-    | '/org/invitations'
     | '/org/members'
     | '/org/settings'
     | '/org/teams'
@@ -253,7 +242,6 @@ export interface FileRouteTypes {
     | '/api/verify'
     | '/invite/$id'
     | '/oauth2/$'
-    | '/_authed/org/invitations'
     | '/_authed/org/members'
     | '/_authed/org/settings'
     | '/_authed/org/teams'
@@ -412,18 +400,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedOrgMembersRouteImport
       parentRoute: typeof AuthedOrgRoute
     }
-    '/_authed/org/invitations': {
-      id: '/_authed/org/invitations'
-      path: '/invitations'
-      fullPath: '/org/invitations'
-      preLoaderRoute: typeof AuthedOrgInvitationsRouteImport
-      parentRoute: typeof AuthedOrgRoute
-    }
   }
 }
 
 interface AuthedOrgRouteChildren {
-  AuthedOrgInvitationsRoute: typeof AuthedOrgInvitationsRoute
   AuthedOrgMembersRoute: typeof AuthedOrgMembersRoute
   AuthedOrgSettingsRoute: typeof AuthedOrgSettingsRoute
   AuthedOrgTeamsRoute: typeof AuthedOrgTeamsRoute
@@ -431,7 +411,6 @@ interface AuthedOrgRouteChildren {
 }
 
 const AuthedOrgRouteChildren: AuthedOrgRouteChildren = {
-  AuthedOrgInvitationsRoute: AuthedOrgInvitationsRoute,
   AuthedOrgMembersRoute: AuthedOrgMembersRoute,
   AuthedOrgSettingsRoute: AuthedOrgSettingsRoute,
   AuthedOrgTeamsRoute: AuthedOrgTeamsRoute,

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Building2, Users, UsersRound, Mail, Settings } from "lucide-react";
+import { BuildingIcon, UsersIcon, UsersThreeIcon, GearIcon } from "@phosphor-icons/react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -10,11 +10,10 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-	{ href: "/org", label: "Overview", icon: Building2 },
-	{ href: "/org/members", label: "Members", icon: Users },
-	{ href: "/org/teams", label: "Teams", icon: UsersRound },
-	{ href: "/org/invitations", label: "Invitations", icon: Mail },
-	{ href: "/org/settings", label: "Settings", icon: Settings },
+	{ href: "/org", label: "Overview", icon: BuildingIcon },
+	{ href: "/org/members", label: "Members", icon: UsersIcon },
+	{ href: "/org/teams", label: "Teams", icon: UsersThreeIcon },
+	{ href: "/org/settings", label: "Settings", icon: GearIcon },
 ];
 
 export function NavMain() {
@@ -35,9 +34,9 @@ export function NavMain() {
 
 						return (
 							<SidebarMenuItem key={item.href}>
-								<SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+								<SidebarMenuButton  asChild isActive={isActive} tooltip={item.label}>
 									<Link to={item.href}>
-										<item.icon />
+										<item.icon  />
 										<span>{item.label}</span>
 									</Link>
 								</SidebarMenuButton>

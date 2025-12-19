@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronLeft, Copy, RotateCcw } from "lucide-react";
+import { CheckIcon, CaretLeftIcon, CopyIcon, ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useAccount, useConnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { SimpleKitContext } from "../simplekit-context";
@@ -25,9 +25,9 @@ export function CopyAddressButton() {
   return (
     <button className="text-muted-foreground" onClick={handleCopy}>
       {copied ? (
-        <Check className="size-4" strokeWidth={4} />
+        <CheckIcon className="size-4" weight="fill" />
       ) : (
-        <Copy className="size-4" strokeWidth={4} />
+        <CopyIcon className="size-4" weight="fill" />
       )}
       <span className="sr-only">{copied ? "Copied" : "Copy address"}</span>
     </button>
@@ -51,7 +51,7 @@ export function BackChevron() {
       className="absolute left-[26px] top-[42px] z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground md:top-[26px]"
       onClick={handleClick}
     >
-      <ChevronLeft className="h-4 w-4" />
+      <CaretLeftIcon className="h-4 w-4" />
       <span className="sr-only">Cancel connection</span>
     </button>
   );
@@ -79,7 +79,7 @@ export function RetryConnectorButton() {
       className="group absolute -bottom-2 -right-2 rounded-full bg-muted p-1.5 shadow"
       onClick={handleClick}
     >
-      <RotateCcw className="size-4 transition-transform group-hover:-rotate-45" />
+      <ArrowCounterClockwiseIcon className="size-4 transition-transform group-hover:-rotate-45" />
     </Button>
   );
 }

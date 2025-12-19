@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fingerprint } from "lucide-react";
+import { FingerprintIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import {
@@ -79,7 +79,7 @@ export function PasskeyList() {
 	if (!passkeys || passkeys.length === 0) {
 		return (
 			<EmptyState
-				icon={Fingerprint}
+				icon={FingerprintIcon}
 				title="No passkeys registered"
 				description="Add a passkey to enable passwordless sign-in"
 				variant="card"
@@ -104,7 +104,7 @@ export function PasskeyList() {
 						>
 							<TableCell className="font-medium">
 								<div className="flex items-center gap-2">
-									<Fingerprint className="h-4 w-4 text-success" />
+									<FingerprintIcon className="h-4 w-4 text-success" />
 									{key.name || "Unnamed Passkey"}
 									{key.deviceType && (
 										<Badge

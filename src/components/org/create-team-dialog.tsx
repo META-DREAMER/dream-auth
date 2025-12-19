@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UsersRound, Loader2 } from "lucide-react";
+import { UsersThreeIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ export function CreateTeamDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={UsersRound}
+					icon={UsersThreeIcon}
 					title="Create Team"
 					description="Create a new team to organize members and manage access."
 				/>
@@ -104,7 +104,7 @@ export function CreateTeamDialog({
 						>
 							{createMutation.isPending ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Creating...
 								</>
 							) : (

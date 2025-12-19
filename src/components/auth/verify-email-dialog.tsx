@@ -1,4 +1,4 @@
-import { Loader2, Mail, ShieldCheck } from "lucide-react";
+import { SpinnerIcon, EnvelopeIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -77,13 +77,13 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 					size="sm"
 					className="border-warning/30 bg-warning/10 text-warning-foreground hover:bg-warning/20 hover:text-warning-foreground"
 				>
-					<ShieldCheck className="mr-2 h-4 w-4" />
+					<ShieldCheckIcon className="mr-2 h-4 w-4" />
 					Verify
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={Mail}
+					icon={EnvelopeIcon}
 					title="Verify Your Email"
 					description={
 						isLoading && !hasSentOtp
@@ -115,7 +115,7 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 						>
 							{isLoading ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Verifying...
 								</>
 							) : (

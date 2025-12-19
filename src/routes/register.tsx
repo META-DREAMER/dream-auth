@@ -4,7 +4,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { CheckCircle, Loader2, UserPlus } from "lucide-react";
+import { CheckCircleIcon, SpinnerIcon, UserPlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -91,7 +91,7 @@ function RegisterPage() {
 				<Card className="w-full max-w-md">
 					<CardContent className="pt-6 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
-						<CheckCircle className="h-6 w-6 text-success" />
+						<CheckCircleIcon className="h-6 w-6 text-success" />
 					</div>
 						<h2 className="text-xl font-semibold mb-2">
 							Account created!
@@ -110,7 +110,7 @@ function RegisterPage() {
 			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<UserPlus className="h-6 w-6 text-primary-foreground" />
+						<UserPlusIcon className="h-6 w-6 text-primary-foreground" />
 					</div>
 					<CardTitle className="text-2xl font-bold tracking-tight">
 						Create an account
@@ -214,7 +214,7 @@ function RegisterPage() {
 						>
 							{isLoading ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Creating account...
 								</>
 							) : (

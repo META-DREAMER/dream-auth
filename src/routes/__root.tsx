@@ -8,7 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { getSessionFn } from "@/lib/session.server";
 import { Web3Provider } from "@/components/web3-provider";
-
+import { ThemeProvider, themeScript } from "@/lib/theme";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -40,6 +40,12 @@ export const Route = createRootRoute({
 				href: appCss,
 			},
 		],
+		scripts: [
+			{
+				id: "theme-script",
+				children: themeScript,
+			},
+		],
 	}),
 
 	shellComponent: RootDocument,
@@ -48,12 +54,14 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="dark">
+		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>
-			<body data-vaul-drawer-wrapper="" className="bg-background">
-				{children}
+			<body className="bg-background">
+				<div data-vaul-drawer-wrapper="" className="min-h-screen ">
+					{children}
+				</div>
 				{process.env.NODE_ENV === "development" && (
 					<TanStackDevtools
 						config={{
@@ -75,8 +83,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
 	return (
-		<Web3Provider>
-			<Outlet />
-		</Web3Provider>
+		<ThemeProvider>
+			<Web3Provider>
+				<Outlet />
+			</Web3Provider>
+		</ThemeProvider>
 	);
 }

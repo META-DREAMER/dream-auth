@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Check, KeyRound, Loader2, Shield, X } from "lucide-react";
+import { CheckIcon, KeyIcon, SpinnerIcon, ShieldIcon, XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { z } from "zod";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -81,7 +81,7 @@ function ConsentPage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-							<X className="h-6 w-6 text-red-400" />
+							<XIcon className="h-6 w-6 text-red-400" />
 						</div>
 						<CardTitle className="text-xl">
 							Invalid Authorization Request
@@ -145,7 +145,7 @@ function ConsentPage() {
 			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Shield className="h-6 w-6 text-primary-foreground" />
+						<ShieldIcon className="h-6 w-6 text-primary-foreground" />
 					</div>
 					<CardTitle className="text-xl font-bold tracking-tight">
 						Authorization Request
@@ -182,7 +182,7 @@ function ConsentPage() {
 						variant="outline"
 						className="border-success/30 text-success bg-success/10"
 					>
-						<KeyRound className="h-3 w-3 mr-1" />
+						<KeyIcon className="h-3 w-3 mr-1" />
 						You
 					</Badge>
 					</div>
@@ -206,7 +206,7 @@ function ConsentPage() {
 									className="flex items-start gap-3 p-2 rounded-md bg-muted/50"
 								>
 									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/20 mt-0.5">
-										<Check className="h-3 w-3 text-success" />
+										<CheckIcon className="h-3 w-3 text-success" />
 									</div>
 										<div className="flex-1 min-w-0">
 											<p className="text-sm font-medium">
@@ -245,12 +245,12 @@ function ConsentPage() {
 					>
 						{isDenying ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								Denying...
 							</>
 						) : (
 							<>
-								<X className="mr-2 h-4 w-4" />
+								<XIcon className="mr-2 h-4 w-4" />
 								Deny
 							</>
 						)}
@@ -262,12 +262,12 @@ function ConsentPage() {
 					>
 						{isLoading ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								Authorizing...
 							</>
 						) : (
 							<>
-								<Check className="mr-2 h-4 w-4" />
+								<CheckIcon className="mr-2 h-4 w-4" />
 								Authorize
 							</>
 						)}

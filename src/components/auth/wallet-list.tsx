@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Wallet } from "lucide-react";
+import { WalletIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import {
@@ -80,7 +80,7 @@ export function WalletList() {
 	if (!walletAccounts || walletAccounts.length === 0) {
 		return (
 			<EmptyState
-				icon={Wallet}
+				icon={WalletIcon}
 				title="No wallets linked yet"
 				description="Link a wallet to sign in with your Ethereum address"
 			/>
@@ -104,7 +104,7 @@ export function WalletList() {
 						>
 							<TableCell className="font-mono text-sm">
 								<span className="flex items-center gap-2">
-									<Wallet className="h-4 w-4 text-orange-500 shrink-0" />
+									<WalletIcon className="h-4 w-4 text-orange-500 shrink-0" />
 									<span className="truncate">
 										{account.accountId.slice(0, 6)}...{account.accountId.slice(-4)}
 									</span>

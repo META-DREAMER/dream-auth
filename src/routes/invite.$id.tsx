@@ -2,14 +2,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import {
-	Building2,
-	Check,
-	Clock,
-	Loader2,
-	Mail,
-	Wallet,
-	X,
-} from "lucide-react";
+	BuildingIcon,
+	CheckIcon,
+	ClockIcon,
+	SpinnerIcon,
+	EnvelopeIcon,
+	WalletIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import { Pool } from "pg";
 import { useAccount } from "wagmi";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -255,7 +255,7 @@ function InvitePage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-							<X className="h-6 w-6 text-red-400" />
+							<XIcon className="h-6 w-6 text-red-400" />
 						</div>
 						<CardTitle className="text-xl">
 							Invitation Not Found
@@ -288,7 +288,7 @@ function InvitePage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20">
-							<Clock className="h-6 w-6 text-amber-400" />
+							<ClockIcon className="h-6 w-6 text-amber-400" />
 						</div>
 						<CardTitle className="text-xl">
 							{isExpired ? "Invitation Expired" : "Invitation No Longer Available"}
@@ -320,7 +320,7 @@ function InvitePage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="space-y-1 text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-							<Building2 className="h-6 w-6 text-white" />
+							<BuildingIcon className="h-6 w-6 text-white" />
 						</div>
 						<CardTitle className="text-xl font-bold tracking-tight">
 							Join {invitationPreview.organizationName}
@@ -349,7 +349,7 @@ function InvitePage() {
 							<div className="flex items-center justify-between">
 								<span className="text-sm text-muted-foreground">Expires</span>
 								<span className="text-sm flex items-center gap-1">
-									<Clock className="h-3 w-3" />
+									<ClockIcon className="h-3 w-3" />
 									{new Date(invitationPreview.expiresAt).toLocaleDateString()}
 								</span>
 							</div>
@@ -359,7 +359,7 @@ function InvitePage() {
 									<div className="flex items-center justify-between">
 										<span className="text-sm text-muted-foreground">Required Wallet</span>
 										<span className="text-sm font-mono flex items-center gap-1">
-											<Wallet className="h-3 w-3" />
+											<WalletIcon className="h-3 w-3" />
 											{invitationPreview.walletAddressPreview}
 										</span>
 									</div>
@@ -393,7 +393,7 @@ function InvitePage() {
 								className="w-full"
 								>
 									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
-										<Mail className="mr-2 h-4 w-4" />
+										<EnvelopeIcon className="mr-2 h-4 w-4" />
 										Sign in with Email
 									</Link>
 								</Button>
@@ -405,7 +405,7 @@ function InvitePage() {
 									className="w-full font-medium"
 								>
 									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
-										<Mail className="mr-2 h-4 w-4" />
+										<EnvelopeIcon className="mr-2 h-4 w-4" />
 										Sign in with Email
 									</Link>
 								</Button>
@@ -469,7 +469,7 @@ function InvitePage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
-							<X className="h-6 w-6 text-red-400" />
+							<XIcon className="h-6 w-6 text-red-400" />
 						</div>
 						<CardTitle className="text-xl">
 							Invitation Not Found
@@ -501,7 +501,7 @@ function InvitePage() {
 				<Card className="w-full max-w-md relative">
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
-							<Check className="h-6 w-6 text-success" />
+							<CheckIcon className="h-6 w-6 text-success" />
 						</div>
 						<CardTitle className="text-xl">
 							Welcome to {invitation?.organizationName}!
@@ -523,7 +523,7 @@ function InvitePage() {
 			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<Building2 className="h-6 w-6 text-primary-foreground" />
+						<BuildingIcon className="h-6 w-6 text-primary-foreground" />
 					</div>
 					<CardTitle className="text-xl font-bold tracking-tight">
 						Join {invitation?.organizationName}
@@ -561,7 +561,7 @@ function InvitePage() {
 						<div className="flex items-center justify-between">
 							<span className="text-sm text-muted-foreground">Expires</span>
 							<span className="text-sm flex items-center gap-1">
-								<Clock className="h-3 w-3" />
+								<ClockIcon className="h-3 w-3" />
 								{invitation?.expiresAt
 									? new Date(invitation.expiresAt).toLocaleDateString()
 									: "N/A"}
@@ -575,7 +575,7 @@ function InvitePage() {
 								<div className="flex items-center justify-between">
 									<span className="text-sm text-muted-foreground">Required Wallet</span>
 									<span className="text-sm font-mono flex items-center gap-1">
-										<Wallet className="h-3 w-3" />
+										<WalletIcon className="h-3 w-3" />
 										{invitationWallet?.slice(0, 6)}...
 										{invitationWallet?.slice(-4)}
 									</span>
@@ -617,12 +617,12 @@ function InvitePage() {
 					>
 						{rejectMutation.isPending ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								Declining...
 							</>
 						) : (
 							<>
-								<X className="mr-2 h-4 w-4" />
+								<XIcon className="mr-2 h-4 w-4" />
 								Decline
 							</>
 						)}
@@ -638,12 +638,12 @@ function InvitePage() {
 					>
 						{acceptMutation.isPending ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								Accepting...
 							</>
 						) : (
 							<>
-								<Check className="mr-2 h-4 w-4" />
+								<CheckIcon className="mr-2 h-4 w-4" />
 								Accept
 							</>
 						)}

@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
 import {
 	DialogDescription,
 	DialogHeader,
@@ -9,7 +8,7 @@ import { dialogIconStyles } from "@/lib/semantic-variants";
 
 interface DialogHeaderScaffoldProps {
 	/** Icon to display in header */
-	icon: LucideIcon;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	/** Dialog title */
 	title: string;
 	/** Dialog description */

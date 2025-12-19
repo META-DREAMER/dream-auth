@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, KeyRound, LogOut, Settings, Shield, User } from "lucide-react";
+import { BuildingIcon, KeyIcon, SignOutIcon, GearIcon, ShieldIcon, UserIcon } from "@phosphor-icons/react";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,7 @@ function HomePage() {
 
 				<div className="relative text-center max-w-xl">
 					<div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/25">
-						<Shield className="h-10 w-10 text-primary-foreground" />
+						<ShieldIcon className="h-10 w-10 text-primary-foreground" />
 					</div>
 
 					<h1 className="text-4xl font-bold tracking-tight mb-4">
@@ -46,7 +46,7 @@ function HomePage() {
 							className="w-full"
 						>
 							<Link to="/login">
-								<KeyRound className="mr-2 h-5 w-5" />
+								<KeyIcon className="mr-2 h-5 w-5" />
 								Sign in
 							</Link>
 						</Button>
@@ -73,7 +73,7 @@ function HomePage() {
 				<Card>
 					<CardHeader className="text-center">
 						<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-							<User className="h-8 w-8 text-primary-foreground" />
+							<UserIcon className="h-8 w-8 text-primary-foreground" />
 						</div>
 						<CardTitle className="text-2xl">
 							Welcome back, {session.user.name || "User"}
@@ -114,7 +114,7 @@ function HomePage() {
 								className="flex-1"
 							>
 								<Link to="/org">
-									<Building2 className="mr-2 h-4 w-4" />
+									<BuildingIcon className="mr-2 h-4 w-4" />
 									Organizations
 								</Link>
 							</Button>
@@ -124,7 +124,7 @@ function HomePage() {
 								className="flex-1"
 							>
 								<Link to="/settings">
-									<Settings className="mr-2 h-4 w-4" />
+									<GearIcon className="mr-2 h-4 w-4" />
 									Settings
 								</Link>
 							</Button>
@@ -134,7 +134,7 @@ function HomePage() {
 							variant="outline"
 							className="w-full hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive-foreground"
 						>
-							<LogOut className="mr-2 h-4 w-4" />
+							<SignOutIcon className="mr-2 h-4 w-4" />
 							Sign out
 						</Button>
 					</CardContent>

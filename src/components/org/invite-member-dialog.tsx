@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Wallet, Loader2, UserPlus } from "lucide-react";
+import { EnvelopeIcon, WalletIcon, SpinnerIcon, UserPlusIcon } from "@phosphor-icons/react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { RoleSelect } from "@/components/org/role-select";
@@ -90,7 +90,7 @@ export function InviteMemberDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={UserPlus}
+					icon={UserPlusIcon}
 					title="Invite Member"
 					description={`Invite someone to join ${orgName}`}
 				/>
@@ -105,11 +105,11 @@ export function InviteMemberDialog({
 						>
 							<TabsList className="grid w-full grid-cols-2">
 								<TabsTrigger value="email">
-									<Mail className="mr-2 h-4 w-4" />
+									<EnvelopeIcon className="mr-2 h-4 w-4" />
 									Email
 								</TabsTrigger>
 								<TabsTrigger value="wallet">
-									<Wallet className="mr-2 h-4 w-4" />
+									<WalletIcon className="mr-2 h-4 w-4" />
 									Wallet
 								</TabsTrigger>
 							</TabsList>
@@ -167,7 +167,7 @@ export function InviteMemberDialog({
 						>
 							{inviteMutation.isPending ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Sending...
 								</>
 							) : (

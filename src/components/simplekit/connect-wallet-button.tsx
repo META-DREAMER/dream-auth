@@ -3,7 +3,7 @@
 import { useAccount, useEnsName } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { useSimpleKit } from "./use-simple-kit";
-import { Wallet } from "lucide-react";
+import { WalletIcon } from "@phosphor-icons/react";
 import { EnsAvatar } from "@/components/shared/ens-avatar";
 
 export function ConnectWalletButton({ className }: { className?: string }) {
@@ -22,7 +22,7 @@ export function ConnectWalletButton({ className }: { className?: string }) {
         </>
       ) : (
         <>
-          <Wallet className="mr-2 h-4 w-4" />
+          <WalletIcon className="mr-2 h-4 w-4" />
           Connect Wallet
         </>
       )}

@@ -4,7 +4,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
+import { FingerprintIcon, KeyIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -146,7 +146,7 @@ function LoginPage() {
 			<Card className="w-full max-w-md relative">
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-						<KeyRound className="h-6 w-6 text-primary-foreground" />
+						<KeyIcon className="h-6 w-6 text-primary-foreground" />
 					</div>
 					<CardTitle className="text-2xl font-bold tracking-tight">
 						Welcome back
@@ -169,12 +169,12 @@ function LoginPage() {
 						>
 							{isPasskeyLoading ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Authenticating...
 								</>
 							) : (
 								<>
-									<Fingerprint className="mr-2 h-4 w-4" />
+									<FingerprintIcon className="mr-2 h-4 w-4" />
 									Sign in with Passkey
 								</>
 							)}
@@ -235,7 +235,7 @@ function LoginPage() {
 						>
 							{isLoading ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Signing in...
 								</>
 							) : (

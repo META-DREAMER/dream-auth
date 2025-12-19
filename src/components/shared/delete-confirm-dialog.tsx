@@ -1,4 +1,4 @@
-import { Loader2, Trash2 } from "lucide-react";
+import { SpinnerIcon, TrashIcon } from "@phosphor-icons/react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -52,9 +52,9 @@ export function DeleteConfirmDialog({
 			className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
 		>
 			{isDeleting ? (
-				<Loader2 className="h-4 w-4 animate-spin" />
+				<SpinnerIcon className="h-4 w-4 animate-spin" />
 			) : (
-				<Trash2 className="h-4 w-4" />
+				<TrashIcon className="h-4 w-4" />
 			)}
 		</Button>
 	);
@@ -85,7 +85,7 @@ export function DeleteConfirmDialog({
 					>
 						{isDeleting ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								{confirmText}
 							</>
 						) : (

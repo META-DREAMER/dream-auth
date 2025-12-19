@@ -1,4 +1,4 @@
-import { Loader2, Wallet, PenLine } from "lucide-react";
+import { SpinnerIcon, WalletIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useSimpleKit } from "@/components/simplekit";
 import { useSiweAutoTrigger } from "@/hooks/use-siwe-auto-trigger";
@@ -43,7 +43,7 @@ export function ConnectSIWEButton({
 				className={cn("w-full ", className)}
 				variant="outline"
 			>
-				<Wallet className="mr-2 h-4 w-4" />
+				<WalletIcon className="mr-2 h-4 w-4" />
 				Connect Wallet
 			</Button>
 		);
@@ -59,13 +59,13 @@ export function ConnectSIWEButton({
 		>
 			{isAuthenticating ? (
 				<>
-					<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 					Signing...
 				</>
 			) : (
 				<>
 					<EnsAvatar address={address} ensName={ensName} className="mr-2" />
-					<PenLine className="mr-2 h-4 w-4" />
+					<PencilSimpleIcon className="mr-2 h-4 w-4" />
 					Sign In as {ensName || formattedAddress}
 				</>
 			)}

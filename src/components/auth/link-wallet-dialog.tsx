@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, PenLine } from "lucide-react";
+import { SpinnerIcon, PlusIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSiweAuth } from "@/hooks/use-siwe-auth";
@@ -96,12 +96,12 @@ export function LinkWalletDialog() {
 				>
 					{isAuthenticating ? (
 						<>
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 							Linking...
 						</>
 					) : (
 						<>
-							<PenLine className="mr-2 h-4 w-4" />
+							<PencilSimpleIcon className="mr-2 h-4 w-4" />
 							Sign to Link {formattedAddress}
 						</>
 					)}
@@ -129,7 +129,7 @@ export function LinkWalletDialog() {
 			onClick={handleStartLinking}
 			disabled={isAuthenticating}
 		>
-			<Plus className="mr-2 h-4 w-4" />
+			<PlusIcon className="mr-2 h-4 w-4" />
 			Link Wallet
 		</Button>
 	);

@@ -1,4 +1,4 @@
-import { Loader2, Mail, Plus } from "lucide-react";
+import { SpinnerIcon, EnvelopeIcon, PlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -82,13 +82,13 @@ export function LinkEmailDialog() {
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button variant="outline" size="sm">
-					<Plus className="mr-2 h-4 w-4" />
+					<PlusIcon className="mr-2 h-4 w-4" />
 					Link Email
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={Mail}
+					icon={EnvelopeIcon}
 					title={step === "email" ? "Link Email Address" : "Verify Your Email"}
 					description={
 						step === "email"
@@ -133,7 +133,7 @@ export function LinkEmailDialog() {
 							>
 								{isLoading ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 										Sending...
 									</>
 								) : (
@@ -170,7 +170,7 @@ export function LinkEmailDialog() {
 							>
 								{isLoading ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 										Verifying...
 									</>
 								) : (

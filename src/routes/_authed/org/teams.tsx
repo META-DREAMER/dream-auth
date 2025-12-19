@@ -2,14 +2,14 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-	UsersRound,
-	Loader2,
-	Plus,
-	MoreVertical,
-	Trash2,
-	UserPlus,
-	Users,
-} from "lucide-react";
+	SpinnerIcon,
+	PlusIcon,
+	DotsThreeVerticalIcon,
+	TrashIcon,
+	UserPlusIcon,
+	UsersIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
 import { authClient, organization } from "@/lib/auth-client";
 import { orgTeamsOptions, orgMembersOptions } from "@/lib/org-queries";
 import { formatDate } from "@/lib/format";
@@ -114,7 +114,7 @@ function TeamsPage() {
 				action={
 					isOwnerOrAdmin ? (
 						<Button onClick={() => setCreateDialogOpen(true)}>
-							<Plus className="mr-2 h-4 w-4" />
+							<PlusIcon className="mr-2 h-4 w-4" />
 							Create Team
 						</Button>
 					) : undefined
@@ -124,7 +124,7 @@ function TeamsPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<UsersRound className="h-5 w-5" />
+						<UsersThreeIcon className="h-5 w-5" />
 						Organization Teams
 					</CardTitle>
 					<CardDescription>
@@ -141,7 +141,7 @@ function TeamsPage() {
 						</div>
 					) : teamList.length === 0 ? (
 						<div className="text-center py-12">
-							<UsersRound className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+							<UsersThreeIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
 							<p className="text-muted-foreground mb-2">No teams yet</p>
 							<p className="text-sm text-muted-foreground mb-4">
 								Create teams to organize members and manage access
@@ -151,7 +151,7 @@ function TeamsPage() {
 									onClick={() => setCreateDialogOpen(true)}
 									variant="outline"
 								>
-									<Plus className="mr-2 h-4 w-4" />
+									<PlusIcon className="mr-2 h-4 w-4" />
 									Create First Team
 								</Button>
 							)}
@@ -216,7 +216,7 @@ function TeamsPage() {
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{deleteTeamMutation.isPending && (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 							)}
 							Delete Team
 						</AlertDialogAction>
@@ -282,11 +282,11 @@ function TeamCard({
 	return (
 		<Card className="bg-card/50 hover:border-border/80 transition-colors">
 			<CardHeader className="pb-3">
-				<div className="flex items-start justify-between">
-					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
-							<UsersRound className="h-5 w-5" />
-						</div>
+					<div className="flex items-start justify-between">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+								<UsersThreeIcon className="h-5 w-5" />
+							</div>
 						<div>
 							<CardTitle className="text-base">
 								{team.name}
@@ -304,19 +304,19 @@ function TeamCard({
 									size="icon"
 									className="h-8 w-8"
 								>
-									<MoreVertical className="h-4 w-4" />
+									<DotsThreeVerticalIcon className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem onClick={onManage}>
-									<UserPlus className="mr-2 h-4 w-4" />
+									<UserPlusIcon className="mr-2 h-4 w-4" />
 									Manage Members
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onClick={onDelete}
 									className="text-destructive focus:text-destructive"
 								>
-									<Trash2 className="mr-2 h-4 w-4" />
+									<TrashIcon className="mr-2 h-4 w-4" />
 									Delete Team
 								</DropdownMenuItem>
 							</DropdownMenuContent>
@@ -326,7 +326,7 @@ function TeamCard({
 			</CardHeader>
 			<CardContent>
 				<div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-					<Users className="h-4 w-4" />
+					<UsersIcon className="h-4 w-4" />
 					<span>
 						{isPending ? "..." : memberCount}{" "}
 						{memberCount === 1 ? "member" : "members"}
@@ -370,7 +370,7 @@ function TeamCard({
 						onClick={onManage}
 						className="w-full mt-3"
 					>
-						<UserPlus className="mr-2 h-4 w-4" />
+						<UserPlusIcon className="mr-2 h-4 w-4" />
 						Manage Members
 					</Button>
 				)}

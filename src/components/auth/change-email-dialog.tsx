@@ -1,4 +1,4 @@
-import { CheckCircle, Loader2, Mail, Pencil } from "lucide-react";
+import { CheckCircleIcon, SpinnerIcon, EnvelopeIcon, PencilIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
@@ -72,13 +72,13 @@ export function ChangeEmailDialog() {
 					variant="outline"
 					size="sm"
 				>
-					<Pencil className="mr-2 h-4 w-4" />
+					<PencilIcon className="mr-2 h-4 w-4" />
 					Change Email
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={emailSent ? CheckCircle : Mail}
+					icon={emailSent ? CheckCircleIcon : EnvelopeIcon}
 					title={emailSent ? "Check Your Email" : "Change Email Address"}
 					description={
 						emailSent
@@ -137,7 +137,7 @@ export function ChangeEmailDialog() {
 							>
 								{isLoading ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 										Sending...
 									</>
 								) : (

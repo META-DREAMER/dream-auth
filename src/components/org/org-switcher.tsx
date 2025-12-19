@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Plus, Building2, Loader2, Check } from "lucide-react";
+import { CaretUpDownIcon, PlusIcon, BuildingIcon, SpinnerIcon, CheckIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import {
 	DropdownMenu,
@@ -46,7 +46,7 @@ export function OrgSwitcher() {
 								className="data-[state=open]:bg-sidebar-accent"
 							>
 							<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary">
-								<Building2 className="size-4 text-primary-foreground" />
+								<BuildingIcon className="size-4 text-primary-foreground" />
 							</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
@@ -58,7 +58,7 @@ export function OrgSwitcher() {
 										</span>
 									)}
 								</div>
-								<ChevronsUpDown className="ml-auto" />
+								<CaretUpDownIcon className="ml-auto" />
 							</SidebarMenuButton>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
@@ -76,16 +76,15 @@ export function OrgSwitcher() {
 										onClick={() => handleSetActive(org.id)}
 										disabled={isSwitching || isActive}
 										className={cn(
-											"gap-2 p-2",
-											isActive && "bg-accent"
+											"gap-2 p-2"
 										)}
 									>
-										<Building2 className="size-4" />
+										<BuildingIcon className="size-4" />
 										<span className="flex-1">{org.name}</span>
 										{isSwitching ? (
-											<Loader2 className="size-4 animate-spin text-muted-foreground" />
+											<SpinnerIcon className="size-4 animate-spin text-muted-foreground" />
 										) : isActive ? (
-											<Check className="size-4 text-primary" />
+											<CheckIcon className="size-4 text-primary" />
 										) : (
 											"role" in org && <RoleBadge role={org.role as string} />
 										)}
@@ -97,7 +96,7 @@ export function OrgSwitcher() {
 								onClick={() => setCreateDialogOpen(true)}
 								className="gap-2 p-2"
 							>
-								<Plus className="size-4" />
+								<PlusIcon className="size-4" />
 								<span>Create Organization</span>
 							</DropdownMenuItem>
 						</DropdownMenuContent>

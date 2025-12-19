@@ -1,34 +1,43 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/outfit";
 @import "@fontsource-variable/manrope";
+@import "@fontsource-variable/merriweather";
+@import "@fontsource/geist-sans";
 @import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+@custom-variant system (&:is(.system *));
+@custom-variant not-system (&:is(:not(.system) *));
 
 /* ============================================
    LIGHT THEME
    ============================================ */
 
 :root {
-  /* Typography */
-  --font-sans: 'Manrope Variable', 'Manrope', system-ui, sans-serif;
+  /* Typography - uncomment one font-sans option */
+  /* --font-sans: 'Outfit Variable', 'Outfit', system-ui, sans-serif; */
+  /* --font-sans: 'Manrope Variable', 'Manrope', system-ui, sans-serif; */
+  --font-sans: 'Merriweather Variable', 'Merriweather', Georgia, serif;
+  /* --font-sans: 'Geist Sans', system-ui, sans-serif; */
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
   
-  --background: oklch(1 0 0);
+  --background: oklch(0.99 0.003 85);
   --foreground: oklch(0.147 0.004 49.25);
-  --card: oklch(1 0 0);
+  --card: oklch(0.99 0.003 85);
   --card-foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.99 0.003 85);
   --popover-foreground: oklch(0.147 0.004 49.25);
   --primary: oklch(0.216 0.006 56.043);
-  --primary-foreground: oklch(0.985 0.001 106.423);
-  --secondary: oklch(0.97 0.001 106.424);
+  --primary-foreground: oklch(0.975 0.01 85);
+  --secondary: oklch(0.96 0.01 85);
   --secondary-foreground: oklch(0.216 0.006 56.043);
-  --muted: oklch(0.97 0.001 106.424);
+  --muted: oklch(0.96 0.01 85);
   --muted-foreground: oklch(0.553 0.013 58.071);
   --accent: oklch(0.216 0.006 56.043);
-  --accent-foreground: oklch(0.985 0.001 106.423);
+  --accent-foreground: oklch(0.975 0.01 85);
 
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.98 0.01 27);
@@ -46,7 +55,7 @@
   --info-foreground: oklch(0.98 0.01 240);
   
   /* Borders & Inputs */
- --border: oklch(0.923 0.003 48.717);
+  --border: oklch(0.923 0.003 48.717);
   --input: oklch(0.923 0.003 48.717);
   --ring: oklch(0.709 0.01 56.259);
   
@@ -61,12 +70,12 @@
   --radius: 0.45rem;
   
   /* Sidebar */
-  --sidebar: oklch(0.985 0.001 106.423);
+  --sidebar: oklch(0.975 0.01 85);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
   --sidebar-primary: oklch(0.216 0.006 56.043);
-  --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-accent: oklch(0.216 0.006 56.043);
-  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-primary-foreground: oklch(0.975 0.01 85);
+  --sidebar-accent: oklch(0.94 0.008 85);
+  --sidebar-accent-foreground: oklch(0.147 0.004 49.25);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
 }
@@ -77,15 +86,15 @@
 
 .dark {
   --background: oklch(0.147 0.004 49.25);
-  --foreground: oklch(0.985 0.001 106.423);
+  --foreground: oklch(0.975 0.01 85);
   --card: oklch(0.216 0.006 56.043);
-  --card-foreground: oklch(0.985 0.001 106.423);
+  --card-foreground: oklch(0.975 0.01 85);
   --popover: oklch(0.216 0.006 56.043);
-  --popover-foreground: oklch(0.985 0.001 106.423);
+  --popover-foreground: oklch(0.975 0.01 85);
   --primary: oklch(0.923 0.003 48.717);
   --primary-foreground: oklch(0.216 0.006 56.043);
   --secondary: oklch(0.268 0.007 34.298);
-  --secondary-foreground: oklch(0.985 0.001 106.423);
+  --secondary-foreground: oklch(0.975 0.01 85);
   --muted: oklch(0.268 0.007 34.298);
   --muted-foreground: oklch(0.709 0.01 56.259);
   --accent: oklch(0.923 0.003 48.717);
@@ -107,9 +116,9 @@
   --info-foreground: oklch(0.15 0.04 240);
   
   /* Borders & Inputs - Subtle with transparency */
---border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.553 0.013 58.071);
+  --border: oklch(0.99 0.003 85 / 10%);
+  --input: oklch(0.99 0.003 85 / 15%);
+  --ring: oklch(0.553 0.013 58.071);
   
   /* Chart colors */
   --chart-1: oklch(0.90 0.18 127);
@@ -119,14 +128,14 @@
   --chart-5: oklch(0.53 0.14 132);
   
   /* Sidebar - Elevated surface */
-  --sidebar: oklch(0.216 0.006 56.043);
-  --sidebar-foreground: oklch(0.985 0.001 106.423);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.975 0.01 85);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-accent: oklch(0.923 0.003 48.717);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.553 0.013 58.071);
+  --sidebar-primary-foreground: oklch(0.975 0.01 85);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.975 0.01 85);
+  --sidebar-border: oklch(0.99 0.003 85 / 10%);
+  --sidebar-ring: oklch(0.439 0 0);
 }
 
 /* ============================================
@@ -177,6 +186,8 @@
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
+
+  --highlight: color(display-p3 0.282 0.627 0.765);
   
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -198,19 +209,27 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-sans bg-background text-foreground antialiased;
+    @apply font-sans bg-background text-foreground antialiased transition-colors duration-300;
   }
   html {
     @apply font-sans;
     /* Prevent layout shift when modal/drawer opens and scrollbar disappears */
-    scrollbar-gutter: stable;
+    /* scrollbar-gutter: stable; */
   }
   
   /* Prevent Radix/vaul from adding padding/margin to body when modal opens */
   /* This fixes the page width narrowing issue on mobile */
   body[data-scroll-locked],
   body[data-vaul-drawer-visible] {
+    background: var(--background) !important;
     padding-right: 0 !important;
     margin-right: 0 !important;
   }
+}
+
+
+/* Smooth Transitions for Dark Mode */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.3s;
 }

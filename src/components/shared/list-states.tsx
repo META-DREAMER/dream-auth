@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react";
-import { AlertCircle } from "lucide-react";
+import type { ReactNode } from "react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { loadingStyles, emptyStateStyles, errorStyles } from "@/lib/semantic-variants";
@@ -29,7 +29,7 @@ interface ListErrorProps {
 export function ListError({ message, retry, className }: ListErrorProps) {
 	return (
 		<div className={cn("flex items-center gap-2", errorStyles.container, className)}>
-			<AlertCircle className={errorStyles.icon} />
+			<WarningCircleIcon className={errorStyles.icon} />
 			<span className="flex-1">{message}</span>
 			{retry && (
 				<button
@@ -45,7 +45,7 @@ export function ListError({ message, retry, className }: ListErrorProps) {
 }
 
 interface EmptyStateProps {
-	icon: LucideIcon;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	title: string;
 	description?: string;
 	/** Whether to use the larger "card" style (default: false) */

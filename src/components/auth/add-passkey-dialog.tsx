@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fingerprint, Loader2, Plus } from "lucide-react";
+import { FingerprintIcon, SpinnerIcon, PlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
@@ -60,13 +60,13 @@ export function AddPasskeyDialog() {
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button>
-					<Plus className="mr-2 h-4 w-4" />
+					<PlusIcon className="mr-2 h-4 w-4" />
 					Add Passkey
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={Fingerprint}
+					icon={FingerprintIcon}
 					title="Register a Passkey"
 					description="Passkeys let you sign in securely without a password using your device's biometrics or security key."
 				/>
@@ -101,7 +101,7 @@ export function AddPasskeyDialog() {
 						>
 							{addMutation.isPending ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Registering...
 								</>
 							) : (

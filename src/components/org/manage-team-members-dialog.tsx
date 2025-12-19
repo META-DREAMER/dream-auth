@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UsersRound, Loader2, UserPlus, UserMinus, Check } from "lucide-react";
+import { SpinnerIcon, UserPlusIcon, UserMinusIcon, UsersThreeIcon, CheckIcon } from "@phosphor-icons/react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { Button } from "@/components/ui/button";
@@ -175,7 +175,7 @@ export function ManageTeamMembersDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={UsersRound}
+					icon={UsersThreeIcon}
 					title="Manage Team Members"
 					description={
 						<>
@@ -230,15 +230,15 @@ export function ManageTeamMembersDialog({
 										</div>
 										{selectedUserIds.has(member.userId) &&
 											currentMemberIds.has(member.userId) && (
-												<Check className="h-4 w-4 text-primary" />
+												<CheckIcon className="h-4 w-4 text-primary" />
 											)}
 										{selectedUserIds.has(member.userId) &&
 											!currentMemberIds.has(member.userId) && (
-												<UserPlus className="h-4 w-4 text-success" />
+												<UserPlusIcon className="h-4 w-4 text-success" />
 											)}
 										{!selectedUserIds.has(member.userId) &&
 											currentMemberIds.has(member.userId) && (
-												<UserMinus className="h-4 w-4 text-red-500" />
+												<UserMinusIcon className="h-4 w-4 text-red-500" />
 											)}
 									</Label>
 								))}
@@ -263,7 +263,7 @@ export function ManageTeamMembersDialog({
 					>
 						{saving ? (
 							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 								Saving...
 							</>
 						) : (

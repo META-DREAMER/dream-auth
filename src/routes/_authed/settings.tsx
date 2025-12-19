@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-	ArrowLeft,
-	Building2,
-	Fingerprint,
-	LogOut,
-	Mail,
-	Settings,
-	User,
-	Wallet,
-} from "lucide-react";
+	ArrowLeftIcon,
+	BuildingIcon,
+	FingerprintIcon,
+	SignOutIcon,
+	EnvelopeIcon,
+	GearIcon,
+	UserIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { AddPasskeyDialog } from "@/components/auth/add-passkey-dialog";
 import { ChangeEmailDialog } from "@/components/auth/change-email-dialog";
 import { LinkEmailDialog } from "@/components/auth/link-email-dialog";
@@ -48,7 +48,7 @@ function SettingsPage() {
 
 			<div className="relative max-w-3xl mx-auto px-4 py-8">
 				{/* Header */}
-				<div className="flex items-center justify-between mb-8">
+				<div className="flex sm:items-center gap-4 flex-col sm:flex-row justify-between mb-8">
 					<div className="flex items-center gap-4">
 						<Button
 							asChild
@@ -56,12 +56,12 @@ function SettingsPage() {
 							size="icon"
 						>
 							<Link to="/">
-								<ArrowLeft className="h-5 w-5" />
+								<ArrowLeftIcon className="h-5 w-5" />
 							</Link>
 						</Button>
 						<div>
 							<h1 className="text-2xl font-bold flex items-center gap-2">
-								<Settings className="h-6 w-6" />
+								<GearIcon className="h-6 w-6" />
 								Settings
 							</h1>
 							<p className="text-muted-foreground text-sm">
@@ -73,18 +73,20 @@ function SettingsPage() {
 						<Button
 							asChild
 							variant="outline"
+							className="flex-1"
 						>
 							<Link to="/org">
-								<Building2 className="mr-2 h-4 w-4" />
+								<BuildingIcon className="mr-2 h-4 w-4" />
 								Organizations
 							</Link>
 						</Button>
 						<Button
 							onClick={handleSignOut}
 							variant="outline"
-							className="hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive-foreground"
+							
+							className="flex-1 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive-foreground"
 						>
-							<LogOut className="mr-2 h-4 w-4" />
+							<SignOutIcon className="mr-2 h-4 w-4" />
 							Sign out
 						</Button>
 					</div>
@@ -95,7 +97,7 @@ function SettingsPage() {
 					<Card>
 						<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<User className="h-5 w-5 text-success" />
+							<UserIcon className="h-5 w-5 text-success" />
 							Profile
 						</CardTitle>
 							<CardDescription>
@@ -117,7 +119,7 @@ function SettingsPage() {
 									</p>
 									{realEmail && (
 										<p className="text-muted-foreground flex items-center gap-1">
-											<Mail className="h-4 w-4" />
+											<EnvelopeIcon className="h-4 w-4" />
 											{realEmail}
 										</p>
 									)}
@@ -132,7 +134,7 @@ function SettingsPage() {
 							<div className="flex items-center justify-between">
 								<div>
 									<CardTitle className="flex items-center gap-2">
-										<Mail className="h-5 w-5 text-blue-500" />
+										<EnvelopeIcon className="h-5 w-5 text-blue-500" />
 										Email
 									</CardTitle>
 									<CardDescription>
@@ -150,7 +152,7 @@ function SettingsPage() {
 							{realEmail ? (
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<Mail className="h-4 w-4 text-muted-foreground" />
+										<EnvelopeIcon className="h-4 w-4 text-muted-foreground" />
 										<span>{realEmail}</span>
 										<Badge
 											variant={session.user.emailVerified ? "default" : "secondary"}
@@ -184,7 +186,7 @@ function SettingsPage() {
 							<div className="flex items-center justify-between">
 								<div>
 								<CardTitle className="flex items-center gap-2">
-									<Fingerprint className="h-5 w-5 text-success" />
+									<FingerprintIcon className="h-5 w-5 text-success" />
 									Passkeys
 								</CardTitle>
 									<CardDescription>
@@ -205,7 +207,7 @@ function SettingsPage() {
 							<div className="flex items-center justify-between">
 								<div>
 									<CardTitle className="flex items-center gap-2">
-										<Wallet className="h-5 w-5 text-orange-500" />
+										<WalletIcon className="h-5 w-5 text-orange-500" />
 										Linked Wallets
 									</CardTitle>
 									<CardDescription>

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2 } from "lucide-react";
+import { BuildingIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
@@ -96,7 +96,7 @@ export function CreateOrgDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={Building2}
+					icon={BuildingIcon}
 					title="Create Organization"
 					description="Create a new organization to collaborate with your team."
 				/>
@@ -158,7 +158,7 @@ export function CreateOrgDialog({
 						>
 							{createMutation.isPending ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Creating...
 								</>
 							) : (

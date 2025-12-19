@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shield, Loader2 } from "lucide-react";
+import { ShieldIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
 import { RoleSelect } from "@/components/org/role-select";
@@ -96,7 +96,7 @@ export function EditMemberRoleDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeaderScaffold
-					icon={Shield}
+					icon={ShieldIcon}
 					title="Change Member Role"
 					description={
 						<>
@@ -131,7 +131,7 @@ export function EditMemberRoleDialog({
 						>
 							{updateRoleMutation.isPending ? (
 								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
 									Saving...
 								</>
 							) : (
