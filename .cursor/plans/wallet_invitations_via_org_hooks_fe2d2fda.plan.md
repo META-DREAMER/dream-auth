@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: run-migrations
     content: Run better-auth CLI migrations for organization tables
-    status: in_progress
+    status: completed
 ---
 
 # Wallet Invitations via Organization Plugin Hooks
