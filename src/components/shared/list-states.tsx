@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
