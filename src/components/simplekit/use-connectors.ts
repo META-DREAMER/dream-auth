@@ -14,11 +14,11 @@ export function useConnectors() {
 
   const sortedConnectors = React.useMemo(() => {
     let metaMaskConnector: Connector | undefined;
+    let injectedMetaMaskConnector: Connector | undefined;
     let injectedConnector: Connector | undefined;
 
     // Fix: Provide initial value for reduce
     const formattedConnectors = connectors.reduce<Array<Connector>>((acc, curr) => {
-      // console.log(curr.id);
       switch (curr.id) {
         case "metaMaskSDK":
           metaMaskConnector = {
@@ -27,10 +27,16 @@ export function useConnectors() {
           };
           return acc;
         case "metaMask":
-          injectedConnector = {
+          injectedMetaMaskConnector = {
             ...curr,
             icon: "https://utfs.io/f/be0bd88f-ce87-4cbc-b2e5-c578fa866173-sq4a0b.png",
           };
+          return acc;
+        case "baseAccount":
+          acc.push({
+            ...curr,
+            icon: "https://avatars.githubusercontent.com/u/16627100?s=256&v=4",
+          });
           return acc;
         case "safe":
           acc.push({
@@ -38,44 +44,44 @@ export function useConnectors() {
             icon: "https://utfs.io/f/164ea200-3e15-4a9b-9ce5-a397894c442a-awpd29.png",
           });
           return acc;
-        case "coinbaseWalletSDK":
-          acc.push({
+        case "injected":
+          injectedConnector = {
             ...curr,
-            icon: "https://utfs.io/f/53e47f86-5f12-404f-a98b-19dc7b760333-chngxw.png",
-          });
+          };
           return acc;
         case "walletConnect":
-          acc.push({
-            ...curr,
-            icon: "https://utfs.io/f/5bfaa4d1-b872-48a7-9d37-c2517d4fc07a-utlf4g.png",
-          });
+            acc.push({
+              ...curr,
+              icon: "https://utfs.io/f/5bfaa4d1-b872-48a7-9d37-c2517d4fc07a-utlf4g.png",
+            });
           return acc;
         default:
-          acc.unshift(curr);
+            acc.unshift(curr);
           return acc;
       }
     }, []);
-
+    const numInjectedConnectors = formattedConnectors.filter(({ type }) => type === "injected").length;
+    const allConnectors = injectedConnector && numInjectedConnectors <= 1 ? [injectedConnector, ...formattedConnectors] : formattedConnectors;
     if (
       metaMaskConnector &&
-      !formattedConnectors.find(
+      !allConnectors.find(
         ({ id }) =>
           id === "io.metamask" ||
           id === "io.metamask.mobile" ||
           id === "injected",
       )
     ) {
-      return [metaMaskConnector, ...formattedConnectors];
+      return [metaMaskConnector, ...allConnectors];
     }
 
-    if (injectedConnector) {
-      const nonMetaMaskConnectors = formattedConnectors.filter(
+    if (injectedMetaMaskConnector) {
+      const nonMetaMaskConnectors = allConnectors.filter(
         ({ id }) => id !== "io.metamask" && id !== "io.metamask.mobile",
       );
-      return [injectedConnector, ...nonMetaMaskConnectors];
+      return [injectedMetaMaskConnector, ...nonMetaMaskConnectors];
     }
 
-    return formattedConnectors;
+    return allConnectors;
   }, [connectors]);
 
   return { connectors: sortedConnectors, connect };

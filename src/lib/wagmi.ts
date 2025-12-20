@@ -1,21 +1,28 @@
 import { createConfig, http } from "wagmi";
 import { mainnet } from "wagmi/chains";
-import { injected, walletConnect  } from "wagmi/connectors";
+import {
+	baseAccount,
+	injected,
+	porto,
+	safe,
+	walletConnect,
+} from "wagmi/connectors";
 import { clientEnv } from "@/env.client";
 
-/**
- * Wagmi configuration for wallet connectivity.
- * Uses injected connectors (MetaMask, Coinbase Wallet, etc.)
- * and optionally WalletConnect for mobile wallet support.
- */
 export const wagmiConfig = createConfig({
 	chains: [mainnet],
 	connectors: [
-		// Injected wallets (MetaMask, Coinbase Wallet, Brave, etc.)
 		injected(),
-		// WalletConnect requires a valid projectId - only add if configured
+		porto(),
+		safe(),
+		baseAccount({ appName: "Dream Auth", preference: {telemetry: false, }  }),
 		...(clientEnv.VITE_WALLETCONNECT_PROJECT_ID
-			? [walletConnect({ projectId: clientEnv.VITE_WALLETCONNECT_PROJECT_ID, showQrModal: true })]
+			? [
+					walletConnect({
+						projectId: clientEnv.VITE_WALLETCONNECT_PROJECT_ID,
+						showQrModal: true,
+					}),
+				]
 			: []),
 	],
 	transports: {

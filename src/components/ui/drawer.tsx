@@ -2,6 +2,8 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
+import { Button } from "./button"
+import { XIcon } from "@phosphor-icons/react"
 
 function Drawer({
   shouldScaleBackground = true,
@@ -50,8 +52,13 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  showHandle = true,
+  showCloseButton,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  showHandle?: boolean,
+  showCloseButton?: boolean
+}) {
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -63,7 +70,17 @@ function DrawerContent({
         )}
         {...props}
       >
-        <div className="bg-muted mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block " />
+        {showHandle ? <div className="bg-muted mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block " /> : null}
+        {showCloseButton && (
+          <DrawerClose data-slot="drawer-close" asChild>
+            <Button variant="ghost" className="absolute top-4 right-4 rounded-full hover:text-muted-foreground text-muted-foreground/80" size="icon-sm">
+              <XIcon
+                weight="bold"
+              />
+              <span className="sr-only">Close</span>
+            </Button>
+          </DrawerClose>
+        )}
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>

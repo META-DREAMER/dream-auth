@@ -1,15 +1,6 @@
-import {
-	CaretUpDownIcon,
-	SignOutIcon,
-	GearIcon,
-	SunIcon,
-	MoonIcon,
-	DesktopIcon,
-} from "@phosphor-icons/react";
+import { CaretUpDownIcon, SignOutIcon, GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -27,19 +18,11 @@ import {
 } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
 import { useSignOut } from "@/hooks/use-sign-out";
-import { useTheme, type UserTheme } from "@/lib/theme";
-
-const themeOptions: { value: UserTheme; label: string; icon: typeof SunIcon }[] = [
-	{ value: "light", label: "Light", icon: SunIcon },
-	{ value: "dark", label: "Dark", icon: MoonIcon },
-	{ value: "system", label: "System", icon: DesktopIcon },
-];
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
 	const { data: session } = useSession();
 	const handleSignOut = useSignOut();
-	const { userTheme, setTheme } = useTheme();
 
 	if (!session) return null;
 
@@ -92,30 +75,8 @@ export function NavUser() {
 								</div>
 							</div>
 						</DropdownMenuLabel>
-						
-						<div className="px-2 py-1.5">
-                            <ButtonGroup className="w-full">
-								{themeOptions.map((option) => {
-									const Icon = option.icon;
-									const isActive = userTheme === option.value;
-									return (
-										<Button
-											key={option.value}
-											variant={isActive ? "default" : "outline"}
-											size="icon-xs"
-                                            className="flex-1"
-											onClick={() => setTheme(option.value)}
-											title={option.label}
-										>
-											<Icon className="size-3.5" />
-										</Button>
-									);
-								})}
-							</ButtonGroup>
-						</div>
 						<DropdownMenuSeparator />
-
-                        <DropdownMenuGroup>
+						<DropdownMenuGroup>
 							<DropdownMenuItem asChild>
 								<Link to="/settings">
 									<GearIcon />

@@ -58,8 +58,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-background">
-				<div data-vaul-drawer-wrapper="" className="min-h-screen ">
+			<body>
+				<div data-vaul-drawer-wrapper="" className="min-h-screen transition-colors duration-300 relative">
 					{children}
 				</div>
 				{process.env.NODE_ENV === "development" && (

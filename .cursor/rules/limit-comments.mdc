@@ -1,0 +1,6 @@
+---
+globs: *.tsx,*.ts,*.css
+alwaysApply: false
+---
+
+Don't add too many comments to the code unless necesarry or the code isnt self explanatory.

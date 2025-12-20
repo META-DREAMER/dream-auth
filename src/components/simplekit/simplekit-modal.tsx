@@ -72,7 +72,7 @@ const SimpleKitModalClose = ({
   const SimpleKitModalCloseComponent = isDesktop ? DialogClose : DrawerClose;
 
   return (
-    <SimpleKitModalCloseComponent className={className} {...props}>
+    <SimpleKitModalCloseComponent className={cn("text-muted-foreground", className)} {...props}>
       {children}
     </SimpleKitModalCloseComponent>
   );
@@ -92,6 +92,8 @@ const SimpleKitModalContent = ({
         "rounded-t-3xl sm:rounded-3xl md:max-w-[360px]",
         className,
       )}
+      showHandle={false}
+      showCloseButton={true}
       onOpenAutoFocus={(e) => e.preventDefault()}
       {...props}
     >
@@ -127,7 +129,7 @@ const SimpleKitModalHeader = ({
 
   return (
     <SimpleKitModalHeaderComponent
-      className={cn("space-y-0 pb-6 md:pb-3", className)}
+      className={cn("space-y-0 p-6 md:p-2", className)}
       {...props}
     >
       {children}
@@ -158,7 +160,7 @@ const SimpleKitModalBody = ({
   return (
     <ScrollArea
       className={cn(
-        "h-[234px] max-h-[300px] px-6 md:-mr-4 md:h-full md:min-h-[260px] md:px-0 md:pr-4",
+        "h-[300px] max-h-[80vh] px-6 md:-mr-4 md:h-full md:min-h-[260px] md:px-0 md:pr-4",
         className,
       )}
       {...props}

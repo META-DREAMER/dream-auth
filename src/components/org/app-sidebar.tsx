@@ -4,12 +4,15 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { OrgSwitcher } from "./org-switcher";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
+import { ThemeSwitcherButtons } from "./theme-switcher-buttons";
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -19,6 +22,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <NavMain />
       </SidebarContent>
       <SidebarFooter>
+        <ThemeSwitcherButtons
+          orientation={state === "collapsed" ? "vertical" : "horizontal"}
+        />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

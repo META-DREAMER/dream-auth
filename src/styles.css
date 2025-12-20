@@ -213,18 +213,8 @@
   }
   html {
     @apply font-sans;
-    /* Prevent layout shift when modal/drawer opens and scrollbar disappears */
-    /* scrollbar-gutter: stable; */
   }
-  
-  /* Prevent Radix/vaul from adding padding/margin to body when modal opens */
-  /* This fixes the page width narrowing issue on mobile */
-  body[data-scroll-locked],
-  body[data-vaul-drawer-visible] {
-    background: var(--background) !important;
-    padding-right: 0 !important;
-    margin-right: 0 !important;
-  }
+
 }
 
 
