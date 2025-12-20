@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { type Connector } from "wagmi";
+import type { Connector } from "wagmi";
 import { Button } from "@/components/ui/button";
 
 const OTHER_WALLETS_ICONS = [
@@ -39,9 +39,9 @@ export function WalletOption(props: { connector: Connector; onClick: () => void 
       >
         <p>Other Wallets</p>
         <div className="grid grid-cols-2 gap-0.5">
-          {OTHER_WALLETS_ICONS.map((icon, i) => (
+          {OTHER_WALLETS_ICONS.map((icon) => (
             <img
-              key={i}
+              key={icon}
               src={icon}
               alt=""
               className="size-4 overflow-hidden rounded-[3px]"

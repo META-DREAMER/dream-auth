@@ -27,7 +27,7 @@ export function SimpleKitProvider(props: { children: React.ReactNode }) {
       }, MODAL_CLOSE_DURATION);
       return () => clearTimeout(timeout);
     }
-  }, [status, setOpen, pendingConnector, setPendingConnector]);
+  }, [status, pendingConnector]);
 
   return (
     <SimpleKitContext.Provider

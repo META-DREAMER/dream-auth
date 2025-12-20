@@ -16,7 +16,7 @@ import {
 import { authClient, organization, useSession } from "@/lib/auth-client";
 import { inviteByEmail, inviteByWallet, isWalletInvitation } from "@/lib/invite-helpers";
 import { orgMembersOptions, orgInvitationsOptions } from "@/lib/org-queries";
-import { formatDate } from "@/lib/format";
+import { formatAddress, formatDate } from "@/lib/format";
 import { useOrgPermissions } from "@/hooks/use-org-permissions";
 import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
 import { PageHeader } from "@/components/org/page-header";
@@ -202,9 +202,9 @@ function MembersPage() {
 			setResendingId(invitation.id);
 			// First cancel the old invitation, then create a new one
 			await organization.cancelInvitation({ invitationId: invitation.id });
-			if (isWalletInvitation(invitation)) {
+			if (isWalletInvitation(invitation) && invitation.walletAddress) {
 				return inviteByWallet(
-					invitation.walletAddress!,
+					invitation.walletAddress,
 					invitation.role as "member" | "admin",
 					invitation.organizationId
 				);
@@ -313,9 +313,9 @@ function MembersPage() {
 					<CardContent>
 						{isPendingInvitations ? (
 							<div className="space-y-4">
-								{[...Array(3)].map((_, i) => (
-									<Skeleton key={i} className="h-16 w-full" />
-								))}
+								<Skeleton className="h-16 w-full" />
+								<Skeleton className="h-16 w-full" />
+								<Skeleton className="h-16 w-full" />
 							</div>
 						) : (
 							<Table>
@@ -341,11 +341,11 @@ function MembersPage() {
 											<TableRow key={invitation.id}>
 												<TableCell>
 													<div className="flex flex-col">
-														<span className="font-medium">
-															{isWallet
-																? `${invitation.walletAddress?.slice(0, 6)}...${invitation.walletAddress?.slice(-4)}`
-																: invitation.email}
-														</span>
+												<span className="font-medium">
+													{isWallet
+														? formatAddress(invitation.walletAddress)
+														: invitation.email}
+												</span>
 														{isWallet && (
 															<span className="text-xs text-muted-foreground">
 																{invitation.email}
@@ -444,9 +444,9 @@ function MembersPage() {
 				<CardContent>
 					{isPendingMembers ? (
 						<div className="space-y-4">
-							{[...Array(3)].map((_, i) => (
-								<Skeleton key={i} className="h-16 w-full" />
-							))}
+							<Skeleton className="h-16 w-full" />
+							<Skeleton className="h-16 w-full" />
+							<Skeleton className="h-16 w-full" />
 						</div>
 					) : members.length === 0 ? (
 						<div className="text-center py-8 text-muted-foreground">

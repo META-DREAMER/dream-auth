@@ -4,6 +4,7 @@ import * as React from "react";
 import { useAccount, useDisconnect, useEnsName, useBalance } from "wagmi";
 import { formatEther } from "viem";
 import { Button } from "@/components/ui/button";
+import { formatAddress } from "@/lib/format";
 import { SimpleKitContext } from "../simplekit-context";
 import {
   SimpleKitModalBody,
@@ -22,7 +23,7 @@ export function Account() {
   const { data: userBalance } = useBalance({ address });
   const context = React.useContext(SimpleKitContext);
 
-  const formattedAddress = address?.slice(0, 6) + "•••" + address?.slice(-4);
+  const formattedAddress = formatAddress(address);
   const formattedUserBalace = userBalance?.value
     ? parseFloat(formatEther(userBalance.value)).toFixed(4)
     : undefined;

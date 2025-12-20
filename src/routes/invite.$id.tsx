@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { serverEnv } from "@/env";
 import { organization, useSession } from "@/lib/auth-client";
+import { formatAddress } from "@/lib/format";
 import {
 	getInvitationWalletAddress,
 	isWalletInvitation,
@@ -106,7 +107,7 @@ const getInvitationPreview = createServerFn({ method: "GET" })
 				expiresAt: row.expiresAt,
 				isWalletInvitation: !!walletAddress,
 				walletAddressPreview: walletAddress
-					? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+					? formatAddress(walletAddress)
 					: undefined,
 			};
 		} finally {
@@ -574,11 +575,10 @@ function InvitePage() {
 								<Separator />
 								<div className="flex items-center justify-between">
 									<span className="text-sm text-muted-foreground">Required Wallet</span>
-									<span className="text-sm font-mono flex items-center gap-1">
-										<WalletIcon className="h-3 w-3" />
-										{invitationWallet?.slice(0, 6)}...
-										{invitationWallet?.slice(-4)}
-									</span>
+								<span className="text-sm font-mono flex items-center gap-1">
+									<WalletIcon className="h-3 w-3" />
+									{formatAddress(invitationWallet)}
+								</span>
 								</div>
 							</>
 						)}
@@ -588,11 +588,11 @@ function InvitePage() {
 					{isWalletInvite && connectedWallet && !walletMatches && (
 						<div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
 							<p className="text-sm text-amber-400">
-								<strong>Wrong wallet connected.</strong> This invitation requires
-								you to sign in with wallet{" "}
-								<span className="font-mono">
-									{invitationWallet?.slice(0, 6)}...{invitationWallet?.slice(-4)}
-								</span>
+							<strong>Wrong wallet connected.</strong> This invitation requires
+							you to sign in with wallet{" "}
+							<span className="font-mono">
+								{formatAddress(invitationWallet)}
+							</span>
 							</p>
 						</div>
 					)}

@@ -16,6 +16,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
+import { formatAddress } from "@/lib/format";
 
 /**
  * Displays the user's linked wallet addresses with the ability to unlink them.
@@ -106,7 +107,7 @@ export function WalletList() {
 								<span className="flex items-center gap-2">
 									<WalletIcon className="h-4 w-4 text-orange-500 shrink-0" />
 									<span className="truncate">
-										{account.accountId.slice(0, 6)}...{account.accountId.slice(-4)}
+										{formatAddress(account.accountId)}
 									</span>
 								</span>
 							</TableCell>
@@ -120,8 +121,7 @@ export function WalletList() {
 										<>
 											This will remove the wallet{" "}
 											<span className="font-mono">
-												{account.accountId.slice(0, 6)}...
-												{account.accountId.slice(-4)}
+												{formatAddress(account.accountId)}
 											</span>{" "}
 											from your account. You can link it again later.
 										</>

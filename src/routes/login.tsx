@@ -56,7 +56,6 @@ function LoginPage() {
 	// Check passkey support and enable conditional UI (autofill) - runs once on mount
 	useEffect(() => {
 		const checkPasskeySupport = async () => {
-			// biome-ignore lint/complexity/useOptionalChain: typeof check required for SSR safety - window?.X still throws ReferenceError if window is undeclared
 			if (
 				typeof window !== "undefined" &&
 				window.PublicKeyCredential &&

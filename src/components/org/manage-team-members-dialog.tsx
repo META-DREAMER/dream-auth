@@ -190,9 +190,9 @@ export function ManageTeamMembersDialog({
 
 					{isPendingMembers ? (
 						<div className="space-y-3">
-							{[...Array(3)].map((_, i) => (
-								<Skeleton key={i} className="h-14 w-full" />
-							))}
+							<Skeleton className="h-14 w-full" />
+							<Skeleton className="h-14 w-full" />
+							<Skeleton className="h-14 w-full" />
 						</div>
 					) : orgMembers.length === 0 ? (
 						<p className="text-center text-muted-foreground py-8">

@@ -72,9 +72,7 @@ function handleThemeChange(userTheme: UserTheme) {
 	};
 
 	// Use View Transitions API if available for smooth switching
-	// @ts-ignore
 	if (document.startViewTransition) {
-		// @ts-ignore
 		document.startViewTransition(update);
 	} else {
 		update();

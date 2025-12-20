@@ -135,9 +135,9 @@ function TeamsPage() {
 				<CardContent>
 					{isPendingTeams ? (
 						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-							{[...Array(3)].map((_, i) => (
-								<Skeleton key={i} className="h-48 w-full" />
-							))}
+							<Skeleton className="h-48 w-full" />
+							<Skeleton className="h-48 w-full" />
+							<Skeleton className="h-48 w-full" />
 						</div>
 					) : teamList.length === 0 ? (
 						<div className="text-center py-12">
@@ -335,9 +335,9 @@ function TeamCard({
 
 				{isPending ? (
 					<div className="flex gap-1">
-						{[...Array(3)].map((_, i) => (
-							<Skeleton key={i} className="h-8 w-8 rounded-full" />
-						))}
+						<Skeleton className="h-8 w-8 rounded-full" />
+						<Skeleton className="h-8 w-8 rounded-full" />
+						<Skeleton className="h-8 w-8 rounded-full" />
 					</div>
 				) : memberCount > 0 ? (
 					<div className="flex -space-x-2">

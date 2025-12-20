@@ -148,9 +148,9 @@ function OrgSettingsPage() {
 				<CardContent>
 					{isPendingFull ? (
 						<div className="space-y-4">
-							{[...Array(3)].map((_, i) => (
-								<Skeleton key={i} className="h-10 w-full" />
-							))}
+							<Skeleton className="h-10 w-full" />
+							<Skeleton className="h-10 w-full" />
+							<Skeleton className="h-10 w-full" />
 						</div>
 					) : (
 						<div className="space-y-4">

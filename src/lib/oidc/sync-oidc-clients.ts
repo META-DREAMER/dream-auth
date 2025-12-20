@@ -9,7 +9,7 @@
  * @see https://github.com/better-auth/better-auth/issues/6649
  */
 
-import { Pool, PoolClient } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { randomUUID } from "node:crypto";
 import type { OidcClientConfig } from "./schemas";
 import { serverEnv } from "@/env";

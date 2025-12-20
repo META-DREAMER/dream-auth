@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAccount } from "wagmi";
+import { formatAddress } from "@/lib/format";
 import { SimpleKitContext } from "./simplekit-context";
 
 export function useSimpleKit() {
@@ -10,7 +11,7 @@ export function useSimpleKit() {
 
   const isModalOpen = context.open;
   const isConnected = address && !context.pendingConnector;
-  const formattedAddress = address?.slice(0, 6) + "•••" + address?.slice(-4);
+  const formattedAddress = formatAddress(address);
 
   function open() {
     context.setOpen(true);

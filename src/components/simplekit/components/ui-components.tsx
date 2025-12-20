@@ -18,12 +18,13 @@ export function CopyAddressButton() {
   }, [copied]);
 
   async function handleCopy() {
+    if (!address) return;
     setCopied(true);
-    await navigator.clipboard.writeText(address!);
+    await navigator.clipboard.writeText(address);
   }
 
   return (
-    <button className="text-muted-foreground" onClick={handleCopy}>
+    <button type="button" className="text-muted-foreground" onClick={handleCopy}>
       {copied ? (
         <CheckIcon className="size-4" weight="fill" />
       ) : (
@@ -48,6 +49,7 @@ export function BackChevron() {
 
   return (
     <button
+      type="button"
       className="absolute left-[26px] top-[42px] z-50 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground md:top-[26px]"
       onClick={handleClick}
     >

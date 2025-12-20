@@ -1,5 +1,5 @@
 import * as React from "react";
-import { type Connector } from "wagmi";
+import type { Connector } from "wagmi";
 
 export interface SimpleKitContextType {
   pendingConnector: Connector | null;

@@ -52,10 +52,11 @@ export function useEmailVerification({
 
 	// Update countdown timer
 	useEffect(() => {
-		if (!lastSentAtRef.current) return;
+		const lastSentAt = lastSentAtRef.current;
+		if (!lastSentAt) return;
 
 		const updateCountdown = () => {
-			const elapsed = Math.floor((Date.now() - lastSentAtRef.current!) / 1000);
+			const elapsed = Math.floor((Date.now() - lastSentAt) / 1000);
 			const remaining = Math.max(0, OTP_COOLDOWN_SECONDS - elapsed);
 			setSecondsUntilResend(remaining);
 
@@ -68,7 +69,7 @@ export function useEmailVerification({
 		const interval = setInterval(updateCountdown, 1000);
 
 		return () => clearInterval(interval);
-	}, [hasSentOtp]);
+	}, []);
 
 	const canResend = secondsUntilResend === 0;
 
