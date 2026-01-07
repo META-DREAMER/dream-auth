@@ -206,6 +206,83 @@ describe("OAuth2 proxy route", () => {
 			expect(calledRequest.url).toContain("/api/auth/oauth2/token");
 		});
 
+		it("preserves POST body for form-encoded token exchange", async () => {
+			const mockResponse = new Response(
+				JSON.stringify({ access_token: "token123" }),
+				{
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
+
+			const handlers = await getHandler();
+			const formBody =
+				"grant_type=authorization_code&code=abc123&redirect_uri=http://localhost:3000/callback&client_id=test-app";
+			const request = new Request("https://auth.example.com/oauth2/token", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: formBody,
+			});
+
+			await handlers.POST({ request, params: { _splat: "token" } });
+
+			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
+			// Body should be preserved - read it to verify
+			const calledBody = await calledRequest.text();
+			expect(calledBody).toBe(formBody);
+		});
+
+		it("preserves Content-Type header for POST requests", async () => {
+			const mockResponse = new Response(
+				JSON.stringify({ access_token: "token" }),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
+
+			const handlers = await getHandler();
+			const request = new Request("https://auth.example.com/oauth2/token", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: "grant_type=client_credentials",
+			});
+
+			await handlers.POST({ request, params: { _splat: "token" } });
+
+			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
+			expect(calledRequest.headers.get("Content-Type")).toBe(
+				"application/x-www-form-urlencoded",
+			);
+		});
+
+		it("preserves Authorization header for client credentials", async () => {
+			const mockResponse = new Response(
+				JSON.stringify({ access_token: "token" }),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
+
+			const handlers = await getHandler();
+			const basicAuth = `Basic ${Buffer.from("client_id:client_secret").toString("base64")}`;
+			const request = new Request("https://auth.example.com/oauth2/token", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+					Authorization: basicAuth,
+				},
+				body: "grant_type=client_credentials",
+			});
+
+			await handlers.POST({ request, params: { _splat: "token" } });
+
+			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
+			expect(calledRequest.headers.get("Authorization")).toBe(basicAuth);
+		});
+
 		it("converts POST JSON redirect to HTTP 302", async () => {
 			const mockResponse = new Response(
 				JSON.stringify({

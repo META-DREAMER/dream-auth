@@ -15,22 +15,23 @@ export default defineConfig({
 		include: [
 			"src/**/*.test.ts",
 			"src/**/*.test.tsx",
-			"src/**/*.int.test.ts",
 			"server/**/*.test.ts",
-			"server/**/*.int.test.ts",
 			"tests/**/*.test.ts",
 		],
 
-		// Exclude patterns
-		exclude: ["node_modules", "dist", ".output"],
+		// Exclude integration tests from main run (they have their own config)
+		exclude: [
+			"node_modules",
+			"dist",
+			".output",
+			"**/*.int.test.ts", // Integration tests excluded from unit test run
+		],
 
 		// Environment matching - jsdom for React, node for server code
 		environmentMatchGlobs: [
 			// Hook and component tests use jsdom
 			["**/*.test.tsx", "jsdom"],
-			// Server/integration tests use node
-			["**/*.int.test.ts", "node"],
-			// Default to node for unit tests
+			// Server/unit tests use node
 			["**/*.test.ts", "node"],
 		],
 
@@ -62,7 +63,7 @@ export default defineConfig({
 				"src/lib/org-queries.ts", // TanStack Query definitions (thin wrappers)
 				"src/lib/session.server.ts", // Server session helpers (requires SSR context)
 				"src/lib/toast-variants.ts", // UI toast config (visual, not behavioral)
-				"src/lib/oidc/sync-oidc-clients.ts", // Covered by int tests (skipped without DB)
+				"src/lib/oidc/sync-oidc-clients.ts", // Covered by int tests
 				"src/hooks/use-media-query.ts", // Browser API wrapper
 				"src/hooks/use-mobile.ts", // Simple derived hook
 				"src/routes/api/auth/**", // BetterAuth catch-all (thin proxy)
@@ -88,7 +89,7 @@ export default defineConfig({
 			},
 		},
 
-		// Timeout for integration tests
+		// Timeout for tests
 		testTimeout: 30000,
 		hookTimeout: 30000,
 	},

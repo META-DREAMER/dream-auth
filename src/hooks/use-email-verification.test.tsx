@@ -53,6 +53,100 @@ describe("useEmailVerification", () => {
 		expect(result.current.secondsUntilResend).toBe(0);
 	});
 
+	describe("countdown timer", () => {
+		it("decrements secondsUntilResend over time", async () => {
+			vi.mocked(authClient.emailOtp.sendVerificationOtp).mockResolvedValue({
+				data: { success: true },
+				error: null,
+			});
+
+			const { result } = renderHook(() =>
+				useEmailVerification({ email: "test@example.com" }),
+			);
+
+			// Send OTP to start cooldown
+			await act(async () => {
+				await result.current.sendOtp();
+			});
+
+			expect(result.current.secondsUntilResend).toBe(30);
+			expect(result.current.canResend).toBe(false);
+
+			// Advance time by 10 seconds
+			await act(async () => {
+				vi.advanceTimersByTime(10000);
+			});
+
+			// Should have decremented by 10
+			expect(result.current.secondsUntilResend).toBe(20);
+			expect(result.current.canResend).toBe(false);
+		});
+
+		it("canResend becomes true after 30 seconds", async () => {
+			vi.mocked(authClient.emailOtp.sendVerificationOtp).mockResolvedValue({
+				data: { success: true },
+				error: null,
+			});
+
+			const { result } = renderHook(() =>
+				useEmailVerification({ email: "test@example.com" }),
+			);
+
+			await act(async () => {
+				await result.current.sendOtp();
+			});
+
+			expect(result.current.canResend).toBe(false);
+
+			// Advance time by 30 seconds
+			await act(async () => {
+				vi.advanceTimersByTime(30000);
+			});
+
+			expect(result.current.secondsUntilResend).toBe(0);
+			expect(result.current.canResend).toBe(true);
+		});
+
+		it("allows resending OTP after cooldown expires", async () => {
+			vi.mocked(authClient.emailOtp.sendVerificationOtp).mockResolvedValue({
+				data: { success: true },
+				error: null,
+			});
+
+			const { result } = renderHook(() =>
+				useEmailVerification({ email: "test@example.com" }),
+			);
+
+			// First send
+			await act(async () => {
+				await result.current.sendOtp();
+			});
+
+			expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledTimes(1);
+
+			// Try immediately - should fail
+			await act(async () => {
+				const success = await result.current.sendOtp();
+				expect(success).toBe(false);
+			});
+
+			expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledTimes(1);
+
+			// Advance past cooldown
+			await act(async () => {
+				vi.advanceTimersByTime(31000);
+			});
+
+			// Now should succeed
+			await act(async () => {
+				const success = await result.current.sendOtp();
+				expect(success).toBe(true);
+			});
+
+			expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledTimes(2);
+		});
+	});
+
 	describe("sendOtp", () => {
 		it("sends OTP successfully", async () => {
 			vi.mocked(authClient.emailOtp.sendVerificationOtp).mockResolvedValue({

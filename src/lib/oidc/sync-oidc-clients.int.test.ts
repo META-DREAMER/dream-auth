@@ -1,6 +1,12 @@
 /**
  * Integration tests for OIDC client seeding to database.
- * These tests require a PostgreSQL database (via testcontainers).
+ *
+ * These tests use testcontainers to spin up a real PostgreSQL database.
+ * Run with: pnpm test:integration
+ *
+ * The skipIfNoDb check is a safety net - when running via the integration
+ * config (vitest.integration.config.ts), testcontainers will start a
+ * PostgreSQL container and set DATABASE_URL before these tests run.
  */
 
 import { Pool } from "pg";
@@ -23,7 +29,7 @@ import {
 describe("OIDC Client Sync Integration Tests", () => {
 	let pool: Pool;
 
-	// Skip tests if no DATABASE_URL is provided (CI will provide it)
+	// Safety net: skip if DATABASE_URL not set (should always be set via testcontainers in CI)
 	const skipIfNoDb = !process.env.DATABASE_URL;
 
 	beforeEach(async () => {

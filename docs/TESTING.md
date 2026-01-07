@@ -8,13 +8,19 @@ This document describes the testing infrastructure and strategy implemented for 
 - **React Testing**: @testing-library/react 16.x
 - **Database Testing**: @testcontainers/postgresql for integration tests
 - **Coverage Threshold**: 60% minimum (currently achieving 90%+)
-- **Total Tests**: 200 (187 unit tests + 13 integration tests)
+- **Total Tests**: 206 (193 unit tests + 13 integration tests)
 
 ## Running Tests
 
 ```bash
-# Run all tests
+# Run unit tests
 pnpm test
+
+# Run integration tests (uses testcontainers for PostgreSQL)
+pnpm test:integration
+
+# Run all tests (unit + integration)
+pnpm test:all
 
 # Run tests in watch mode
 pnpm test:watch
@@ -91,10 +97,10 @@ In CI, testcontainers spins up a PostgreSQL container automatically.
 | Invite Helpers | `invite-helpers.test.ts` | 20 | 100% |
 | Health API | `health.test.ts` | 3 | 100% |
 | Verify API | `verify.test.ts` | 6 | 100% |
-| OAuth2 Proxy | `$.test.ts` | 10 | 98% |
+| OAuth2 Proxy | `$.test.ts` | 13 | 98% |
 | OIDC Discovery | `openid-configuration.test.ts` | 8 | 100% |
 | JWKS Endpoint | `jwks[.]json.test.ts` | 8 | 100% |
-| Email Verification Hook | `use-email-verification.test.tsx` | 13 | 90% |
+| Email Verification Hook | `use-email-verification.test.tsx` | 16 | 100% |
 | SIWE Auth Hook | `use-siwe-auth.test.tsx` | 11 | 100% |
 | SIWE Auto-Trigger Hook | `use-siwe-auto-trigger.test.tsx` | 13 | 100% |
 | Org Permissions Hook | `use-org-permissions.test.tsx` | 6 | 100% |
