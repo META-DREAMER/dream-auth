@@ -1,8 +1,8 @@
-import { SpinnerIcon, EnvelopeIcon, PlusIcon } from "@phosphor-icons/react";
+import { EnvelopeIcon, PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -105,9 +105,7 @@ export function LinkEmailDialog() {
 							{error && <ErrorAlert message={error} />}
 
 							<div className="space-y-2">
-								<Label htmlFor="email">
-									Email Address
-								</Label>
+								<Label htmlFor="email">Email Address</Label>
 								<Input
 									id="email"
 									type="email"
@@ -127,10 +125,7 @@ export function LinkEmailDialog() {
 							<DialogClose asChild>
 								<Button variant="outline">Cancel</Button>
 							</DialogClose>
-							<Button
-								type="submit"
-								disabled={isLoading || !email}
-							>
+							<Button type="submit" disabled={isLoading || !email}>
 								{isLoading ? (
 									<>
 										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -164,10 +159,7 @@ export function LinkEmailDialog() {
 							>
 								Back
 							</Button>
-							<Button
-								type="submit"
-								disabled={isLoading || otp.length !== 6}
-							>
+							<Button type="submit" disabled={isLoading || otp.length !== 6}>
 								{isLoading ? (
 									<>
 										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />

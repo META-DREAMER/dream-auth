@@ -9,10 +9,10 @@
  * @see https://github.com/better-auth/better-auth/issues/6649
  */
 
-import { Pool, type PoolClient } from "pg";
 import { randomUUID } from "node:crypto";
-import type { OidcClientConfig } from "./schemas";
+import { Pool, type PoolClient } from "pg";
 import { serverEnv } from "@/env";
+import type { OidcClientConfig } from "./schemas";
 
 /**
  * Validation errors for OIDC client configuration
@@ -99,9 +99,7 @@ async function upsertOidcClient(
 	const now = new Date();
 
 	// Prepare metadata as JSON string (or null)
-	const metadataJson = client.metadata
-		? JSON.stringify(client.metadata)
-		: null;
+	const metadataJson = client.metadata ? JSON.stringify(client.metadata) : null;
 
 	// Join redirectURLs as comma-separated string (Better Auth format)
 	const redirectUrls = client.redirectURLs.join(",");
@@ -190,9 +188,7 @@ export async function ensureOidcClientsSeeded(
  * Internal function to perform the actual seeding operation.
  * Runs in a transaction for atomicity.
  */
-async function performSeeding(
-	clients: OidcClientConfig[],
-): Promise<void> {
+async function performSeeding(clients: OidcClientConfig[]): Promise<void> {
 	// Log client IDs but NEVER log secrets
 	console.log(
 		`[OIDC] Seeding ${clients.length} client(s) to database: ${clients.map((c) => c.clientId).join(", ")}`,

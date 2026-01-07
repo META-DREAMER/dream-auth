@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FingerprintIcon } from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import {
@@ -99,18 +99,13 @@ export function PasskeyList() {
 				</TableHeader>
 				<TableBody>
 					{passkeys.map((key) => (
-						<TableRow
-							key={key.id}
-						>
+						<TableRow key={key.id}>
 							<TableCell className="font-medium">
 								<div className="flex items-center gap-2">
 									<FingerprintIcon className="h-4 w-4 text-success" />
 									{key.name || "Unnamed Passkey"}
 									{key.deviceType && (
-										<Badge
-											variant="outline"
-											className="ml-2 text-xs"
-										>
+										<Badge variant="outline" className="ml-2 text-xs">
 											{key.deviceType}
 										</Badge>
 									)}

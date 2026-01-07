@@ -1,4 +1,4 @@
-import { CaretUpDownIcon, SignOutIcon, GearIcon } from "@phosphor-icons/react";
+import { CaretUpDownIcon, GearIcon, SignOutIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,8 +16,8 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { useSession } from "@/lib/auth-client";
 import { useSignOut } from "@/hooks/use-sign-out";
+import { useSession } from "@/lib/auth-client";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();

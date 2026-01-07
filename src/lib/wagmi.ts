@@ -15,7 +15,7 @@ export const wagmiConfig = createConfig({
 		injected(),
 		porto(),
 		safe(),
-		baseAccount({ appName: "Dream Auth", preference: {telemetry: false, }  }),
+		baseAccount({ appName: "Dream Auth", preference: { telemetry: false } }),
 		...(clientEnv.VITE_WALLETCONNECT_PROJECT_ID
 			? [
 					walletConnect({

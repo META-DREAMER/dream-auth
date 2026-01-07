@@ -1,4 +1,10 @@
-import { CaretUpDownIcon, PlusIcon, BuildingIcon, SpinnerIcon, CheckIcon } from "@phosphor-icons/react";
+import {
+	BuildingIcon,
+	CaretUpDownIcon,
+	CheckIcon,
+	PlusIcon,
+	SpinnerIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import {
 	DropdownMenu,
@@ -15,9 +21,9 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { authClient, organization } from "@/lib/auth-client";
-import { RoleBadge } from "./role-badge";
-import { CreateOrgDialog } from "./create-org-dialog";
 import { cn } from "@/lib/utils";
+import { CreateOrgDialog } from "./create-org-dialog";
+import { RoleBadge } from "./role-badge";
 
 export function OrgSwitcher() {
 	const { isMobile } = useSidebar();
@@ -45,9 +51,9 @@ export function OrgSwitcher() {
 								size="lg"
 								className="data-[state=open]:bg-sidebar-accent"
 							>
-							<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary">
-								<BuildingIcon className="size-4 text-primary-foreground" />
-							</div>
+								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary">
+									<BuildingIcon className="size-4 text-primary-foreground" />
+								</div>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">
 										{activeOrg?.name ?? "Select Organization"}
@@ -75,9 +81,7 @@ export function OrgSwitcher() {
 										key={org.id}
 										onClick={() => handleSetActive(org.id)}
 										disabled={isSwitching || isActive}
-										className={cn(
-											"gap-2 p-2"
-										)}
+										className={cn("gap-2 p-2")}
 									>
 										<BuildingIcon className="size-4" />
 										<span className="flex-1">{org.name}</span>

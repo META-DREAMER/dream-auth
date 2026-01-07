@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "@/lib/auth";
 import { serverEnv, serverEnvWithOidc } from "@/env";
+import { auth } from "@/lib/auth";
 import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
 /**

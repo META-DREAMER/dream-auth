@@ -22,9 +22,11 @@ export function StatusBadge({ status, expired = false }: StatusBadgeProps) {
 	const style = statusStyles[displayStatus] ?? statusStyles.pending;
 
 	return (
-		<Badge variant="outline" className={cn(style, "capitalize", expired && "line-through")}>
+		<Badge
+			variant="outline"
+			className={cn(style, "capitalize", expired && "line-through")}
+		>
 			{displayStatus}
 		</Badge>
 	);
 }
-

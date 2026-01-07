@@ -19,12 +19,12 @@ interface DialogHeaderScaffoldProps {
 
 /**
  * Shared dialog header scaffold providing consistent icon sizing, spacing, and layout.
- * 
+ *
  * Features:
  * - Consistent header icon (h-12 w-12 rounded-full bg-primary)
  * - Centered title and description
  * - Consistent spacing
- * 
+ *
  * Use this within DialogContent to standardize dialog headers across the app.
  */
 export function DialogHeaderScaffold({
@@ -45,4 +45,3 @@ export function DialogHeaderScaffold({
 		</DialogHeader>
 	);
 }
-

@@ -58,9 +58,7 @@ export function EmailOTPInput({
 							Try again
 						</button>
 					) : (
-						<span>
-							Resend in {secondsUntilResend}s
-						</span>
+						<span>Resend in {secondsUntilResend}s</span>
 					)}
 				</p>
 			)}

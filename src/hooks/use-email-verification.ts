@@ -143,7 +143,9 @@ export function useEmailVerification({
 			await router.invalidate();
 			onSuccess?.();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Invalid verification code");
+			setError(
+				err instanceof Error ? err.message : "Invalid verification code",
+			);
 		} finally {
 			setIsLoading(false);
 		}

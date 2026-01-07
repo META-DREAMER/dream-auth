@@ -9,7 +9,9 @@ export function cn(...inputs: ClassValue[]) {
  * Check if an email is a SIWE-generated placeholder email.
  * SIWE creates emails in the format: 0x<40 hex chars>@domain
  */
-export function isSiweGeneratedEmail(email: string | null | undefined): boolean {
+export function isSiweGeneratedEmail(
+	email: string | null | undefined,
+): boolean {
 	if (!email) return false;
 	// Ethereum addresses are 0x followed by 40 hex characters
 	const siweEmailPattern = /^0x[a-fA-F0-9]{40}@/i;

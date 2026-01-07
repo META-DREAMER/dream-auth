@@ -1,12 +1,11 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
-import type { OidcClientConfig } from "@/lib/oidc/schemas";
 import {
-	parseOidcClientsJson,
 	loadOidcClientsFromFile,
 	mergeOidcClients,
+	parseOidcClientsJson,
 } from "@/lib/oidc/config";
-
+import type { OidcClientConfig } from "@/lib/oidc/schemas";
 
 /**
  * Server-side environment variables.

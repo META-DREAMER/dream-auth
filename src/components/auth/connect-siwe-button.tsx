@@ -1,9 +1,13 @@
-import { SpinnerIcon, WalletIcon, PencilSimpleIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
-import { useSimpleKit } from "@/components/simplekit";
-import { useSiweAutoTrigger } from "@/hooks/use-siwe-auto-trigger";
+import {
+	PencilSimpleIcon,
+	SpinnerIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { useAccount, useEnsName } from "wagmi";
 import { EnsAvatar } from "@/components/shared/ens-avatar";
+import { useSimpleKit } from "@/components/simplekit";
+import { Button } from "@/components/ui/button";
+import { useSiweAutoTrigger } from "@/hooks/use-siwe-auto-trigger";
 import { cn } from "@/lib/utils";
 
 interface ConnectSIWEButtonProps {
@@ -16,7 +20,7 @@ interface ConnectSIWEButtonProps {
  * A button that handles the full SIWE authentication flow:
  * - If not connected: shows "Connect Wallet" button
  * - If connected but not authenticated: auto-triggers SIWE, shows "Sign In" button for manual retry
- * 
+ *
  * Auto-triggers once per address, with manual retry always available.
  */
 export function ConnectSIWEButton({
@@ -24,10 +28,15 @@ export function ConnectSIWEButton({
 	onError,
 	className,
 }: ConnectSIWEButtonProps) {
-	const { open: openConnectModal, isConnected, isModalOpen, formattedAddress } = useSimpleKit();
+	const {
+		open: openConnectModal,
+		isConnected,
+		isModalOpen,
+		formattedAddress,
+	} = useSimpleKit();
 	const { address } = useAccount();
 	const { data: ensName } = useEnsName({ address });
-	
+
 	const { authenticate, isAuthenticating } = useSiweAutoTrigger({
 		isConnected: isConnected ?? false,
 		isModalOpen: isModalOpen ?? false,

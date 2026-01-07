@@ -1,5 +1,11 @@
+import {
+	CheckIcon,
+	KeyIcon,
+	ShieldIcon,
+	SpinnerIcon,
+	XIcon,
+} from "@phosphor-icons/react";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { CheckIcon, KeyIcon, SpinnerIcon, ShieldIcon, XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { z } from "zod";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -26,7 +32,10 @@ const searchSchema = z.object({
 /**
  * Human-readable descriptions for OAuth scopes
  */
-const SCOPE_DESCRIPTIONS: Record<string, { label: string; description: string }> = {
+const SCOPE_DESCRIPTIONS: Record<
+	string,
+	{ label: string; description: string }
+> = {
 	openid: {
 		label: "OpenID",
 		description: "Verify your identity",
@@ -87,14 +96,12 @@ function ConsentPage() {
 							Invalid Authorization Request
 						</CardTitle>
 						<CardDescription>
-							Missing required parameters. Please try the authorization flow again.
+							Missing required parameters. Please try the authorization flow
+							again.
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-						<Button
-							onClick={() => navigate({ to: "/" })}
-							variant="outline"
-						>
+						<Button onClick={() => navigate({ to: "/" })} variant="outline">
 							Go Home
 						</Button>
 					</CardFooter>
@@ -151,8 +158,8 @@ function ConsentPage() {
 						Authorization Request
 					</CardTitle>
 					<CardDescription>
-						<span className="font-medium">{client_id}</span> wants
-						to access your account
+						<span className="font-medium">{client_id}</span> wants to access
+						your account
 					</CardDescription>
 				</CardHeader>
 
@@ -178,13 +185,13 @@ function ConsentPage() {
 								</p>
 							)}
 						</div>
-					<Badge
-						variant="outline"
-						className="border-success/30 text-success bg-success/10"
-					>
-						<KeyIcon className="h-3 w-3 mr-1" />
-						You
-					</Badge>
+						<Badge
+							variant="outline"
+							className="border-success/30 text-success bg-success/10"
+						>
+							<KeyIcon className="h-3 w-3 mr-1" />
+							You
+						</Badge>
 					</div>
 
 					<Separator />
@@ -201,17 +208,15 @@ function ConsentPage() {
 									description: `Access to ${scopeKey}`,
 								};
 								return (
-								<li
-									key={scopeKey}
-									className="flex items-start gap-3 p-2 rounded-md bg-muted/50"
-								>
-									<div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/20 mt-0.5">
-										<CheckIcon className="h-3 w-3 text-success" />
-									</div>
+									<li
+										key={scopeKey}
+										className="flex items-start gap-3 p-2 rounded-md bg-muted/50"
+									>
+										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/20 mt-0.5">
+											<CheckIcon className="h-3 w-3 text-success" />
+										</div>
 										<div className="flex-1 min-w-0">
-											<p className="text-sm font-medium">
-												{scopeInfo.label}
-											</p>
+											<p className="text-sm font-medium">{scopeInfo.label}</p>
 											<p className="text-xs text-muted-foreground">
 												{scopeInfo.description}
 											</p>

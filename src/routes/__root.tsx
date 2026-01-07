@@ -6,8 +6,8 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { getSessionFn } from "@/lib/session.server";
 import { Web3Provider } from "@/components/web3-provider";
+import { getSessionFn } from "@/lib/session.server";
 import { ThemeProvider, themeScript } from "@/lib/theme";
 import appCss from "../styles.css?url";
 
@@ -32,7 +32,6 @@ export const Route = createRootRoute({
 				name: "description",
 				content: "Home Cluster Identity Provider",
 			},
-			
 		],
 		links: [
 			{
@@ -59,7 +58,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				<div data-vaul-drawer-wrapper="" className="min-h-screen transition-colors duration-300 relative">
+				<div
+					data-vaul-drawer-wrapper=""
+					className="min-h-screen transition-colors duration-300 relative"
+				>
 					{children}
 				</div>
 				{process.env.NODE_ENV === "development" && (

@@ -17,12 +17,12 @@ export const Route = createFileRoute("/.well-known/openid-configuration")({
 				const internalUrl = new URL(
 					"/api/auth/.well-known/openid-configuration",
 					url.origin,
-				)
+				);
 
 				const internalRequest = new Request(internalUrl.toString(), {
 					method: "GET",
 					headers: request.headers,
-				})
+				});
 
 				const response = await auth.handler(internalRequest);
 
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/.well-known/openid-configuration")({
 						...(data.introspection_endpoint && {
 							introspection_endpoint: `${rootUrl}/oauth2/introspect`,
 						}),
-					}
+					};
 
 					return new Response(JSON.stringify(modifiedData), {
 						status: 200,
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/.well-known/openid-configuration")({
 							"Content-Type": "application/json",
 							"Cache-Control": "public, max-age=3600",
 						},
-					})
+					});
 				}
 
 				return response;

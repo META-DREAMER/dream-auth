@@ -1,5 +1,10 @@
+import {
+	BuildingIcon,
+	GearIcon,
+	UsersIcon,
+	UsersThreeIcon,
+} from "@phosphor-icons/react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { BuildingIcon, UsersIcon, UsersThreeIcon, GearIcon } from "@phosphor-icons/react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -34,9 +39,13 @@ export function NavMain() {
 
 						return (
 							<SidebarMenuItem key={item.href}>
-								<SidebarMenuButton  asChild isActive={isActive} tooltip={item.label}>
+								<SidebarMenuButton
+									asChild
+									isActive={isActive}
+									tooltip={item.label}
+								>
 									<Link to={item.href}>
-										<item.icon  />
+										<item.icon />
 										<span>{item.label}</span>
 									</Link>
 								</SidebarMenuButton>

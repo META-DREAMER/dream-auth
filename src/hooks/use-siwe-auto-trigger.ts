@@ -17,13 +17,13 @@ interface UseSiweAutoTriggerOptions {
 
 /**
  * Shared hook for auto-triggering SIWE authentication when wallet connects.
- * 
+ *
  * Features:
  * - Auto-triggers once per address
  * - Prevents loops by tracking triggered addresses
  * - Respects modal state and authentication state
  * - Resets tracking when disconnected
- * 
+ *
  * Used by ConnectSIWEButton and LinkWalletDialog for consistent behavior.
  */
 export function useSiweAutoTrigger({
@@ -60,7 +60,14 @@ export function useSiweAutoTrigger({
 			}, 300);
 			return () => clearTimeout(timer);
 		}
-	}, [enabled, isConnected, address, isModalOpen, isAuthenticating, authenticate]);
+	}, [
+		enabled,
+		isConnected,
+		address,
+		isModalOpen,
+		isAuthenticating,
+		authenticate,
+	]);
 
 	// Reset auto-trigger tracking when disconnected
 	useEffect(() => {
@@ -74,4 +81,3 @@ export function useSiweAutoTrigger({
 		isAuthenticating,
 	};
 }
-

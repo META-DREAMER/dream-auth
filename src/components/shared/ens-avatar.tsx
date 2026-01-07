@@ -24,11 +24,11 @@ export function EnsAvatar({
 }: EnsAvatarProps) {
 	const { address: accountAddress } = useAccount();
 	const targetAddress = address ?? accountAddress;
-	
-	const { data: ensName } = useEnsName({ 
+
+	const { data: ensName } = useEnsName({
 		address: targetAddress as `0x${string}`,
 	});
-	const { data: ensAvatar } = useEnsAvatar({ 
+	const { data: ensAvatar } = useEnsAvatar({
 		name: providedEnsName ?? ensName ?? undefined,
 	});
 
@@ -44,4 +44,3 @@ export function EnsAvatar({
 		/>
 	);
 }
-

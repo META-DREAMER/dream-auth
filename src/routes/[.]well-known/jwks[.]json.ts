@@ -14,15 +14,12 @@ export const Route = createFileRoute("/.well-known/jwks.json")({
 			GET: async ({ request }) => {
 				// Create a new request targeting the BetterAuth JWKS endpoint
 				const url = new URL(request.url);
-				const internalUrl = new URL(
-					"/api/auth/jwks",
-					url.origin,
-				)
+				const internalUrl = new URL("/api/auth/jwks", url.origin);
 
 				const internalRequest = new Request(internalUrl.toString(), {
 					method: "GET",
 					headers: request.headers,
-				})
+				});
 
 				const response = await auth.handler(internalRequest);
 
@@ -33,11 +30,11 @@ export const Route = createFileRoute("/.well-known/jwks.json")({
 					// Preserve BetterAuth's headers and add/override Cache-Control
 					const headers = new Headers(response.headers);
 					headers.set("Cache-Control", "public, max-age=3600, must-revalidate");
-					
+
 					return new Response(JSON.stringify(data), {
 						status: 200,
 						headers,
-					})
+					});
 				}
 
 				return response;
@@ -47,15 +44,12 @@ export const Route = createFileRoute("/.well-known/jwks.json")({
 				// BetterAuth may not support HEAD, so we return headers directly
 				// First verify the endpoint exists by making a GET request
 				const url = new URL(request.url);
-				const internalUrl = new URL(
-					"/api/auth/jwks",
-					url.origin,
-				)
+				const internalUrl = new URL("/api/auth/jwks", url.origin);
 
 				const internalRequest = new Request(internalUrl.toString(), {
 					method: "GET",
 					headers: request.headers,
-				})
+				});
 
 				const response = await auth.handler(internalRequest);
 
@@ -64,11 +58,11 @@ export const Route = createFileRoute("/.well-known/jwks.json")({
 					// Preserve BetterAuth's headers and add/override Cache-Control
 					const headers = new Headers(response.headers);
 					headers.set("Cache-Control", "public, max-age=3600, must-revalidate");
-					
+
 					return new Response(null, {
 						status: 200,
 						headers,
-					})
+					});
 				}
 
 				return new Response(null, { status: response.status });

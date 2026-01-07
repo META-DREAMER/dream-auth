@@ -41,7 +41,6 @@ function getTrustedClients() {
 	}));
 }
 
-
 export const auth = betterAuth({
 	database: pool,
 	baseURL: serverEnv.BETTER_AUTH_URL,
@@ -128,19 +127,19 @@ export const auth = betterAuth({
 	},
 
 	// advanced: {
-		// cookiePrefix: "auth",
-		// cookies: {
-			// session_token: {
-				// attributes: {
-					// httpOnly: true,
-					// secure: process.env.NODE_ENV === "production",
-					// sameSite: "lax",
-					// Only set domain if explicitly configured (for cross-subdomain auth)
-					// When undefined, cookie uses current origin (works for localhost)
-					// ...(serverEnv.COOKIE_DOMAIN && { domain: serverEnv.COOKIE_DOMAIN }),
-				// },
-			// },
-		// },
+	// cookiePrefix: "auth",
+	// cookies: {
+	// session_token: {
+	// attributes: {
+	// httpOnly: true,
+	// secure: process.env.NODE_ENV === "production",
+	// sameSite: "lax",
+	// Only set domain if explicitly configured (for cross-subdomain auth)
+	// When undefined, cookie uses current origin (works for localhost)
+	// ...(serverEnv.COOKIE_DOMAIN && { domain: serverEnv.COOKIE_DOMAIN }),
+	// },
+	// },
+	// },
 	// },
 
 	plugins: [
@@ -215,7 +214,7 @@ export const auth = betterAuth({
 							// Better-auth handles nonce storage and validation internally
 							return generateSiweNonce();
 						},
-						verifyMessage: async ({ message, signature, address,  }) => {
+						verifyMessage: async ({ message, signature, address }) => {
 							try {
 								// Verify the signature using viem
 								// Better-auth validates the nonce internally
@@ -327,23 +326,28 @@ export const auth = betterAuth({
 			// Send invitation notifications
 			async sendInvitationEmail(data) {
 				const inviteLink = `${serverEnv.BETTER_AUTH_URL}/invite/${data.id}`;
-				const walletAddress = (
-					data as typeof data & { walletAddress?: string }
-				).walletAddress;
+				const walletAddress = (data as typeof data & { walletAddress?: string })
+					.walletAddress;
 
 				if (walletAddress) {
 					// Wallet invitation - log for now, could integrate with push notification service
 					console.log(`[Wallet Invitation] Wallet: ${walletAddress}`);
-					console.log(`[Wallet Invitation] Organization: ${data.organization.name}`);
+					console.log(
+						`[Wallet Invitation] Organization: ${data.organization.name}`,
+					);
 					console.log(`[Wallet Invitation] Role: ${data.role}`);
 					console.log(`[Wallet Invitation] Link: ${inviteLink}`);
 				} else {
 					// Email invitation - integrate with email service
 					// TODO: Integrate with Resend, SendGrid, etc.
 					console.log(`[Email Invitation] To: ${data.email}`);
-					console.log(`[Email Invitation] Organization: ${data.organization.name}`);
+					console.log(
+						`[Email Invitation] Organization: ${data.organization.name}`,
+					);
 					console.log(`[Email Invitation] Role: ${data.role}`);
-					console.log(`[Email Invitation] Invited by: ${data.inviter.user.email}`);
+					console.log(
+						`[Email Invitation] Invited by: ${data.inviter.user.email}`,
+					);
 					console.log(`[Email Invitation] Link: ${inviteLink}`);
 				}
 			},
@@ -368,14 +372,11 @@ export type User = typeof auth.$Infer.Session.user;
  */
 if (serverEnv.ENABLE_OIDC_PROVIDER) {
 	// Fire-and-forget: don't await, don't block server startup
-	ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS).catch(
-		(error) => {
-			console.error(
-				"[OIDC] Failed to seed clients on server startup (non-blocking):",
-				error,
-			);
-			// Don't throw - this is a background operation
-		},
-	);
+	ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS).catch((error) => {
+		console.error(
+			"[OIDC] Failed to seed clients on server startup (non-blocking):",
+			error,
+		);
+		// Don't throw - this is a background operation
+	});
 }
-

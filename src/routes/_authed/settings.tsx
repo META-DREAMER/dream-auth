@@ -1,20 +1,20 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeftIcon,
 	BuildingIcon,
-	FingerprintIcon,
-	SignOutIcon,
 	EnvelopeIcon,
+	FingerprintIcon,
 	GearIcon,
+	SignOutIcon,
 	UserIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AddPasskeyDialog } from "@/components/auth/add-passkey-dialog";
 import { ChangeEmailDialog } from "@/components/auth/change-email-dialog";
 import { LinkEmailDialog } from "@/components/auth/link-email-dialog";
 import { LinkWalletDialog } from "@/components/auth/link-wallet-dialog";
-import { VerifyEmailDialog } from "@/components/auth/verify-email-dialog";
 import { PasskeyList } from "@/components/auth/passkey-list";
+import { VerifyEmailDialog } from "@/components/auth/verify-email-dialog";
 import { WalletList } from "@/components/auth/wallet-list";
 import { PageBackground } from "@/components/shared/page-background";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_authed/settings")({
 function SettingsPage() {
 	const { session } = Route.useRouteContext();
 	const handleSignOut = useSignOut();
-	
+
 	// Filter out SIWE-generated placeholder emails (walletAddress@domain)
 	const realEmail = getRealEmail(session.user.email);
 
@@ -50,11 +50,7 @@ function SettingsPage() {
 				{/* Header */}
 				<div className="flex sm:items-center gap-4 flex-col sm:flex-row justify-between mb-8">
 					<div className="flex items-center gap-4">
-						<Button
-							asChild
-							variant="ghost"
-							size="icon"
-						>
+						<Button asChild variant="ghost" size="icon">
 							<Link to="/">
 								<ArrowLeftIcon className="h-5 w-5" />
 							</Link>
@@ -70,11 +66,7 @@ function SettingsPage() {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
-						<Button
-							asChild
-							variant="outline"
-							className="flex-1"
-						>
+						<Button asChild variant="outline" className="flex-1">
 							<Link to="/org">
 								<BuildingIcon className="mr-2 h-4 w-4" />
 								Organizations
@@ -83,7 +75,6 @@ function SettingsPage() {
 						<Button
 							onClick={handleSignOut}
 							variant="outline"
-							
 							className="flex-1 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive-foreground"
 						>
 							<SignOutIcon className="mr-2 h-4 w-4" />
@@ -96,23 +87,21 @@ function SettingsPage() {
 					{/* Profile Section */}
 					<Card>
 						<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<UserIcon className="h-5 w-5 text-success" />
-							Profile
-						</CardTitle>
-							<CardDescription>
-								Your account information
-							</CardDescription>
+							<CardTitle className="flex items-center gap-2">
+								<UserIcon className="h-5 w-5 text-success" />
+								Profile
+							</CardTitle>
+							<CardDescription>Your account information</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="flex items-center gap-4">
-							<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-								<span className="text-2xl font-semibold text-primary-foreground">
-									{session.user.name?.charAt(0).toUpperCase() ||
-										realEmail?.charAt(0).toUpperCase() ||
-										"U"}
-								</span>
-							</div>
+								<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary">
+									<span className="text-2xl font-semibold text-primary-foreground">
+										{session.user.name?.charAt(0).toUpperCase() ||
+											realEmail?.charAt(0).toUpperCase() ||
+											"U"}
+									</span>
+								</div>
 								<div>
 									<p className="text-lg font-medium">
 										{session.user.name || "User"}
@@ -155,7 +144,9 @@ function SettingsPage() {
 										<EnvelopeIcon className="h-4 w-4 text-muted-foreground" />
 										<span>{realEmail}</span>
 										<Badge
-											variant={session.user.emailVerified ? "default" : "secondary"}
+											variant={
+												session.user.emailVerified ? "default" : "secondary"
+											}
 											className={
 												session.user.emailVerified
 													? "bg-success/20 text-success border-success/30"
@@ -166,7 +157,6 @@ function SettingsPage() {
 										</Badge>
 									</div>
 									<div className="flex items-center gap-2">
-										
 										{!session.user.emailVerified && (
 											<VerifyEmailDialog email={realEmail} />
 										)}
@@ -174,7 +164,8 @@ function SettingsPage() {
 								</div>
 							) : (
 								<p className="text-muted-foreground text-sm">
-									No email linked to your account yet. Add one for easier recovery.
+									No email linked to your account yet. Add one for easier
+									recovery.
 								</p>
 							)}
 						</CardContent>
@@ -185,10 +176,10 @@ function SettingsPage() {
 						<CardHeader>
 							<div className="flex items-center justify-between">
 								<div>
-								<CardTitle className="flex items-center gap-2">
-									<FingerprintIcon className="h-5 w-5 text-success" />
-									Passkeys
-								</CardTitle>
+									<CardTitle className="flex items-center gap-2">
+										<FingerprintIcon className="h-5 w-5 text-success" />
+										Passkeys
+									</CardTitle>
 									<CardDescription>
 										Sign in securely without a password
 									</CardDescription>
@@ -227,23 +218,19 @@ function SettingsPage() {
 					{/* Session Info */}
 					<Card>
 						<CardHeader>
-							<CardTitle className="text-sm">
-								Session Information
-							</CardTitle>
+							<CardTitle className="text-sm">Session Information</CardTitle>
 						</CardHeader>
 						<CardContent>
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">User ID</dt>
-									<dd className="font-mono text-xs">
-										{session.user.id}
-									</dd>
+									<dd className="font-mono text-xs">{session.user.id}</dd>
 								</div>
 								{realEmail && session.user.emailVerified && (
-								<div className="flex justify-between">
-									<dt className="text-muted-foreground">Email Verified</dt>
-									<dd className="text-success">Yes</dd>
-								</div>
+									<div className="flex justify-between">
+										<dt className="text-muted-foreground">Email Verified</dt>
+										<dd className="text-success">Yes</dd>
+									</div>
 								)}
 							</dl>
 						</CardContent>

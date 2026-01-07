@@ -1,14 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { BuildingIcon, UsersIcon, EnvelopeIcon, UsersThreeIcon, PlusIcon } from "@phosphor-icons/react";
-import { authClient } from "@/lib/auth-client";
 import {
-	orgMembersOptions,
-	orgInvitationsOptions,
-	orgFullOptions,
-	orgTeamsOptions,
-} from "@/lib/org-queries";
-import { formatDateLong } from "@/lib/format";
+	BuildingIcon,
+	EnvelopeIcon,
+	PlusIcon,
+	UsersIcon,
+	UsersThreeIcon,
+} from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +17,14 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { authClient } from "@/lib/auth-client";
+import { formatDateLong } from "@/lib/format";
+import {
+	orgFullOptions,
+	orgInvitationsOptions,
+	orgMembersOptions,
+	orgTeamsOptions,
+} from "@/lib/org-queries";
 
 export const Route = createFileRoute("/_authed/org/")({
 	component: OrgOverview,
@@ -29,7 +35,7 @@ function OrgOverview() {
 		authClient.useActiveOrganization();
 
 	const { data: fullOrg, isPending: isPendingFull } = useQuery(
-		orgFullOptions(activeOrg?.id)
+		orgFullOptions(activeOrg?.id),
 	);
 
 	const { data: membersData } = useQuery(orgMembersOptions(activeOrg?.id));
@@ -84,9 +90,7 @@ function OrgOverview() {
 							)}
 							<div>
 								<CardTitle>{activeOrg.name}</CardTitle>
-								<CardDescription>
-									{activeOrg.slug}
-								</CardDescription>
+								<CardDescription>{activeOrg.slug}</CardDescription>
 								{createdDate && (
 									<p className="text-xs text-muted-foreground mt-1">
 										Created {createdDate}
@@ -129,11 +133,7 @@ function OrgOverview() {
 					<CardContent>
 						<div className="flex items-center justify-between">
 							<div className="text-2xl font-bold">
-								{isPendingFull ? (
-									<Skeleton className="h-8 w-12" />
-								) : (
-									teamCount
-								)}
+								{isPendingFull ? <Skeleton className="h-8 w-12" /> : teamCount}
 							</div>
 							<UsersThreeIcon className="h-5 w-5 text-muted-foreground" />
 						</div>
@@ -181,11 +181,11 @@ function OrgOverview() {
 						</Button>
 					</div>
 					<p className="text-xs text-muted-foreground mt-2">
-						These features will be available once the members and teams pages are implemented.
+						These features will be available once the members and teams pages
+						are implemented.
 					</p>
 				</CardContent>
 			</Card>
 		</div>
 	);
 }
-

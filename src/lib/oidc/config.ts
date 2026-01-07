@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type { OidcClientConfig } from "./schemas";
 import { oidcClientSchema } from "./schemas";
 
@@ -38,9 +38,7 @@ export function parseOidcClientsJson(
  * Load OIDC clients from a mounted file (JSON or YAML).
  * Supports both formats based on file content or extension.
  */
-export function loadOidcClientsFromFile(
-	filePath: string,
-): OidcClientConfig[] {
+export function loadOidcClientsFromFile(filePath: string): OidcClientConfig[] {
 	if (!existsSync(filePath)) {
 		console.error(`[OIDC] OIDC_CLIENTS_FILE does not exist: ${filePath}`);
 		// Fail fast in production
@@ -72,7 +70,9 @@ export function loadOidcClientsFromFile(
 			);
 			// Fail fast in production
 			if (process.env.NODE_ENV === "production") {
-				throw new Error("OIDC_CLIENTS_FILE: YAML format not supported, use JSON");
+				throw new Error(
+					"OIDC_CLIENTS_FILE: YAML format not supported, use JSON",
+				);
 			}
 			return [];
 		}
@@ -119,11 +119,3 @@ export function mergeOidcClients(
 
 	return allClients;
 }
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
-import { wagmiConfig } from "@/lib/wagmi";
 import { SimpleKitProvider } from "@/components/simplekit";
+import { wagmiConfig } from "@/lib/wagmi";
 
 export const queryClient = new QueryClient({
 	defaultOptions: {

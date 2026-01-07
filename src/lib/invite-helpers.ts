@@ -1,5 +1,5 @@
-import { organization } from "@/lib/auth-client";
 import { clientEnv } from "@/env.client";
+import { organization } from "@/lib/auth-client";
 
 /**
  * Generate deterministic email from wallet address.
@@ -90,4 +90,3 @@ export function getInvitationWalletAddress(invitation: {
 }): string | null {
 	return invitation.walletAddress || null;
 }
-

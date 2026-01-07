@@ -1,8 +1,12 @@
-import { SpinnerIcon, EnvelopeIcon, ShieldCheckIcon } from "@phosphor-icons/react";
+import {
+	EnvelopeIcon,
+	ShieldCheckIcon,
+	SpinnerIcon,
+} from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -109,10 +113,7 @@ export function VerifyEmailDialog({ email }: VerifyEmailDialogProps) {
 						<DialogClose asChild>
 							<Button variant="outline">Cancel</Button>
 						</DialogClose>
-						<Button
-							type="submit"
-							disabled={isLoading || otp.length !== 6}
-						>
+						<Button type="submit" disabled={isLoading || otp.length !== 6}>
 							{isLoading ? (
 								<>
 									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
