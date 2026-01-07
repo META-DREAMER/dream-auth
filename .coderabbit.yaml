@@ -23,10 +23,24 @@ reviews:
       instructions: |
         Nitro server plugins. The auto-migrate plugin handles BetterAuth database migrations
         with PostgreSQL advisory locks for safe multi-replica deployments.
-    - path: "**/*.test.ts"
+    - path: "**/*.test.{ts,tsx}"
       instructions: |
-        Tests use Vitest. Mock factories live in test/mocks/.
+        Unit/integration tests use Vitest. Mock factories live in test/mocks/.
         Prefer typed mock factories over type casting.
+    - path: "test/**"
+      instructions: |
+        Test utilities and infrastructure:
+        - test/mocks/: Mock factories for Wagmi, BetterAuth, etc.
+        - test/fixtures/: Test data fixtures
+        - test/helpers/: Shared test utilities
+        - test/setup.ts: Vitest global setup
+    - path: "e2e/**"
+      instructions: |
+        End-to-end tests using Playwright:
+        - e2e/tests/: Test specs
+        - e2e/fixtures/: Playwright fixtures
+        - e2e/helpers/: E2E test utilities
+        - e2e/playwright.config.ts: Playwright configuration
 
   auto_review:
     enabled: true
