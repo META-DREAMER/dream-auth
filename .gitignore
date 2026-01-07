@@ -13,3 +13,6 @@ count.txt
 todos.json
 
 .pnpm-store
+
+# Test coverage
+coverage
