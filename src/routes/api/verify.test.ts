@@ -1,14 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock TanStack router
-vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: vi.fn((path: string) => {
-		return (config: unknown) => {
-			return { path, config };
-		};
-	}),
-}));
-
 // Mock auth module
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -19,9 +10,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 import { auth } from "@/lib/auth";
-
-type RouteHandler = (ctx: { request: Request }) => Promise<Response>;
-type RouteConfig = { config: { server: { handlers: { GET: RouteHandler } } } };
+import { GET } from "./verify";
 
 describe("GET /api/verify", () => {
 	beforeEach(() => {
@@ -31,11 +20,8 @@ describe("GET /api/verify", () => {
 	it("returns 401 when no session exists", async () => {
 		vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify");
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		expect(response.status).toBe(401);
 	});
@@ -54,15 +40,12 @@ describe("GET /api/verify", () => {
 			},
 		} as never);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify", {
 			headers: {
 				Cookie: "session=test-session-cookie",
 			},
 		});
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		expect(response.status).toBe(200);
 		expect(response.headers.get("X-Auth-User")).toBe("Test User");
@@ -84,11 +67,8 @@ describe("GET /api/verify", () => {
 			},
 		} as never);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify");
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		expect(response.headers.get("X-Auth-User")).toBe("");
 	});
@@ -96,16 +76,13 @@ describe("GET /api/verify", () => {
 	it("passes request headers to getSession", async () => {
 		vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify", {
 			headers: {
 				Cookie: "session=my-session",
 				Authorization: "Bearer token",
 			},
 		});
-		await handler({ request });
+		await GET({ request, params: {} });
 
 		expect(auth.api.getSession).toHaveBeenCalledWith({
 			headers: request.headers,
@@ -126,11 +103,8 @@ describe("GET /api/verify", () => {
 			},
 		} as never);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify");
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		const body = await response.text();
 		expect(body).toBe("");
@@ -139,11 +113,8 @@ describe("GET /api/verify", () => {
 	it("returns null body on failure", async () => {
 		vi.mocked(auth.api.getSession).mockResolvedValue(null);
 
-		const { Route } = await import("./verify");
-		const handler = (Route as RouteConfig).config.server.handlers.GET;
-
 		const request = new Request("http://localhost:3000/api/verify");
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		const body = await response.text();
 		expect(body).toBe("");

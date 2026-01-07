@@ -1,14 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock TanStack router and auth before importing
-vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: vi.fn((path: string) => {
-		return (config: unknown) => {
-			return { path, config };
-		};
-	}),
-}));
-
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		handler: vi.fn(),
@@ -16,33 +7,12 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 import { auth } from "@/lib/auth";
+import { GET, POST } from "./$";
 
 describe("OAuth2 proxy route", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
-
-	async function getHandler() {
-		const { Route } = await import("./$.ts");
-		return (
-			Route as {
-				config: {
-					server: {
-						handlers: {
-							GET: (ctx: {
-								request: Request;
-								params: { _splat?: string };
-							}) => Promise<Response>;
-							POST: (ctx: {
-								request: Request;
-								params: { _splat?: string };
-							}) => Promise<Response>;
-						};
-					};
-				};
-			}
-		).config.server.handlers;
-	}
 
 	describe("GET handler", () => {
 		it("proxies request to BetterAuth oauth2 endpoint", async () => {
@@ -52,10 +22,9 @@ describe("OAuth2 proxy route", () => {
 			});
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/authorize");
 
-			await handlers.GET({ request, params: { _splat: "authorize" } });
+			await GET({ request, params: { _splat: "authorize" } });
 
 			expect(auth.handler).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -71,12 +40,11 @@ describe("OAuth2 proxy route", () => {
 			const mockResponse = new Response("ok", { status: 200 });
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request(
 				"https://auth.example.com/oauth2/authorize?client_id=test&redirect_uri=http://localhost",
 			);
 
-			await handlers.GET({ request, params: { _splat: "authorize" } });
+			await GET({ request, params: { _splat: "authorize" } });
 
 			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 			const url = new URL(calledRequest.url);
@@ -97,10 +65,9 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/authorize");
 
-			const response = await handlers.GET({
+			const response = await GET({
 				request,
 				params: { _splat: "authorize" },
 			});
@@ -124,10 +91,9 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/authorize");
 
-			const response = await handlers.GET({
+			const response = await GET({
 				request,
 				params: { _splat: "authorize" },
 			});
@@ -151,10 +117,9 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/token");
 
-			const response = await handlers.GET({
+			const response = await GET({
 				request,
 				params: { _splat: "token" },
 			});
@@ -168,10 +133,9 @@ describe("OAuth2 proxy route", () => {
 			const mockResponse = new Response("ok", { status: 200 });
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/");
 
-			await handlers.GET({ request, params: { _splat: undefined } });
+			await GET({ request, params: { _splat: undefined } });
 
 			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 			expect(calledRequest.url).toContain("/api/auth/oauth2/");
@@ -189,13 +153,12 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/token", {
 				method: "POST",
 				body: "grant_type=authorization_code&code=abc",
 			});
 
-			await handlers.POST({ request, params: { _splat: "token" } });
+			await POST({ request, params: { _splat: "token" } });
 
 			expect(auth.handler).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -216,7 +179,6 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const formBody =
 				"grant_type=authorization_code&code=abc123&redirect_uri=http://localhost:3000/callback&client_id=test-app";
 			const request = new Request("https://auth.example.com/oauth2/token", {
@@ -227,7 +189,7 @@ describe("OAuth2 proxy route", () => {
 				body: formBody,
 			});
 
-			await handlers.POST({ request, params: { _splat: "token" } });
+			await POST({ request, params: { _splat: "token" } });
 
 			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 			// Body should be preserved - read it to verify
@@ -242,7 +204,6 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/token", {
 				method: "POST",
 				headers: {
@@ -251,7 +212,7 @@ describe("OAuth2 proxy route", () => {
 				body: "grant_type=client_credentials",
 			});
 
-			await handlers.POST({ request, params: { _splat: "token" } });
+			await POST({ request, params: { _splat: "token" } });
 
 			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 			expect(calledRequest.headers.get("Content-Type")).toBe(
@@ -266,7 +227,6 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const basicAuth = `Basic ${Buffer.from("client_id:client_secret").toString("base64")}`;
 			const request = new Request("https://auth.example.com/oauth2/token", {
 				method: "POST",
@@ -277,7 +237,7 @@ describe("OAuth2 proxy route", () => {
 				body: "grant_type=client_credentials",
 			});
 
-			await handlers.POST({ request, params: { _splat: "token" } });
+			await POST({ request, params: { _splat: "token" } });
 
 			const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 			expect(calledRequest.headers.get("Authorization")).toBe(basicAuth);
@@ -296,12 +256,11 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/consent", {
 				method: "POST",
 			});
 
-			const response = await handlers.POST({
+			const response = await POST({
 				request,
 				params: { _splat: "consent" },
 			});
@@ -324,12 +283,11 @@ describe("OAuth2 proxy route", () => {
 			);
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/token", {
 				method: "POST",
 			});
 
-			const response = await handlers.POST({
+			const response = await POST({
 				request,
 				params: { _splat: "token" },
 			});
@@ -344,10 +302,9 @@ describe("OAuth2 proxy route", () => {
 			});
 			vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-			const handlers = await getHandler();
 			const request = new Request("https://auth.example.com/oauth2/authorize");
 
-			const response = await handlers.GET({
+			const response = await GET({
 				request,
 				params: { _splat: "authorize" },
 			});

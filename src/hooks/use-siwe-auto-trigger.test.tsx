@@ -15,6 +15,7 @@ vi.mock("./use-siwe-auth", () => ({
 }));
 
 import { useAccount } from "wagmi";
+import { createConnectedAccount, createDisconnectedAccount } from "@test/mocks/wagmi";
 import { useSiweAuth } from "./use-siwe-auth";
 import { useSiweAutoTrigger } from "./use-siwe-auto-trigger";
 
@@ -25,9 +26,7 @@ describe("useSiweAutoTrigger", () => {
 		vi.clearAllMocks();
 		vi.useFakeTimers();
 
-		vi.mocked(useAccount).mockReturnValue({
-			address: "0x1234567890abcdef1234567890abcdef12345678",
-		} as ReturnType<typeof useAccount>);
+		vi.mocked(useAccount).mockReturnValue(createConnectedAccount());
 
 		vi.mocked(useSiweAuth).mockReturnValue({
 			authenticate: mockAuthenticate,
@@ -126,9 +125,7 @@ describe("useSiweAutoTrigger", () => {
 	});
 
 	it("does not auto-trigger when no address", async () => {
-		vi.mocked(useAccount).mockReturnValue({
-			address: undefined,
-		} as ReturnType<typeof useAccount>);
+		vi.mocked(useAccount).mockReturnValue(createDisconnectedAccount());
 
 		renderHook(() =>
 			useSiweAutoTrigger({
@@ -221,9 +218,9 @@ describe("useSiweAutoTrigger", () => {
 		expect(mockAuthenticate).toHaveBeenCalledTimes(1);
 
 		// Change address
-		vi.mocked(useAccount).mockReturnValue({
-			address: "0xaabbccdd0011223344556677889900aabbccddee",
-		} as ReturnType<typeof useAccount>);
+		vi.mocked(useAccount).mockReturnValue(
+			createConnectedAccount({ address: "0xaabbccdd0011223344556677889900aabbccddee" }),
+		);
 
 		rerender({ isConnected: true });
 

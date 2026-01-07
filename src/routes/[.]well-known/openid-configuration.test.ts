@@ -1,14 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock TanStack router and auth before importing
-vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: vi.fn((path: string) => {
-		return (config: unknown) => {
-			return { path, config };
-		};
-	}),
-}));
-
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		handler: vi.fn(),
@@ -16,26 +7,12 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 import { auth } from "@/lib/auth";
+import { GET } from "./openid-configuration";
 
 describe("GET /.well-known/openid-configuration", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
-
-	async function getHandler() {
-		const { Route } = await import("./openid-configuration.ts");
-		return (
-			Route as {
-				config: {
-					server: {
-						handlers: {
-							GET: (ctx: { request: Request }) => Promise<Response>;
-						};
-					};
-				};
-			}
-		).config.server.handlers.GET;
-	}
 
 	it("rewrites issuer to root URL", async () => {
 		const mockDiscoveryData = {
@@ -55,12 +32,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 		const data = await response.json();
 
 		expect(data.issuer).toBe("https://auth.example.com");
@@ -84,12 +60,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 		const data = await response.json();
 
 		expect(data.authorization_endpoint).toBe(
@@ -126,12 +101,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 		const data = await response.json();
 
 		expect(data.revocation_endpoint).toBe(
@@ -159,12 +133,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 		const data = await response.json();
 
 		expect(data.introspection_endpoint).toBe(
@@ -190,12 +163,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		expect(response.headers.get("Cache-Control")).toBe("public, max-age=3600");
 	});
@@ -207,12 +179,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		await handler({ request });
+		await GET({ request, params: {} });
 
 		const calledRequest = vi.mocked(auth.handler).mock.calls[0][0] as Request;
 		expect(calledRequest.url).toContain(
@@ -226,12 +197,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 
 		expect(response.status).toBe(500);
 	});
@@ -260,12 +230,11 @@ describe("GET /.well-known/openid-configuration", () => {
 		});
 		vi.mocked(auth.handler).mockResolvedValue(mockResponse);
 
-		const handler = await getHandler();
 		const request = new Request(
 			"https://auth.example.com/.well-known/openid-configuration",
 		);
 
-		const response = await handler({ request });
+		const response = await GET({ request, params: {} });
 		const data = await response.json();
 
 		// Check standard properties are preserved

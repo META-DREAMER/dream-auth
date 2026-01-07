@@ -32,6 +32,12 @@ vi.mock("@/env.client", () => ({
 import { createSiweMessage } from "viem/siwe";
 import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { siwe } from "@/lib/auth-client";
+import {
+	createConnectedAccount,
+	createDisconnectedAccount,
+	createDisconnect,
+	createSignMessage,
+} from "@test/mocks/wagmi";
 import { useSiweAuth } from "./use-siwe-auth";
 
 describe("useSiweAuth", () => {
@@ -41,19 +47,11 @@ describe("useSiweAuth", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		vi.mocked(useAccount).mockReturnValue({
-			address: "0x1234567890abcdef1234567890abcdef12345678",
-			chain: { id: 1 },
-		} as ReturnType<typeof useAccount>);
-
-		vi.mocked(useDisconnect).mockReturnValue({
-			disconnect: mockDisconnect,
-		} as unknown as ReturnType<typeof useDisconnect>);
-
-		vi.mocked(useSignMessage).mockReturnValue({
-			mutateAsync: mockSignMessageAsync,
-		} as unknown as ReturnType<typeof useSignMessage>);
-
+		vi.mocked(useAccount).mockReturnValue(createConnectedAccount());
+		vi.mocked(useDisconnect).mockReturnValue(createDisconnect(mockDisconnect));
+		vi.mocked(useSignMessage).mockReturnValue(
+			createSignMessage(mockSignMessageAsync),
+		);
 		vi.mocked(createSiweMessage).mockReturnValue("mock-siwe-message");
 	});
 
@@ -65,10 +63,7 @@ describe("useSiweAuth", () => {
 	});
 
 	it("sets error when wallet not connected (no address)", async () => {
-		vi.mocked(useAccount).mockReturnValue({
-			address: undefined,
-			chain: { id: 1 },
-		} as ReturnType<typeof useAccount>);
+		vi.mocked(useAccount).mockReturnValue(createDisconnectedAccount());
 
 		const { result } = renderHook(() => useSiweAuth());
 
@@ -81,10 +76,11 @@ describe("useSiweAuth", () => {
 	});
 
 	it("sets error when wallet not connected (no chain)", async () => {
-		vi.mocked(useAccount).mockReturnValue({
-			address: "0x1234567890abcdef1234567890abcdef12345678",
+		const accountWithNoChain = {
+			...createConnectedAccount(),
 			chain: undefined,
-		} as ReturnType<typeof useAccount>);
+		};
+		vi.mocked(useAccount).mockReturnValue(accountWithNoChain);
 
 		const { result } = renderHook(() => useSiweAuth());
 

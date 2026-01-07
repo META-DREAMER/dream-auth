@@ -7,25 +7,39 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock auth-client before importing the hook
+// vi.hoisted ensures these mocks are available when vi.mock factory runs
+// (vi.mock calls are hoisted to top of file, before variable declarations)
+const {
+	mockUseActiveOrganization,
+	mockUseSession,
+	mockOrgMembersOptions,
+} = vi.hoisted(() => ({
+	mockUseActiveOrganization: vi.fn(),
+	mockUseSession: vi.fn(),
+	mockOrgMembersOptions: vi.fn(),
+}));
+
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
-		useActiveOrganization: vi.fn(),
+		useActiveOrganization: mockUseActiveOrganization,
 	},
-	useSession: vi.fn(),
+	useSession: mockUseSession,
 }));
 
-// Mock org-queries
 vi.mock("@/lib/org-queries", () => ({
-	orgMembersOptions: vi.fn((orgId: string | undefined) => ({
-		queryKey: ["org-members", orgId],
-		queryFn: async () => ({ members: [] }),
-		enabled: !!orgId,
-	})),
+	orgMembersOptions: mockOrgMembersOptions,
 }));
 
-import { authClient, useSession } from "@/lib/auth-client";
-import { orgMembersOptions } from "@/lib/org-queries";
+import {
+	createMockOrganization,
+	createMockSession,
+	createUseActiveOrganizationReturn,
+	createUseSessionReturn,
+} from "@test/mocks/auth-client";
+import {
+	createDisabledOrgMembersOptions,
+	createOrgMembersOptions,
+} from "@test/mocks/org-query";
 import { useOrgPermissions } from "./use-org-permissions";
 
 function createWrapper() {
@@ -47,19 +61,17 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("returns isOwner true when user has owner role", async () => {
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: { id: "org-1", name: "Test Org" },
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", "org-1"],
-			queryFn: async () => ({
-				members: [{ userId: "user-1", role: "owner" }],
-			}),
-			enabled: true,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(
+				createMockOrganization({ id: "org-1", name: "Test Org" }),
+			),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(
+			createOrgMembersOptions("org-1", [{ userId: "user-1", role: "owner" }]),
+		);
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
@@ -74,19 +86,17 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("returns isAdmin true when user has admin role", async () => {
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: { id: "org-1", name: "Test Org" },
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", "org-1"],
-			queryFn: async () => ({
-				members: [{ userId: "user-1", role: "admin" }],
-			}),
-			enabled: true,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(
+				createMockOrganization({ id: "org-1", name: "Test Org" }),
+			),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(
+			createOrgMembersOptions("org-1", [{ userId: "user-1", role: "admin" }]),
+		);
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
@@ -101,19 +111,17 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("returns isMember true when user has member role", async () => {
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: { id: "org-1", name: "Test Org" },
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", "org-1"],
-			queryFn: async () => ({
-				members: [{ userId: "user-1", role: "member" }],
-			}),
-			enabled: true,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(
+				createMockOrganization({ id: "org-1", name: "Test Org" }),
+			),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(
+			createOrgMembersOptions("org-1", [{ userId: "user-1", role: "member" }]),
+		);
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
@@ -128,17 +136,13 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("returns all false when no active organization", async () => {
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: undefined,
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", undefined],
-			queryFn: async () => ({ members: [] }),
-			enabled: false,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(undefined),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(createDisabledOrgMembersOptions());
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
@@ -152,19 +156,19 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("returns all false when user not found in members", async () => {
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: { id: "org-1", name: "Test Org" },
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", "org-1"],
-			queryFn: async () => ({
-				members: [{ userId: "different-user", role: "member" }],
-			}),
-			enabled: true,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(
+				createMockOrganization({ id: "org-1", name: "Test Org" }),
+			),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(
+			createOrgMembersOptions("org-1", [
+				{ userId: "different-user", role: "member" },
+			]),
+		);
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
@@ -177,31 +181,29 @@ describe("useOrgPermissions", () => {
 	});
 
 	it("finds currentMember from members list", async () => {
-		const expectedMember = {
-			userId: "user-1",
-			role: "admin",
-			name: "Test User",
-		};
-		vi.mocked(authClient.useActiveOrganization).mockReturnValue({
-			data: { id: "org-1", name: "Test Org" },
-		} as ReturnType<typeof authClient.useActiveOrganization>);
-		vi.mocked(useSession).mockReturnValue({
-			data: { user: { id: "user-1" } },
-		} as ReturnType<typeof useSession>);
-		vi.mocked(orgMembersOptions).mockReturnValue({
-			queryKey: ["org-members", "org-1"],
-			queryFn: async () => ({
-				members: [{ userId: "other-user", role: "member" }, expectedMember],
-			}),
-			enabled: true,
-		});
+		mockUseActiveOrganization.mockReturnValue(
+			createUseActiveOrganizationReturn(
+				createMockOrganization({ id: "org-1", name: "Test Org" }),
+			),
+		);
+		mockUseSession.mockReturnValue(
+			createUseSessionReturn(createMockSession({ user: { id: "user-1" } })),
+		);
+		mockOrgMembersOptions.mockReturnValue(
+			createOrgMembersOptions("org-1", [
+				{ userId: "other-user", role: "member" },
+				{ userId: "user-1", role: "admin" },
+			]),
+		);
 
 		const { result } = renderHook(() => useOrgPermissions(), {
 			wrapper: createWrapper(),
 		});
 
 		await waitFor(() => {
-			expect(result.current.currentMember).toEqual(expectedMember);
+			expect(result.current.currentMember).toBeDefined();
+			expect(result.current.currentMember?.userId).toBe("user-1");
+			expect(result.current.currentMember?.role).toBe("admin");
 		});
 	});
 });
