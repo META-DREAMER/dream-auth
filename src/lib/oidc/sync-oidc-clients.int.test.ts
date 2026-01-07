@@ -14,10 +14,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OidcClientConfig } from "./schemas";
 
 // We need to mock the env module before importing the sync module
+// Use a getter so DATABASE_URL is read dynamically at access time,
+// after testcontainers has started and set the env var
 vi.mock("@/env", () => ({
 	serverEnv: {
-		DATABASE_URL:
-			process.env.DATABASE_URL || "postgresql://test:test@localhost:5432/test",
+		get DATABASE_URL() {
+			return (
+				process.env.DATABASE_URL || "postgresql://test:test@localhost:5432/test"
+			);
+		},
 	},
 }));
 
