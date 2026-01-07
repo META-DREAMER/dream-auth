@@ -17,7 +17,11 @@
 			"**/vitest.config.ts",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/styles.css",
-			"!**/src/components/ui"
+			"!**/src/components/ui",
+			"!.output",
+			"!**/dist",
+			"!**/node_modules",
+			"!**/coverage"
 		]
 	},
 	"formatter": {

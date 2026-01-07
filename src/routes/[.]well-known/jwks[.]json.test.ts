@@ -24,7 +24,6 @@ describe("/.well-known/jwks.json", () => {
 
 	async function getHandlers() {
 		const { Route } = await import("./jwks[.]json.ts");
-		const a = Route.config.server.handlers;
 		return (
 			Route as {
 				config: {

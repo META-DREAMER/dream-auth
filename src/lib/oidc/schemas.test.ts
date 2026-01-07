@@ -78,7 +78,7 @@ describe("oidcClientSchema", () => {
 
 	describe("clientSecret requirement", () => {
 		it("requires clientSecret for web clients", () => {
-			const { clientSecret, ...withoutSecret } = validWebClient;
+			const { clientSecret: _clientSecret, ...withoutSecret } = validWebClient;
 			expect(() => oidcClientSchema.parse(withoutSecret)).toThrow(
 				/clientSecret is required/,
 			);
