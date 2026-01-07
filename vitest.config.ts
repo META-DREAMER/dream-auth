@@ -11,28 +11,33 @@ export default defineConfig({
 		// Global setup for all tests
 		setupFiles: ["./test/setup.ts"],
 
-		// Include patterns
-		include: [
-			"src/**/*.test.ts",
-			"src/**/*.test.tsx",
-			"server/**/*.test.ts",
-			"tests/**/*.test.ts",
-		],
-
 		// Exclude integration tests from main run (they have their own config)
-		exclude: [
-			"node_modules",
-			"dist",
-			".output",
-			"**/*.int.test.ts", // Integration tests excluded from unit test run
-		],
+		exclude: ["node_modules", "dist", ".output", "**/*.int.test.ts"],
 
-		// Environment matching - jsdom for React, node for server code
-		environmentMatchGlobs: [
-			// Hook and component tests use jsdom
-			["**/*.test.tsx", "jsdom"],
-			// Server/unit tests use node
-			["**/*.test.ts", "node"],
+		// Use workspace projects for environment-specific configs
+		workspace: [
+			{
+				// React/component tests with jsdom
+				extends: true,
+				test: {
+					name: "jsdom",
+					environment: "jsdom",
+					include: ["src/**/*.test.tsx"],
+				},
+			},
+			{
+				// Server/unit tests with node
+				extends: true,
+				test: {
+					name: "node",
+					environment: "node",
+					include: [
+						"src/**/*.test.ts",
+						"server/**/*.test.ts",
+						"tests/**/*.test.ts",
+					],
+				},
+			},
 		],
 
 		// Coverage configuration

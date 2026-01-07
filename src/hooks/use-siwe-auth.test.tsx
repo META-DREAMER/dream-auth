@@ -29,15 +29,15 @@ vi.mock("@/env.client", () => ({
 	},
 }));
 
+import {
+	createConnectedAccount,
+	createDisconnect,
+	createDisconnectedAccount,
+	createSignMessage,
+} from "@test/mocks/wagmi";
 import { createSiweMessage } from "viem/siwe";
 import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { siwe } from "@/lib/auth-client";
-import {
-	createConnectedAccount,
-	createDisconnectedAccount,
-	createDisconnect,
-	createSignMessage,
-} from "@test/mocks/wagmi";
 import { useSiweAuth } from "./use-siwe-auth";
 
 describe("useSiweAuth", () => {

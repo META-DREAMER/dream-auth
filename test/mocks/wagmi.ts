@@ -77,10 +77,7 @@ function createMockConnector(): Connector {
  * Creates a mock for useAccount in connected state.
  */
 export function createConnectedAccount(
-	overrides: {
-		address?: `0x${string}`;
-		chainId?: number;
-	} = {},
+	overrides: { address?: `0x${string}`; chainId?: number } = {},
 ): ConnectedAccountState {
 	const address =
 		overrides.address ?? "0x1234567890abcdef1234567890abcdef12345678";

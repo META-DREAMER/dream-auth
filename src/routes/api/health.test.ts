@@ -3,7 +3,10 @@ import { GET } from "./health";
 
 describe("GET /api/health", () => {
 	it("returns 200 with status ok", async () => {
-		const response = await GET({ request: new Request("http://localhost/api/health"), params: {} });
+		const response = await GET({
+			request: new Request("http://localhost/api/health"),
+			params: {},
+		});
 		const body = await response.json();
 
 		expect(response.status).toBe(200);
@@ -11,7 +14,10 @@ describe("GET /api/health", () => {
 	});
 
 	it("includes timestamp in response", async () => {
-		const response = await GET({ request: new Request("http://localhost/api/health"), params: {} });
+		const response = await GET({
+			request: new Request("http://localhost/api/health"),
+			params: {},
+		});
 		const body = await response.json();
 
 		expect(body.timestamp).toBeDefined();
@@ -21,7 +27,10 @@ describe("GET /api/health", () => {
 
 	it("returns timestamp close to current time", async () => {
 		const before = Date.now();
-		const response = await GET({ request: new Request("http://localhost/api/health"), params: {} });
+		const response = await GET({
+			request: new Request("http://localhost/api/health"),
+			params: {},
+		});
 		const after = Date.now();
 		const body = await response.json();
 

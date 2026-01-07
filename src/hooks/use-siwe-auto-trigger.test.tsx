@@ -14,8 +14,11 @@ vi.mock("./use-siwe-auth", () => ({
 	useSiweAuth: vi.fn(),
 }));
 
+import {
+	createConnectedAccount,
+	createDisconnectedAccount,
+} from "@test/mocks/wagmi";
 import { useAccount } from "wagmi";
-import { createConnectedAccount, createDisconnectedAccount } from "@test/mocks/wagmi";
 import { useSiweAuth } from "./use-siwe-auth";
 import { useSiweAutoTrigger } from "./use-siwe-auto-trigger";
 
@@ -219,7 +222,9 @@ describe("useSiweAutoTrigger", () => {
 
 		// Change address
 		vi.mocked(useAccount).mockReturnValue(
-			createConnectedAccount({ address: "0xaabbccdd0011223344556677889900aabbccddee" }),
+			createConnectedAccount({
+				address: "0xaabbccdd0011223344556677889900aabbccddee",
+			}),
 		);
 
 		rerender({ isConnected: true });

@@ -9,15 +9,17 @@
 /**
  * Creates a mock user with required fields.
  */
-export function createMockUser(overrides: {
-	id?: string;
-	email?: string;
-	name?: string;
-	image?: string | null;
-	emailVerified?: boolean;
-	createdAt?: Date;
-	updatedAt?: Date;
-} = {}) {
+export function createMockUser(
+	overrides: {
+		id?: string;
+		email?: string;
+		name?: string;
+		image?: string | null;
+		emailVerified?: boolean;
+		createdAt?: Date;
+		updatedAt?: Date;
+	} = {},
+) {
 	return {
 		id: overrides.id ?? "user-1",
 		email: overrides.email ?? "test@example.com",
@@ -32,19 +34,21 @@ export function createMockUser(overrides: {
 /**
  * Creates a mock session with user and session data.
  */
-export function createMockSession(overrides: {
-	user?: Parameters<typeof createMockUser>[0];
-	session?: {
-		id?: string;
-		userId?: string;
-		token?: string;
-		expiresAt?: Date;
-		createdAt?: Date;
-		updatedAt?: Date;
-		ipAddress?: string;
-		userAgent?: string;
-	};
-} = {}) {
+export function createMockSession(
+	overrides: {
+		user?: Parameters<typeof createMockUser>[0];
+		session?: {
+			id?: string;
+			userId?: string;
+			token?: string;
+			expiresAt?: Date;
+			createdAt?: Date;
+			updatedAt?: Date;
+			ipAddress?: string;
+			userAgent?: string;
+		};
+	} = {},
+) {
 	const user = createMockUser(overrides.user);
 	return {
 		user,
@@ -107,37 +111,39 @@ export function createUseSessionReturnPending() {
  * Creates a mock organization with full structure including members and invitations.
  * BetterAuth's useActiveOrganization returns an organization with these nested arrays.
  */
-export function createMockOrganization(overrides: {
-	id?: string;
-	name?: string;
-	slug?: string;
-	logo?: string | null;
-	createdAt?: Date;
-	metadata?: Record<string, unknown>;
-	members?: Array<{
-		id: string;
-		organizationId: string;
-		role: "owner" | "admin" | "member";
-		createdAt: Date;
-		userId: string;
-		teamId?: string;
-		user: {
+export function createMockOrganization(
+	overrides: {
+		id?: string;
+		name?: string;
+		slug?: string;
+		logo?: string | null;
+		createdAt?: Date;
+		metadata?: Record<string, unknown>;
+		members?: Array<{
 			id: string;
+			organizationId: string;
+			role: "owner" | "admin" | "member";
+			createdAt: Date;
+			userId: string;
+			teamId?: string;
+			user: {
+				id: string;
+				email: string;
+				name: string;
+				image: string | null | undefined;
+			};
+		}>;
+		invitations?: Array<{
+			id: string;
+			organizationId: string;
 			email: string;
-			name: string;
-			image: string | null | undefined;
-		};
-	}>;
-	invitations?: Array<{
-		id: string;
-		organizationId: string;
-		email: string;
-		role: "owner" | "admin" | "member";
-		status: "pending" | "accepted" | "rejected" | "canceled";
-		expiresAt: Date;
-		inviterId: string;
-	}>;
-} = {}) {
+			role: "owner" | "admin" | "member";
+			status: "pending" | "accepted" | "rejected" | "canceled";
+			expiresAt: Date;
+			inviterId: string;
+		}>;
+	} = {},
+) {
 	return {
 		id: overrides.id ?? "org-1",
 		name: overrides.name ?? "Test Organization",

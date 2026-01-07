@@ -9,15 +9,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // vi.hoisted ensures these mocks are available when vi.mock factory runs
 // (vi.mock calls are hoisted to top of file, before variable declarations)
-const {
-	mockUseActiveOrganization,
-	mockUseSession,
-	mockOrgMembersOptions,
-} = vi.hoisted(() => ({
-	mockUseActiveOrganization: vi.fn(),
-	mockUseSession: vi.fn(),
-	mockOrgMembersOptions: vi.fn(),
-}));
+const { mockUseActiveOrganization, mockUseSession, mockOrgMembersOptions } =
+	vi.hoisted(() => ({
+		mockUseActiveOrganization: vi.fn(),
+		mockUseSession: vi.fn(),
+		mockOrgMembersOptions: vi.fn(),
+	}));
 
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
