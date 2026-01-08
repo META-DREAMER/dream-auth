@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShieldIcon, SpinnerIcon } from "@phosphor-icons/react";
-import { ErrorAlert } from "@/components/shared/error-alert";
-import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { RoleSelect } from "@/components/org/role-select";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -144,4 +144,3 @@ export function EditMemberRoleDialog({
 		</Dialog>
 	);
 }
-

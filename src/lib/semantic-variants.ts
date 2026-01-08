@@ -1,15 +1,15 @@
 /**
  * Semantic variant patterns for consistent UI styling across the app.
- * 
+ *
  * These patterns align with shadcn/ui component variants and CSS variable tokens.
  * Use these instead of ad-hoc Tailwind color classes.
  */
 
 /**
  * Semantic button variants - use with Button component or buttonVariants
- * 
+ *
  * Standard variants: default, outline, secondary, ghost, destructive, link
- * 
+ *
  * For destructive actions, use variant="destructive" on Button component.
  */
 export const buttonVariants = {
@@ -23,9 +23,9 @@ export const buttonVariants = {
 
 /**
  * Semantic badge variants - use with Badge component
- * 
+ *
  * Standard variants: default, secondary, destructive, outline, ghost
- * 
+ *
  * For status/role badges, prefer outline variant with semantic color classes.
  */
 export const badgeVariants = {
@@ -40,7 +40,8 @@ export const badgeVariants = {
  * Error state styling - consistent across ErrorAlert and ListError
  */
 export const errorStyles = {
-	container: "rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive",
+	container:
+		"rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive",
 	icon: "h-4 w-4 shrink-0",
 } as const;
 
@@ -48,7 +49,8 @@ export const errorStyles = {
  * Warning state styling - for non-critical alerts
  */
 export const warningStyles = {
-	container: "rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm text-warning-foreground",
+	container:
+		"rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm text-warning-foreground",
 	icon: "h-4 w-4 shrink-0",
 } as const;
 
@@ -56,7 +58,8 @@ export const warningStyles = {
  * Success state styling - for positive feedback
  */
 export const successStyles = {
-	container: "rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success-foreground",
+	container:
+		"rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success-foreground",
 	icon: "h-4 w-4 shrink-0",
 } as const;
 
@@ -84,7 +87,7 @@ export const loadingStyles = {
  * Dialog icon container - consistent sizing and styling
  */
 export const dialogIconStyles = {
-	container: "mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary",
+	container:
+		"mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary",
 	icon: "h-6 w-6 text-primary-foreground",
 } as const;
-

@@ -1,10 +1,10 @@
+import { FingerprintIcon, KeyIcon, SpinnerIcon } from "@phosphor-icons/react";
 import {
 	createFileRoute,
 	Link,
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
-import { FingerprintIcon, KeyIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -150,9 +150,7 @@ function LoginPage() {
 					<CardTitle className="text-2xl font-bold tracking-tight">
 						Welcome back
 					</CardTitle>
-					<CardDescription>
-						Sign in to your account to continue
-					</CardDescription>
+					<CardDescription>Sign in to your account to continue</CardDescription>
 				</CardHeader>
 
 				<CardContent className="space-y-4">
@@ -180,10 +178,10 @@ function LoginPage() {
 						</Button>
 					)}
 
-				<ConnectSIWEButton
-					onSuccess={() => navigate({ to: redirectParam || "/" })}
-					onError={(err) => setError(err)}
-				/>
+					<ConnectSIWEButton
+						onSuccess={() => navigate({ to: redirectParam || "/" })}
+						onError={(err) => setError(err)}
+					/>
 
 					<div className="relative">
 						<div className="absolute inset-0 flex items-center">
@@ -198,9 +196,7 @@ function LoginPage() {
 
 					<form onSubmit={handleSubmit} className="space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="email">
-								Email
-							</Label>
+							<Label htmlFor="email">Email</Label>
 							<Input
 								id="email"
 								type="email"
@@ -213,9 +209,7 @@ function LoginPage() {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="password">
-								Password
-							</Label>
+							<Label htmlFor="password">Password</Label>
 							<Input
 								id="password"
 								type="password"
@@ -227,11 +221,7 @@ function LoginPage() {
 							/>
 						</div>
 
-						<Button
-							type="submit"
-							disabled={isLoading}
-							className="w-full"
-						>
+						<Button type="submit" disabled={isLoading} className="w-full">
 							{isLoading ? (
 								<>
 									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -246,14 +236,14 @@ function LoginPage() {
 
 				<CardFooter className="flex flex-col">
 					<p className="text-center text-sm text-muted-foreground">
-					Don't have an account?{" "}
-					<Link
-						to="/register"
-						search={{ redirect: redirectParam }}
-						className="text-primary hover:text-primary/80 font-medium transition-colors"
-					>
-						Create one
-					</Link>
+						Don't have an account?{" "}
+						<Link
+							to="/register"
+							search={{ redirect: redirectParam }}
+							className="text-primary hover:text-primary/80 font-medium transition-colors"
+						>
+							Create one
+						</Link>
 					</p>
 				</CardFooter>
 			</Card>

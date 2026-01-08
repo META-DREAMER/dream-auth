@@ -1,20 +1,26 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SpinnerIcon, UserPlusIcon, UserMinusIcon, UsersThreeIcon, CheckIcon } from "@phosphor-icons/react";
-import { ErrorAlert } from "@/components/shared/error-alert";
+import {
+	CheckIcon,
+	SpinnerIcon,
+	UserMinusIcon,
+	UserPlusIcon,
+	UsersThreeIcon,
+} from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogClose,
 	DialogContent,
 	DialogFooter,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
 import { organization } from "@/lib/auth-client";
 import { orgTeamsOptions } from "@/lib/org-queries";
 
@@ -56,7 +62,7 @@ export function ManageTeamMembersDialog({
 }: ManageTeamMembersDialogProps) {
 	const queryClient = useQueryClient();
 	const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-		new Set()
+		new Set(),
 	);
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
@@ -130,11 +136,11 @@ export function ManageTeamMembersDialog({
 
 			// Add new members
 			const toAdd = [...selectedUserIds].filter(
-				(id) => !currentMemberIds.has(id)
+				(id) => !currentMemberIds.has(id),
 			);
 			// Remove members
 			const toRemove = [...currentMemberIds].filter(
-				(id) => !selectedUserIds.has(id)
+				(id) => !selectedUserIds.has(id),
 			);
 
 			// Execute all operations
@@ -153,7 +159,9 @@ export function ManageTeamMembersDialog({
 
 			onOpenChange(false);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to update team members");
+			setError(
+				err instanceof Error ? err.message : "Failed to update team members",
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -247,33 +255,32 @@ export function ManageTeamMembersDialog({
 					)}
 				</div>
 
-			<DialogFooter className="flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<span className="text-sm text-muted-foreground text-center sm:text-left">
-					{selectedUserIds.size}{" "}
-					{selectedUserIds.size === 1 ? "member" : "members"} selected
-				</span>
-				<div className="flex flex-col-reverse gap-2 sm:flex-row">
-					<DialogClose asChild>
-						<Button variant="outline">Cancel</Button>
-					</DialogClose>
-					<Button
-						type="button"
-						onClick={handleSave}
-						disabled={saving || !hasChanges}
-					>
-						{saving ? (
-							<>
-								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-								Saving...
-							</>
-						) : (
-							"Save Changes"
-						)}
-					</Button>
-				</div>
-			</DialogFooter>
+				<DialogFooter className="flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<span className="text-sm text-muted-foreground text-center sm:text-left">
+						{selectedUserIds.size}{" "}
+						{selectedUserIds.size === 1 ? "member" : "members"} selected
+					</span>
+					<div className="flex flex-col-reverse gap-2 sm:flex-row">
+						<DialogClose asChild>
+							<Button variant="outline">Cancel</Button>
+						</DialogClose>
+						<Button
+							type="button"
+							onClick={handleSave}
+							disabled={saving || !hasChanges}
+						>
+							{saving ? (
+								<>
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+									Saving...
+								</>
+							) : (
+								"Save Changes"
+							)}
+						</Button>
+					</div>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
 }
-

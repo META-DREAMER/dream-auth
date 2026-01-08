@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { SpinnerIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UsersThreeIcon, SpinnerIcon } from "@phosphor-icons/react";
-import { ErrorAlert } from "@/components/shared/error-alert";
+import { useState } from "react";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -81,9 +81,7 @@ export function CreateTeamDialog({
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="team-name">
-								Team Name
-							</Label>
+							<Label htmlFor="team-name">Team Name</Label>
 							<Input
 								id="team-name"
 								placeholder="e.g., Engineering, Marketing"
@@ -98,10 +96,7 @@ export function CreateTeamDialog({
 						<DialogClose asChild>
 							<Button variant="outline">Cancel</Button>
 						</DialogClose>
-						<Button
-							type="submit"
-							disabled={createMutation.isPending || !name}
-						>
+						<Button type="submit" disabled={createMutation.isPending || !name}>
 							{createMutation.isPending ? (
 								<>
 									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -117,4 +112,3 @@ export function CreateTeamDialog({
 		</Dialog>
 	);
 }
-

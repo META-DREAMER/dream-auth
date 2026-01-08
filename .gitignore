@@ -13,3 +13,9 @@ count.txt
 todos.json
 
 .pnpm-store
+
+# Test coverage
+coverage
+
+# Local settings (editor-specific)
+.claude/settings.local.json

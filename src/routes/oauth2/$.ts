@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth";
+import type { ServerRouteHandler } from "@/lib/server-handler";
 
 /**
  * OAuth2 endpoints alias at root level.
@@ -16,16 +17,26 @@ import { auth } from "@/lib/auth";
  *
  * This allows the OIDC provider to use root-level OAuth2 endpoints (Option B from PRD).
  */
+
+type OAuth2Params = { _splat?: string };
+
+export const GET: ServerRouteHandler<OAuth2Params> = async ({
+	request,
+	params,
+}) => {
+	return proxyToAuth(request, params._splat);
+};
+
+export const POST: ServerRouteHandler<OAuth2Params> = async ({
+	request,
+	params,
+}) => {
+	return proxyToAuth(request, params._splat);
+};
+
 export const Route = createFileRoute("/oauth2/$")({
 	server: {
-		handlers: {
-			GET: async ({ request, params }) => {
-				return proxyToAuth(request, params._splat);
-			},
-			POST: async ({ request, params }) => {
-				return proxyToAuth(request, params._splat);
-			},
-		},
+		handlers: { GET, POST },
 	},
 });
 

@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WalletIcon } from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import {
@@ -100,9 +100,7 @@ export function WalletList() {
 				</TableHeader>
 				<TableBody>
 					{walletAccounts.map((account) => (
-						<TableRow
-							key={account.id}
-						>
+						<TableRow key={account.id}>
 							<TableCell className="font-mono text-sm">
 								<span className="flex items-center gap-2">
 									<WalletIcon className="h-4 w-4 text-orange-500 shrink-0" />

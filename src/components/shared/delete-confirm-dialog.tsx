@@ -28,7 +28,7 @@ interface DeleteConfirmDialogProps {
 
 /**
  * Reusable delete confirmation dialog with consistent styling.
- * 
+ *
  * Features:
  * - Supports custom trigger or default trash icon button
  * - Disables and animates confirm action while pending
@@ -67,20 +67,16 @@ export function DeleteConfirmDialog({
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>{title}</AlertDialogTitle>
-					<AlertDialogDescription>
-						{description}
-					</AlertDialogDescription>
+					<AlertDialogDescription>{description}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isDeleting}>
-						Cancel
-					</AlertDialogCancel>
+					<AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={onConfirm}
 						disabled={isDeleting}
 						className={cn(
 							"bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-opacity",
-							isDeleting && "opacity-75 cursor-not-allowed"
+							isDeleting && "opacity-75 cursor-not-allowed",
 						)}
 					>
 						{isDeleting ? (

@@ -1,7 +1,12 @@
-import { CheckCircleIcon, SpinnerIcon, EnvelopeIcon, PencilIcon } from "@phosphor-icons/react";
+import {
+	CheckCircleIcon,
+	EnvelopeIcon,
+	PencilIcon,
+	SpinnerIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -54,12 +59,18 @@ export function ChangeEmailDialog() {
 			});
 
 			if (result.error) {
-				throw new Error(result.error.message || "Failed to send verification email");
+				throw new Error(
+					result.error.message || "Failed to send verification email",
+				);
 			}
 
 			setEmailSent(true);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to send verification email");
+			setError(
+				err instanceof Error
+					? err.message
+					: "Failed to send verification email",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -68,10 +79,7 @@ export function ChangeEmailDialog() {
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button
-					variant="outline"
-					size="sm"
-				>
+				<Button variant="outline" size="sm">
 					<PencilIcon className="mr-2 h-4 w-4" />
 					Change Email
 				</Button>
@@ -94,13 +102,17 @@ export function ChangeEmailDialog() {
 								<strong>Next steps:</strong>
 							</p>
 							<ol className="mt-2 list-decimal list-inside text-sm text-muted-foreground space-y-1">
-								<li>Check your inbox at <strong className="text-foreground">{email}</strong></li>
+								<li>
+									Check your inbox at{" "}
+									<strong className="text-foreground">{email}</strong>
+								</li>
 								<li>Click the verification link in the email</li>
 								<li>Your email will be updated automatically</li>
 							</ol>
 						</div>
 						<p className="text-xs text-muted-foreground text-center">
-							Didn't receive the email? Check your spam folder or close this dialog and try again.
+							Didn't receive the email? Check your spam folder or close this
+							dialog and try again.
 						</p>
 					</div>
 				) : (
@@ -109,9 +121,7 @@ export function ChangeEmailDialog() {
 							{error && <ErrorAlert message={error} />}
 
 							<div className="space-y-2">
-								<Label htmlFor="email">
-									New Email Address
-								</Label>
+								<Label htmlFor="email">New Email Address</Label>
 								<Input
 									id="email"
 									type="email"
@@ -131,10 +141,7 @@ export function ChangeEmailDialog() {
 							<DialogClose asChild>
 								<Button variant="outline">Cancel</Button>
 							</DialogClose>
-							<Button
-								type="submit"
-								disabled={isLoading || !email}
-							>
+							<Button type="submit" disabled={isLoading || !email}>
 								{isLoading ? (
 									<>
 										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />

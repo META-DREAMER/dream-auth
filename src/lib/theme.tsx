@@ -1,11 +1,5 @@
-import {
-	createContext,
-	use,
-	useState,
-	useEffect,
-	type ReactNode,
-} from "react";
 import { createIsomorphicFn } from "@tanstack/react-start";
+import { createContext, type ReactNode, use, useEffect, useState } from "react";
 import { z } from "zod";
 
 // ============================================
@@ -59,7 +53,7 @@ function handleThemeChange(userTheme: UserTheme) {
 	if (typeof window === "undefined") return;
 
 	const root = document.documentElement;
-	
+
 	const update = () => {
 		root.classList.remove("light", "dark", "system");
 
@@ -147,8 +141,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 			handleThemeChange("system");
 		});
 	}, [userTheme]);
-
-
 
 	const appTheme: AppTheme =
 		userTheme === "system" ? getSystemTheme() : userTheme;

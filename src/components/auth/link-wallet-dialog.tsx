@@ -1,25 +1,30 @@
+import { PencilSimpleIcon, PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SpinnerIcon, PlusIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { useAccount, useDisconnect } from "wagmi";
+import { useSimpleKit } from "@/components/simplekit";
 import { Button } from "@/components/ui/button";
 import { useSiweAuth } from "@/hooks/use-siwe-auth";
-import { useSimpleKit } from "@/components/simplekit";
-import { useAccount, useDisconnect } from "wagmi";
 
 /**
  * Button component for linking a new wallet to an existing account.
  * Uses SimpleKit for connection and SIWE for verification.
- * 
+ *
  * Flow:
  * 1. User clicks "Link Wallet" - opens connect modal
  * 2. After connecting, auto-triggers SIWE (with manual retry available)
  * 3. User signs SIWE message to complete linking
- * 
+ *
  * Auto-triggers once per linking attempt, with manual retry always available.
  */
 export function LinkWalletDialog() {
 	const queryClient = useQueryClient();
-	const { open: openConnectModal, isConnected, isModalOpen, formattedAddress } = useSimpleKit();
+	const {
+		open: openConnectModal,
+		isConnected,
+		isModalOpen,
+		formattedAddress,
+	} = useSimpleKit();
 	const { address } = useAccount();
 	const { disconnect } = useDisconnect();
 	const [isLinkingFlow, setIsLinkingFlow] = useState(false);
@@ -59,7 +64,14 @@ export function LinkWalletDialog() {
 			}, 300);
 			return () => clearTimeout(timer);
 		}
-	}, [isLinkingFlow, isConnected, address, isModalOpen, isAuthenticating, authenticate]);
+	}, [
+		isLinkingFlow,
+		isConnected,
+		address,
+		isModalOpen,
+		isAuthenticating,
+		authenticate,
+	]);
 
 	// Start linking flow - disconnect any existing wallet, then open connect modal
 	const handleStartLinking = () => {

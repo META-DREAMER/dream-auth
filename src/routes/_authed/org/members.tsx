@@ -1,61 +1,22 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-	UsersIcon,
-	SpinnerIcon,
+	ArrowClockwiseIcon,
 	DotsThreeVerticalIcon,
-	ShieldIcon,
-	UserMinusIcon,
-	PlusIcon,
 	EnvelopeIcon,
+	PlusIcon,
+	ShieldIcon,
+	SpinnerIcon,
+	UserMinusIcon,
+	UsersIcon,
 	WalletIcon,
 	XCircleIcon,
-	ArrowClockwiseIcon,
 } from "@phosphor-icons/react";
-import { authClient, organization, useSession } from "@/lib/auth-client";
-import { inviteByEmail, inviteByWallet, isWalletInvitation } from "@/lib/invite-helpers";
-import { orgMembersOptions, orgInvitationsOptions } from "@/lib/org-queries";
-import { formatAddress, formatDate } from "@/lib/format";
-import { useOrgPermissions } from "@/hooks/use-org-permissions";
-import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader } from "@/components/org/page-header";
-import { RoleSelect } from "@/components/org/role-select";
 import { RoleBadge } from "@/components/org/role-badge";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { RoleSelect } from "@/components/org/role-select";
+import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -66,9 +27,52 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrgPermissions } from "@/hooks/use-org-permissions";
+import { authClient, organization, useSession } from "@/lib/auth-client";
+import { formatAddress, formatDate } from "@/lib/format";
+import {
+	inviteByEmail,
+	inviteByWallet,
+	isWalletInvitation,
+} from "@/lib/invite-helpers";
+import { orgInvitationsOptions, orgMembersOptions } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/_authed/org/members")({
 	component: MembersPage,
@@ -113,7 +117,9 @@ function MembersPage() {
 
 	// Invitation state
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-	const [cancelInvitation, setCancelInvitation] = useState<Invitation | null>(null);
+	const [cancelInvitation, setCancelInvitation] = useState<Invitation | null>(
+		null,
+	);
 	const [inviteType, setInviteType] = useState<"email" | "wallet">("email");
 	const [inviteEmail, setInviteEmail] = useState("");
 	const [inviteWallet, setInviteWallet] = useState("");
@@ -122,16 +128,22 @@ function MembersPage() {
 
 	// Queries
 	const { data: membersData, isPending: isPendingMembers } = useQuery(
-		orgMembersOptions(activeOrg?.id)
+		orgMembersOptions(activeOrg?.id),
 	);
 
 	const { data: invitations, isPending: isPendingInvitations } = useQuery(
-		orgInvitationsOptions(activeOrg?.id)
+		orgInvitationsOptions(activeOrg?.id),
 	);
 
 	// Member mutations
 	const updateRoleMutation = useMutation({
-		mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
+		mutationFn: async ({
+			memberId,
+			role,
+		}: {
+			memberId: string;
+			role: string;
+		}) => {
 			return organization.updateMemberRole({
 				memberId,
 				role: role as "member" | "admin" | "owner",
@@ -206,13 +218,13 @@ function MembersPage() {
 				return inviteByWallet(
 					invitation.walletAddress,
 					invitation.role as "member" | "admin",
-					invitation.organizationId
+					invitation.organizationId,
 				);
 			}
 			return inviteByEmail(
 				invitation.email,
 				invitation.role as "member" | "admin",
-				invitation.organizationId
+				invitation.organizationId,
 			);
 		},
 		onSuccess: () => {
@@ -240,7 +252,8 @@ function MembersPage() {
 	}
 
 	const members = membersData?.members ?? [];
-	const pendingInvitations = invitations?.filter((inv) => inv.status === "pending") ?? [];
+	const pendingInvitations =
+		invitations?.filter((inv) => inv.status === "pending") ?? [];
 
 	const handleEditRole = (member: Member) => {
 		setEditMember(member);
@@ -326,9 +339,7 @@ function MembersPage() {
 										<TableHead>Role</TableHead>
 										<TableHead>Expires</TableHead>
 										{isOwnerOrAdmin && (
-											<TableHead className="text-right">
-												Actions
-											</TableHead>
+											<TableHead className="text-right">Actions</TableHead>
 										)}
 									</TableRow>
 								</TableHeader>
@@ -341,11 +352,11 @@ function MembersPage() {
 											<TableRow key={invitation.id}>
 												<TableCell>
 													<div className="flex flex-col">
-												<span className="font-medium">
-													{isWallet
-														? formatAddress(invitation.walletAddress)
-														: invitation.email}
-												</span>
+														<span className="font-medium">
+															{isWallet
+																? formatAddress(invitation.walletAddress)
+																: invitation.email}
+														</span>
 														{isWallet && (
 															<span className="text-xs text-muted-foreground">
 																{invitation.email}
@@ -398,7 +409,9 @@ function MembersPage() {
 															</DropdownMenuTrigger>
 															<DropdownMenuContent align="end">
 																<DropdownMenuItem
-																	onClick={() => resendMutation.mutate(invitation)}
+																	onClick={() =>
+																		resendMutation.mutate(invitation)
+																	}
 																	disabled={resendingId === invitation.id}
 																>
 																	{resendingId === invitation.id ? (
@@ -409,7 +422,9 @@ function MembersPage() {
 																	Resend Invitation
 																</DropdownMenuItem>
 																<DropdownMenuItem
-																	onClick={() => setCancelInvitation(invitation)}
+																	onClick={() =>
+																		setCancelInvitation(invitation)
+																	}
 																	className="text-destructive focus:text-destructive"
 																>
 																	<XCircleIcon className="mr-2 h-4 w-4" />
@@ -460,9 +475,7 @@ function MembersPage() {
 									<TableHead>Role</TableHead>
 									<TableHead>Joined</TableHead>
 									{isOwnerOrAdmin && (
-										<TableHead className="text-right">
-											Actions
-										</TableHead>
+										<TableHead className="text-right">Actions</TableHead>
 									)}
 								</TableRow>
 							</TableHeader>
@@ -557,7 +570,8 @@ function MembersPage() {
 					<DialogHeader>
 						<DialogTitle>Change Member Role</DialogTitle>
 						<DialogDescription>
-							Update the role for {editMember?.user.name || editMember?.user.email}
+							Update the role for{" "}
+							{editMember?.user.name || editMember?.user.email}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="py-4">
@@ -568,10 +582,7 @@ function MembersPage() {
 						/>
 					</div>
 					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setEditMember(null)}
-						>
+						<Button variant="outline" onClick={() => setEditMember(null)}>
 							Cancel
 						</Button>
 						<Button
@@ -588,12 +599,13 @@ function MembersPage() {
 			</Dialog>
 
 			{/* Remove Member Confirmation */}
-			<AlertDialog open={!!removeMember} onOpenChange={() => setRemoveMember(null)}>
+			<AlertDialog
+				open={!!removeMember}
+				onOpenChange={() => setRemoveMember(null)}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Remove Member
-						</AlertDialogTitle>
+						<AlertDialogTitle>Remove Member</AlertDialogTitle>
 						<AlertDialogDescription>
 							Are you sure you want to remove{" "}
 							<span className="font-medium text-foreground">
@@ -603,9 +615,7 @@ function MembersPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>
-							Cancel
-						</AlertDialogCancel>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleRemoveMember}
 							disabled={removeMemberMutation.isPending}
@@ -648,9 +658,7 @@ function MembersPage() {
 
 						{inviteType === "email" ? (
 							<div className="space-y-2">
-								<Label htmlFor="email">
-									Email Address
-								</Label>
+								<Label htmlFor="email">Email Address</Label>
 								<Input
 									id="email"
 									type="email"
@@ -661,9 +669,7 @@ function MembersPage() {
 							</div>
 						) : (
 							<div className="space-y-2">
-								<Label htmlFor="wallet">
-									Wallet Address
-								</Label>
+								<Label htmlFor="wallet">Wallet Address</Label>
 								<Input
 									id="wallet"
 									type="text"
@@ -680,13 +686,8 @@ function MembersPage() {
 						)}
 
 						<div className="space-y-2">
-							<Label htmlFor="role">
-								Role
-							</Label>
-							<RoleSelect
-								value={inviteRole}
-								onValueChange={setInviteRole}
-							/>
+							<Label htmlFor="role">Role</Label>
+							<RoleSelect value={inviteRole} onValueChange={setInviteRole} />
 						</div>
 					</div>
 					<DialogFooter>
@@ -700,7 +701,9 @@ function MembersPage() {
 							onClick={handleInvite}
 							disabled={
 								inviteMutation.isPending ||
-								(inviteType === "email" ? !inviteEmail.trim() : !inviteWallet.trim())
+								(inviteType === "email"
+									? !inviteEmail.trim()
+									: !inviteWallet.trim())
 							}
 						>
 							{inviteMutation.isPending && (
@@ -719,9 +722,7 @@ function MembersPage() {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Cancel Invitation
-						</AlertDialogTitle>
+						<AlertDialogTitle>Cancel Invitation</AlertDialogTitle>
 						<AlertDialogDescription>
 							Are you sure you want to cancel the invitation for{" "}
 							<span className="font-medium text-foreground">
@@ -733,9 +734,7 @@ function MembersPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>
-							Keep Invitation
-						</AlertDialogCancel>
+						<AlertDialogCancel>Keep Invitation</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleCancelInvitation}
 							disabled={cancelMutation.isPending}

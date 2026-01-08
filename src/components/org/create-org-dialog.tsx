@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { BuildingIcon, SpinnerIcon } from "@phosphor-icons/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -28,10 +28,7 @@ interface CreateOrgDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-export function CreateOrgDialog({
-	open,
-	onOpenChange,
-}: CreateOrgDialogProps) {
+export function CreateOrgDialog({ open, onOpenChange }: CreateOrgDialogProps) {
 	const queryClient = useQueryClient();
 	const [name, setName] = useState("");
 	const [slug, setSlug] = useState("");
@@ -46,7 +43,9 @@ export function CreateOrgDialog({
 				logo: logo || undefined,
 			});
 			if (result.error) {
-				throw new Error(result.error.message || "Failed to create organization");
+				throw new Error(
+					result.error.message || "Failed to create organization",
+				);
 			}
 			return result;
 		},
@@ -106,9 +105,7 @@ export function CreateOrgDialog({
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="org-name">
-								Organization Name
-							</Label>
+							<Label htmlFor="org-name">Organization Name</Label>
 							<Input
 								id="org-name"
 								placeholder="e.g., Acme Inc."
@@ -119,9 +116,7 @@ export function CreateOrgDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="org-slug">
-								Slug
-							</Label>
+							<Label htmlFor="org-slug">Slug</Label>
 							<Input
 								id="org-slug"
 								placeholder="e.g., acme-inc"
@@ -135,9 +130,7 @@ export function CreateOrgDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="org-logo">
-								Logo URL (optional)
-							</Label>
+							<Label htmlFor="org-logo">Logo URL (optional)</Label>
 							<Input
 								id="org-logo"
 								type="url"
@@ -152,10 +145,7 @@ export function CreateOrgDialog({
 						<DialogClose asChild>
 							<Button variant="outline">Cancel</Button>
 						</DialogClose>
-						<Button
-							type="submit"
-							disabled={createMutation.isPending || !name}
-						>
+						<Button type="submit" disabled={createMutation.isPending || !name}>
 							{createMutation.isPending ? (
 								<>
 									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -171,4 +161,3 @@ export function CreateOrgDialog({
 		</Dialog>
 	);
 }
-

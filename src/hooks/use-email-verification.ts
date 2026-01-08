@@ -50,7 +50,8 @@ export function useEmailVerification({
 
 	const lastSentAtRef = useRef<number | null>(null);
 
-	// Update countdown timer
+	// Update countdown timer - re-runs when hasSentOtp changes to start interval
+	// biome-ignore lint/correctness/useExhaustiveDependencies: hasSentOtp is intentionally in deps to trigger effect when OTP is sent (ref value changes before state)
 	useEffect(() => {
 		const lastSentAt = lastSentAtRef.current;
 		if (!lastSentAt) return;
@@ -69,7 +70,7 @@ export function useEmailVerification({
 		const interval = setInterval(updateCountdown, 1000);
 
 		return () => clearInterval(interval);
-	}, []);
+	}, [hasSentOtp]); // Re-run when OTP is sent to start countdown
 
 	const canResend = secondsUntilResend === 0;
 
@@ -143,7 +144,9 @@ export function useEmailVerification({
 			await router.invalidate();
 			onSuccess?.();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Invalid verification code");
+			setError(
+				err instanceof Error ? err.message : "Invalid verification code",
+			);
 		} finally {
 			setIsLoading(false);
 		}

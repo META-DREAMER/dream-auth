@@ -1,20 +1,33 @@
-import { SunIcon, MoonIcon, DesktopIcon } from "@phosphor-icons/react";
+import { DesktopIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { useTheme, type UserTheme } from "@/lib/theme";
+import { type UserTheme, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
-const themeOptions: { value: UserTheme; label: string; icon: typeof SunIcon }[] = [
+const themeOptions: {
+	value: UserTheme;
+	label: string;
+	icon: typeof SunIcon;
+}[] = [
 	{ value: "light", label: "Light", icon: SunIcon },
 	{ value: "dark", label: "Dark", icon: MoonIcon },
 	{ value: "system", label: "System", icon: DesktopIcon },
 ];
 
-export function ThemeSwitcherButtons({ orientation }: { orientation?: React.ComponentProps<typeof ButtonGroup>["orientation"] }) {
+export function ThemeSwitcherButtons({
+	orientation,
+}: {
+	orientation?: React.ComponentProps<typeof ButtonGroup>["orientation"];
+}) {
 	const { userTheme, setTheme } = useTheme();
 
 	return (
-		<div className={cn("px-2 py-1.5 ", orientation === "vertical" ? "flex flex-col items-center" : "")}>
+		<div
+			className={cn(
+				"px-2 py-1.5 ",
+				orientation === "vertical" ? "flex flex-col items-center" : "",
+			)}
+		>
 			<ButtonGroup orientation={orientation}>
 				{themeOptions.map((option) => {
 					const Icon = option.icon;
@@ -37,4 +50,3 @@ export function ThemeSwitcherButtons({ orientation }: { orientation?: React.Comp
 		</div>
 	);
 }
-

@@ -27,7 +27,8 @@ export const oidcClientSchema = z
 		clientId: z.string().min(1),
 		name: z.string().min(1),
 		redirectURLs: z.array(z.string().url()).min(1, {
-			message: "At least one redirect URL is required for authorization_code flow",
+			message:
+				"At least one redirect URL is required for authorization_code flow",
 		}),
 
 		// Client type (defaults to "web" for confidential clients)
@@ -60,7 +61,3 @@ export const oidcClientSchema = z
 	);
 
 export type OidcClientConfig = z.infer<typeof oidcClientSchema>;
-
-
-
-

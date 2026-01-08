@@ -1,5 +1,12 @@
+import {
+	BuildingIcon,
+	GearIcon,
+	KeyIcon,
+	ShieldIcon,
+	SignOutIcon,
+	UserIcon,
+} from "@phosphor-icons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BuildingIcon, KeyIcon, SignOutIcon, GearIcon, ShieldIcon, UserIcon } from "@phosphor-icons/react";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,22 +47,13 @@ function HomePage() {
 					</p>
 
 					<div className="flex flex-col sm:flex-row gap-4 justify-center">
-						<Button
-							asChild
-							size="lg"
-							className="w-full"
-						>
+						<Button asChild size="lg" className="w-full">
 							<Link to="/login">
 								<KeyIcon className="mr-2 h-5 w-5" />
 								Sign in
 							</Link>
 						</Button>
-						<Button
-							asChild
-							variant="outline"
-							size="lg"
-							className="w-full"
-						>
+						<Button asChild variant="outline" size="lg" className="w-full">
 							<Link to="/register">Create account</Link>
 						</Button>
 					</div>
@@ -91,9 +89,7 @@ function HomePage() {
 							<dl className="space-y-2 text-sm">
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">User ID</dt>
-									<dd className="font-mono text-xs">
-										{session.user.id}
-									</dd>
+									<dd className="font-mono text-xs">{session.user.id}</dd>
 								</div>
 								<div className="flex justify-between">
 									<dt className="text-muted-foreground">Email</dt>
@@ -109,20 +105,13 @@ function HomePage() {
 						</div>
 
 						<div className="flex flex-col sm:flex-row gap-3">
-							<Button
-								asChild
-								className="flex-1"
-							>
+							<Button asChild className="flex-1">
 								<Link to="/org">
 									<BuildingIcon className="mr-2 h-4 w-4" />
 									Organizations
 								</Link>
 							</Button>
-							<Button
-								asChild
-								variant="outline"
-								className="flex-1"
-							>
+							<Button asChild variant="outline" className="flex-1">
 								<Link to="/settings">
 									<GearIcon className="mr-2 h-4 w-4" />
 									Settings

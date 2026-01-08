@@ -1,9 +1,14 @@
-import { useState } from "react";
+import {
+	EnvelopeIcon,
+	SpinnerIcon,
+	UserPlusIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { EnvelopeIcon, WalletIcon, SpinnerIcon, UserPlusIcon } from "@phosphor-icons/react";
-import { ErrorAlert } from "@/components/shared/error-alert";
-import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { useState } from "react";
 import { RoleSelect } from "@/components/org/role-select";
+import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -114,9 +119,7 @@ export function InviteMemberDialog({
 								</TabsTrigger>
 							</TabsList>
 							<TabsContent value="email" className="space-y-2 mt-4">
-								<Label htmlFor="invite-email">
-									Email Address
-								</Label>
+								<Label htmlFor="invite-email">Email Address</Label>
 								<Input
 									id="invite-email"
 									type="email"
@@ -126,9 +129,7 @@ export function InviteMemberDialog({
 								/>
 							</TabsContent>
 							<TabsContent value="wallet" className="space-y-2 mt-4">
-								<Label htmlFor="invite-wallet">
-									Wallet Address
-								</Label>
+								<Label htmlFor="invite-wallet">Wallet Address</Label>
 								<Input
 									id="invite-wallet"
 									type="text"
@@ -145,9 +146,7 @@ export function InviteMemberDialog({
 						</Tabs>
 
 						<div className="space-y-2">
-							<Label htmlFor="invite-role">
-								Role
-							</Label>
+							<Label htmlFor="invite-role">Role</Label>
 							<RoleSelect value={inviteRole} onValueChange={setInviteRole} />
 						</div>
 					</div>
@@ -180,4 +179,3 @@ export function InviteMemberDialog({
 		</Dialog>
 	);
 }
-

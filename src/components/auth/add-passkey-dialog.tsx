@@ -1,8 +1,8 @@
+import { FingerprintIcon, PlusIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FingerprintIcon, SpinnerIcon, PlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { DialogHeaderScaffold } from "@/components/shared/dialog-scaffold";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -76,9 +76,7 @@ export function AddPasskeyDialog() {
 						{error && <ErrorAlert message={error} />}
 
 						<div className="space-y-2">
-							<Label htmlFor="passkey-name">
-								Passkey Name (optional)
-							</Label>
+							<Label htmlFor="passkey-name">Passkey Name (optional)</Label>
 							<Input
 								id="passkey-name"
 								placeholder="e.g., MacBook Touch ID"
@@ -95,10 +93,7 @@ export function AddPasskeyDialog() {
 						<DialogClose asChild>
 							<Button variant="outline">Cancel</Button>
 						</DialogClose>
-						<Button
-							type="submit"
-							disabled={addMutation.isPending}
-						>
+						<Button type="submit" disabled={addMutation.isPending}>
 							{addMutation.isPending ? (
 								<>
 									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />

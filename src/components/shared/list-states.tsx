@@ -1,7 +1,11 @@
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	emptyStateStyles,
+	errorStyles,
+	loadingStyles,
+} from "@/lib/semantic-variants";
 import { cn } from "@/lib/utils";
-import { loadingStyles, emptyStateStyles, errorStyles } from "@/lib/semantic-variants";
 
 /**
  * Loading skeleton for lists - displays two placeholder rows.
@@ -27,7 +31,13 @@ interface ListErrorProps {
  */
 export function ListError({ message, retry, className }: ListErrorProps) {
 	return (
-		<div className={cn("flex items-center gap-2", errorStyles.container, className)}>
+		<div
+			className={cn(
+				"flex items-center gap-2",
+				errorStyles.container,
+				className,
+			)}
+		>
 			<WarningCircleIcon className={errorStyles.icon} />
 			<span className="flex-1">{message}</span>
 			{retry && (
@@ -65,7 +75,9 @@ export function EmptyState({
 			<div className={emptyStateStyles.card}>
 				<Icon className={emptyStateStyles.icon.card} />
 				<p className="mb-2 font-medium">{title}</p>
-				{description && <p className="text-sm text-muted-foreground">{description}</p>}
+				{description && (
+					<p className="text-sm text-muted-foreground">{description}</p>
+				)}
 			</div>
 		);
 	}

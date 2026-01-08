@@ -1,7 +1,7 @@
 import { getMigrations } from "better-auth/db";
 import { Pool } from "pg";
-import { auth } from "@/lib/auth";
 import { serverEnv } from "@/env";
+import { auth } from "@/lib/auth";
 
 /**
  * Better Auth Auto-Migration Plugin for Nitro
@@ -63,7 +63,9 @@ function formatMigrationSummary(
 		lines.push(`  Tables to create (${toBeCreated.length}):`);
 		for (const table of toBeCreated) {
 			const fieldNames = Object.keys(table.fields);
-			lines.push(`    - ${table.table} (${fieldNames.length} columns: ${fieldNames.join(", ")})`);
+			lines.push(
+				`    - ${table.table} (${fieldNames.length} columns: ${fieldNames.join(", ")})`,
+			);
 		}
 	}
 
@@ -86,7 +88,9 @@ export default async () => {
 	const lockKey = serverEnv.BETTER_AUTH_MIGRATION_LOCK_KEY;
 	const timeoutMs = serverEnv.BETTER_AUTH_MIGRATION_LOCK_TIMEOUT_MS;
 
-	console.log("[BetterAuth] Auto-migrate enabled. Checking for pending migrations...");
+	console.log(
+		"[BetterAuth] Auto-migrate enabled. Checking for pending migrations...",
+	);
 
 	// First, check if there are any migrations to run BEFORE acquiring lock
 	// This avoids lock contention when the database is already up-to-date
@@ -96,7 +100,9 @@ export default async () => {
 	const hasMigrations = toBeCreated.length > 0 || toBeAdded.length > 0;
 
 	if (!hasMigrations) {
-		console.log("[BetterAuth] Database schema is up-to-date. No migrations needed.");
+		console.log(
+			"[BetterAuth] Database schema is up-to-date. No migrations needed.",
+		);
 		return;
 	}
 
@@ -144,11 +150,15 @@ export default async () => {
 		await freshMigrationInfo.runMigrations();
 
 		const duration = Date.now() - startTime;
-		console.log(`[BetterAuth] Migrations completed successfully in ${duration}ms.`);
+		console.log(
+			`[BetterAuth] Migrations completed successfully in ${duration}ms.`,
+		);
 	} finally {
 		if (locked) {
 			try {
-				await client.query("SELECT pg_advisory_unlock(hashtext($1))", [lockKey]);
+				await client.query("SELECT pg_advisory_unlock(hashtext($1))", [
+					lockKey,
+				]);
 				console.log("[BetterAuth] Migration lock released.");
 			} catch (error) {
 				console.error("[BetterAuth] Failed to release migration lock:", error);
@@ -159,4 +169,3 @@ export default async () => {
 		await pool.end();
 	}
 };
-

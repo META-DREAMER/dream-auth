@@ -19,4 +19,3 @@ export function useOrgPermissions() {
 		isMember: !!currentMember,
 	};
 }
-

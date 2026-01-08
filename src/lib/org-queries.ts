@@ -44,4 +44,3 @@ export const orgTeamsOptions = (orgId: string | undefined) =>
 		},
 		enabled: !!orgId,
 	});
-

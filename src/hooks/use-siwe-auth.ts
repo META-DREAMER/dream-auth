@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { createSiweMessage } from "viem/siwe";
-import { siwe } from "@/lib/auth-client";
+import { useAccount, useDisconnect, useSignMessage } from "wagmi";
 import { clientEnv } from "@/env.client";
+import { siwe } from "@/lib/auth-client";
 
 interface UseSiweAuthOptions {
 	onSuccess?: () => void;
@@ -47,12 +47,14 @@ export function useSiweAuth({
 			});
 
 			if (nonceResponse.error || !nonceResponse.data?.nonce) {
-				throw new Error(nonceResponse.error?.message || "Failed to generate SIWE nonce");
+				throw new Error(
+					nonceResponse.error?.message || "Failed to generate SIWE nonce",
+				);
 			}
 
 			const nonce = nonceResponse.data.nonce;
 			const statement = "Sign in with your Ethereum wallet to Dream Auth";
-			
+
 			// Determine domain and URI
 			// Use configured auth URL or fallback to current origin
 			const authUrlStr = clientEnv.VITE_AUTH_URL || window.location.origin;

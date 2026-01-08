@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+
+reviews:
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  # Project context for reviewers
+  path_instructions:
+    - path: "src/**"
+      instructions: |
+        Dream Auth is a self-hosted identity provider built on TanStack Start with BetterAuth.
+        Key directories:
+        - src/lib/auth.ts: Central authentication configuration
+        - src/lib/oidc/: OIDC provider implementation
+        - src/routes/: TanStack Start file-based routing
+        - src/components/: React components (shadcn/ui in ui/)
+        - src/env.ts: Server-only env vars (never import in client code)
+        - src/env.client.ts: Client-safe env vars (VITE_* prefixed)
+    - path: "server/**"
+      instructions: |
+        Nitro server plugins. The auto-migrate plugin handles BetterAuth database migrations
+        with PostgreSQL advisory locks for safe multi-replica deployments.
+    - path: "**/*.test.{ts,tsx}"
+      instructions: |
+        Unit/integration tests use Vitest. Mock factories live in test/mocks/.
+        Prefer typed mock factories over type casting.
+    - path: "test/**"
+      instructions: |
+        Test utilities and infrastructure:
+        - test/mocks/: Mock factories for Wagmi, BetterAuth, etc.
+        - test/fixtures/: Test data fixtures
+        - test/helpers/: Shared test utilities
+        - test/setup.ts: Vitest global setup
+    - path: "e2e/**"
+      instructions: |
+        End-to-end tests using Playwright:
+        - e2e/tests/: Test specs
+        - e2e/fixtures/: Playwright fixtures
+        - e2e/helpers/: E2E test utilities
+        - e2e/playwright.config.ts: Playwright configuration
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  tools:
+    biome:
+      enabled: true
+    eslint:
+      enabled: false
+
+chat:
+  auto_reply: true

@@ -1,37 +1,19 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-	SpinnerIcon,
-	PlusIcon,
 	DotsThreeVerticalIcon,
+	PlusIcon,
+	SpinnerIcon,
 	TrashIcon,
 	UserPlusIcon,
 	UsersIcon,
-  UsersThreeIcon,
+	UsersThreeIcon,
 } from "@phosphor-icons/react";
-import { authClient, organization } from "@/lib/auth-client";
-import { orgTeamsOptions, orgMembersOptions } from "@/lib/org-queries";
-import { formatDate } from "@/lib/format";
-import { useOrgPermissions } from "@/hooks/use-org-permissions";
-import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { CreateTeamDialog } from "@/components/org/create-team-dialog";
+import { ManageTeamMembersDialog } from "@/components/org/manage-team-members-dialog";
 import { PageHeader } from "@/components/org/page-header";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { SelectOrgPrompt } from "@/components/org/select-org-prompt";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -42,8 +24,26 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CreateTeamDialog } from "@/components/org/create-team-dialog";
-import { ManageTeamMembersDialog } from "@/components/org/manage-team-members-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrgPermissions } from "@/hooks/use-org-permissions";
+import { authClient, organization } from "@/lib/auth-client";
+import { formatDate } from "@/lib/format";
+import { orgMembersOptions, orgTeamsOptions } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/_authed/org/teams")({
 	component: TeamsPage,
@@ -67,7 +67,7 @@ function TeamsPage() {
 	const [deleteTeam, setDeleteTeam] = useState<Team | null>(null);
 
 	const { data: teams, isPending: isPendingTeams } = useQuery(
-		orgTeamsOptions(activeOrg?.id)
+		orgTeamsOptions(activeOrg?.id),
 	);
 
 	const { data: membersData } = useQuery(orgMembersOptions(activeOrg?.id));
@@ -195,9 +195,7 @@ function TeamsPage() {
 			<AlertDialog open={!!deleteTeam} onOpenChange={() => setDeleteTeam(null)}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Delete Team
-						</AlertDialogTitle>
+						<AlertDialogTitle>Delete Team</AlertDialogTitle>
 						<AlertDialogDescription>
 							Are you sure you want to delete the team{" "}
 							<span className="font-medium text-foreground">
@@ -207,9 +205,7 @@ function TeamsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>
-							Cancel
-						</AlertDialogCancel>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteTeam}
 							disabled={deleteTeamMutation.isPending}
@@ -282,15 +278,13 @@ function TeamCard({
 	return (
 		<Card className="bg-card/50 hover:border-border/80 transition-colors">
 			<CardHeader className="pb-3">
-					<div className="flex items-start justify-between">
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
-								<UsersThreeIcon className="h-5 w-5" />
-							</div>
+				<div className="flex items-start justify-between">
+					<div className="flex items-center gap-3">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+							<UsersThreeIcon className="h-5 w-5" />
+						</div>
 						<div>
-							<CardTitle className="text-base">
-								{team.name}
-							</CardTitle>
+							<CardTitle className="text-base">{team.name}</CardTitle>
 							<CardDescription className="text-xs">
 								Created {formatDate(team.createdAt)}
 							</CardDescription>
@@ -299,11 +293,7 @@ function TeamCard({
 					{isOwnerOrAdmin && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-								>
+								<Button variant="ghost" size="icon" className="h-8 w-8">
 									<DotsThreeVerticalIcon className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>

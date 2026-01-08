@@ -1,15 +1,15 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import {
 	BuildingIcon,
 	CheckIcon,
 	ClockIcon,
-	SpinnerIcon,
 	EnvelopeIcon,
+	SpinnerIcon,
 	WalletIcon,
 	XIcon,
 } from "@phosphor-icons/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { Pool } from "pg";
 import { useAccount } from "wagmi";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -258,20 +258,15 @@ function InvitePage() {
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
 							<XIcon className="h-6 w-6 text-red-400" />
 						</div>
-						<CardTitle className="text-xl">
-							Invitation Not Found
-						</CardTitle>
+						<CardTitle className="text-xl">Invitation Not Found</CardTitle>
 						<CardDescription>
 							This invitation may have expired, been canceled, or doesn't exist.
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-					<Button
-						asChild
-						variant="outline"
-					>
-						<Link to="/">Go Home</Link>
-					</Button>
+						<Button asChild variant="outline">
+							<Link to="/">Go Home</Link>
+						</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -292,7 +287,9 @@ function InvitePage() {
 							<ClockIcon className="h-6 w-6 text-amber-400" />
 						</div>
 						<CardTitle className="text-xl">
-							{isExpired ? "Invitation Expired" : "Invitation No Longer Available"}
+							{isExpired
+								? "Invitation Expired"
+								: "Invitation No Longer Available"}
 						</CardTitle>
 						<CardDescription>
 							{isExpired
@@ -301,12 +298,9 @@ function InvitePage() {
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-					<Button
-						asChild
-						variant="outline"
-					>
-						<Link to="/">Go Home</Link>
-					</Button>
+						<Button asChild variant="outline">
+							<Link to="/">Go Home</Link>
+						</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -328,12 +322,12 @@ function InvitePage() {
 						</CardTitle>
 						<CardDescription>
 							You've been invited to join as{" "}
-						<Badge
-							variant="outline"
-							className="ml-1 border-success/30 text-success bg-success/10"
-						>
-							{invitationPreview.role}
-						</Badge>
+							<Badge
+								variant="outline"
+								className="ml-1 border-success/30 text-success bg-success/10"
+							>
+								{invitationPreview.role}
+							</Badge>
 						</CardDescription>
 					</CardHeader>
 
@@ -341,7 +335,9 @@ function InvitePage() {
 						{/* Invitation preview details */}
 						<div className="rounded-lg bg-muted border p-4 space-y-3">
 							<div className="flex items-center justify-between">
-								<span className="text-sm text-muted-foreground">Organization</span>
+								<span className="text-sm text-muted-foreground">
+									Organization
+								</span>
 								<span className="text-sm font-medium">
 									{invitationPreview.organizationName}
 								</span>
@@ -358,7 +354,9 @@ function InvitePage() {
 								<>
 									<Separator />
 									<div className="flex items-center justify-between">
-										<span className="text-sm text-muted-foreground">Required Wallet</span>
+										<span className="text-sm text-muted-foreground">
+											Required Wallet
+										</span>
 										<span className="text-sm font-mono flex items-center gap-1">
 											<WalletIcon className="h-3 w-3" />
 											{invitationPreview.walletAddressPreview}
@@ -388,12 +386,11 @@ function InvitePage() {
 										</span>
 									</div>
 								</div>
-							<Button
-								asChild
-								variant="outline"
-								className="w-full"
-								>
-									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
+								<Button asChild variant="outline" className="w-full">
+									<Link
+										to="/login"
+										search={{ redirect: `/invite/${invitationId}` }}
+									>
 										<EnvelopeIcon className="mr-2 h-4 w-4" />
 										Sign in with Email
 									</Link>
@@ -401,11 +398,11 @@ function InvitePage() {
 							</>
 						) : (
 							<>
-								<Button
-									asChild
-									className="w-full font-medium"
-								>
-									<Link to="/login" search={{ redirect: `/invite/${invitationId}` }}>
+								<Button asChild className="w-full font-medium">
+									<Link
+										to="/login"
+										search={{ redirect: `/invite/${invitationId}` }}
+									>
 										<EnvelopeIcon className="mr-2 h-4 w-4" />
 										Sign in with Email
 									</Link>
@@ -472,9 +469,7 @@ function InvitePage() {
 						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20">
 							<XIcon className="h-6 w-6 text-red-400" />
 						</div>
-						<CardTitle className="text-xl">
-							Invitation Not Found
-						</CardTitle>
+						<CardTitle className="text-xl">Invitation Not Found</CardTitle>
 						<CardDescription>
 							{invitationError instanceof Error
 								? invitationError.message
@@ -482,12 +477,9 @@ function InvitePage() {
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="justify-center">
-					<Button
-						asChild
-						variant="outline"
-					>
-						<Link to="/">Go Home</Link>
-					</Button>
+						<Button asChild variant="outline">
+							<Link to="/">Go Home</Link>
+						</Button>
 					</CardFooter>
 				</Card>
 			</div>
@@ -531,12 +523,12 @@ function InvitePage() {
 					</CardTitle>
 					<CardDescription>
 						You've been invited to join as{" "}
-					<Badge
-						variant="outline"
-						className="ml-1 border-success/30 text-success bg-success/10"
-					>
-						{invitation?.role}
-					</Badge>
+						<Badge
+							variant="outline"
+							className="ml-1 border-success/30 text-success bg-success/10"
+						>
+							{invitation?.role}
+						</Badge>
 					</CardDescription>
 				</CardHeader>
 
@@ -546,7 +538,9 @@ function InvitePage() {
 					{/* Invitation details */}
 					<div className="rounded-lg bg-muted border p-4 space-y-3">
 						<div className="flex items-center justify-between">
-							<span className="text-sm text-muted-foreground">Organization</span>
+							<span className="text-sm text-muted-foreground">
+								Organization
+							</span>
 							<span className="text-sm font-medium">
 								{invitation?.organizationName}
 							</span>
@@ -574,11 +568,13 @@ function InvitePage() {
 							<>
 								<Separator />
 								<div className="flex items-center justify-between">
-									<span className="text-sm text-muted-foreground">Required Wallet</span>
-								<span className="text-sm font-mono flex items-center gap-1">
-									<WalletIcon className="h-3 w-3" />
-									{formatAddress(invitationWallet)}
-								</span>
+									<span className="text-sm text-muted-foreground">
+										Required Wallet
+									</span>
+									<span className="text-sm font-mono flex items-center gap-1">
+										<WalletIcon className="h-3 w-3" />
+										{formatAddress(invitationWallet)}
+									</span>
 								</div>
 							</>
 						)}
@@ -588,11 +584,11 @@ function InvitePage() {
 					{isWalletInvite && connectedWallet && !walletMatches && (
 						<div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
 							<p className="text-sm text-amber-400">
-							<strong>Wrong wallet connected.</strong> This invitation requires
-							you to sign in with wallet{" "}
-							<span className="font-mono">
-								{formatAddress(invitationWallet)}
-							</span>
+								<strong>Wrong wallet connected.</strong> This invitation
+								requires you to sign in with wallet{" "}
+								<span className="font-mono">
+									{formatAddress(invitationWallet)}
+								</span>
 							</p>
 						</div>
 					)}

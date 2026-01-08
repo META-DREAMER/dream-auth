@@ -17,6 +17,9 @@ COPY . .
 # Skip env validation during build
 ENV SKIP_ENV_VALIDATION=true
 
+# Increase Node.js heap size for large builds (default ~2GB is insufficient)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build the application
 RUN pnpm run build
 
