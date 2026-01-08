@@ -1,3 +1,4 @@
+import { createMockSession } from "@test/mocks/auth-client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth module
@@ -27,18 +28,12 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns 200 with user headers when session exists", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue({
-			user: {
-				id: "user-123",
-				email: "test@example.com",
-				name: "Test User",
-			},
-			session: {
-				id: "session-123",
-				userId: "user-123",
-				expiresAt: new Date(),
-			},
-		} as never);
+		vi.mocked(auth.api.getSession).mockResolvedValue(
+			createMockSession({
+				user: { id: "user-123", email: "test@example.com", name: "Test User" },
+				session: { id: "session-123" },
+			}),
+		);
 
 		const request = new Request("http://localhost:3000/api/verify", {
 			headers: {
@@ -54,18 +49,12 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns empty X-Auth-User when user has no name", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue({
-			user: {
-				id: "user-123",
-				email: "test@example.com",
-				name: null,
-			},
-			session: {
-				id: "session-123",
-				userId: "user-123",
-				expiresAt: new Date(),
-			},
-		} as never);
+		vi.mocked(auth.api.getSession).mockResolvedValue(
+			createMockSession({
+				user: { id: "user-123", email: "test@example.com", name: "" },
+				session: { id: "session-123" },
+			}),
+		);
 
 		const request = new Request("http://localhost:3000/api/verify");
 		const response = await GET({ request, params: {} });
@@ -90,18 +79,12 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns null body on success", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue({
-			user: {
-				id: "user-123",
-				email: "test@example.com",
-				name: "Test User",
-			},
-			session: {
-				id: "session-123",
-				userId: "user-123",
-				expiresAt: new Date(),
-			},
-		} as never);
+		vi.mocked(auth.api.getSession).mockResolvedValue(
+			createMockSession({
+				user: { id: "user-123", email: "test@example.com", name: "Test User" },
+				session: { id: "session-123" },
+			}),
+		);
 
 		const request = new Request("http://localhost:3000/api/verify");
 		const response = await GET({ request, params: {} });

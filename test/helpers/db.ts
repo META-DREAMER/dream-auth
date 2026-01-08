@@ -98,15 +98,23 @@ export async function seedTestInvitation(
 ): Promise<string> {
 	const role = options.role ?? "member";
 	const expiresAt = options.expiresAt ?? new Date(Date.now() + 7 * 86400000); // 7 days
+	const walletAddress = options.walletAddress ?? null;
 
 	const result = await pool.query(
 		`
     INSERT INTO "invitation"
-    (id, email, "organizationId", role, status, "inviterId", "expiresAt")
-    VALUES (gen_random_uuid(), $1, $2, $3, 'pending', $4, $5)
+    (id, email, "organizationId", role, status, "inviterId", "expiresAt", "walletAddress")
+    VALUES (gen_random_uuid(), $1, $2, $3, 'pending', $4, $5, $6)
     RETURNING id
   `,
-		[options.email, options.organizationId, role, options.inviterId, expiresAt],
+		[
+			options.email,
+			options.organizationId,
+			role,
+			options.inviterId,
+			expiresAt,
+			walletAddress,
+		],
 	);
 
 	return result.rows[0].id;
