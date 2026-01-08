@@ -3,7 +3,7 @@ import {
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
 import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
+import { afterAll, beforeAll } from "vitest";
 
 /**
  * Database setup for integration tests using Testcontainers
@@ -40,6 +40,8 @@ beforeAll(async () => {
 	const connectionString = container.getConnectionUri();
 	process.env.DATABASE_URL = connectionString;
 	process.env.TEST_DATABASE_URL = connectionString;
+	// Signal that a real database is available for integration tests
+	process.env.INTEGRATION_TEST_DB_READY = "true";
 
 	pool = new Pool({ connectionString });
 
@@ -66,23 +68,10 @@ afterAll(async () => {
 	console.log("[Test DB] PostgreSQL container stopped");
 });
 
-// Transaction-based cleanup between tests
-let testClient: import("pg").PoolClient | null = null;
-
-beforeEach(async () => {
-	if (pool) {
-		testClient = await pool.connect();
-		await testClient.query("BEGIN");
-	}
-});
-
-afterEach(async () => {
-	if (testClient) {
-		await testClient.query("ROLLBACK");
-		testClient.release();
-		testClient = null;
-	}
-});
+// Note: Test isolation is handled by individual tests with explicit cleanup
+// (e.g., DELETE FROM table in beforeEach). Transaction-based isolation was
+// removed because tests use pool.query() which gets different connections
+// from the pool, making per-connection transactions ineffective.
 
 // Export for use in tests
 export { pool, container };

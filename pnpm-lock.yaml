@@ -110,9 +110,6 @@ importers:
       react-hook-form:
         specifier: ^7.68.0
         version: 7.68.0(react@19.2.3)
-      shadcn:
-        specifier: ^3.6.2
-        version: 3.6.2(@types/node@25.0.0)(typescript@5.9.3)
       siwe:
         specifier: ^3.0.0
         version: 3.0.0(ethers@6.16.0(bufferutil@4.1.0)(utf-8-validate@5.0.10))
@@ -180,6 +177,9 @@ importers:
       jsdom:
         specifier: ^27.0.0
         version: 27.3.0(bufferutil@4.1.0)(postcss@8.5.6)(utf-8-validate@5.0.10)
+      shadcn:
+        specifier: ^3.6.2
+        version: 3.6.2(@types/node@25.0.0)(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3

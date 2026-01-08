@@ -34,8 +34,9 @@ import {
 describe("OIDC Client Sync Integration Tests", () => {
 	let pool: Pool;
 
-	// Safety net: skip if DATABASE_URL not set (should always be set via testcontainers in CI)
-	const skipIfNoDb = !process.env.DATABASE_URL;
+	// Safety net: skip if no real database is available
+	// INTEGRATION_TEST_DB_READY is set by test/setup-db.ts after testcontainers starts
+	const skipIfNoDb = !process.env.INTEGRATION_TEST_DB_READY;
 
 	beforeEach(async () => {
 		if (skipIfNoDb) return;

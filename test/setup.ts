@@ -14,7 +14,11 @@ import { afterAll, vi } from "vitest";
 process.env.NODE_ENV = "test";
 process.env.SKIP_ENV_VALIDATION = "true";
 
-// Required env vars for tests
+// Required env vars for unit tests (mocks DB anyway)
+// Integration tests override this via setup-db.ts with a real container
+// Note: This fallback ensures unit tests don't fail on missing DATABASE_URL,
+// but does NOT mean a real database is available. Integration tests should
+// check INTEGRATION_TEST_DB_READY instead.
 process.env.DATABASE_URL =
 	process.env.TEST_DATABASE_URL ||
 	"postgresql://test:test@localhost:5433/test_auth";
