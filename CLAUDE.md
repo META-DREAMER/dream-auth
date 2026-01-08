@@ -249,10 +249,74 @@ Other plugin docs also available, they each add different methods, use context7 
 ### Running Tests
 
 ```bash
-pnpm test                    # Run all tests
+# Unit tests (Vitest)
+pnpm test                    # Run all unit tests
 pnpm test:coverage           # Run with coverage report
+
+# Integration tests (Testcontainers)
+pnpm test:integration        # Run integration tests with real PostgreSQL
+
+# E2E tests (Playwright)
+pnpm test:e2e                # Run all E2E tests
+pnpm test:e2e:ui             # Interactive UI mode
+pnpm test:e2e:debug          # Debug mode with inspector
+pnpm test:e2e:report         # View HTML test report
+
+# All tests
+pnpm test:all                # Unit + Integration + E2E
 pnpm typecheck               # Ensure type safety (run before committing)
 ```
+
+### E2E Testing Architecture
+
+**Location:** `e2e/` directory
+
+The E2E test suite uses Playwright with Testcontainers for database isolation:
+
+```
+e2e/
+├── fixtures/                 # Playwright fixtures
+│   ├── auth-fixtures.ts     # Authentication helpers
+│   ├── database-fixtures.ts # Database access and cleanup
+│   └── index.ts             # Combined fixtures export
+├── helpers/
+│   ├── assertions.ts        # Custom assertions
+│   ├── navigation.ts        # Navigation utilities (registerUser, loginUser)
+│   └── test-user-factory.ts # Test data creation
+├── tests/
+│   ├── auth/                # Authentication flow tests
+│   ├── health/              # Health check tests
+│   ├── oidc/                # OIDC provider tests
+│   └── protected-routes/    # Route protection tests
+├── global-setup.ts          # Starts PostgreSQL container
+├── global-teardown.ts       # Cleanup
+└── playwright.config.ts     # Playwright configuration
+```
+
+**Key Concepts:**
+
+1. **Global Setup/Teardown:** Starts PostgreSQL via Testcontainers, writes `.env.e2e.local`
+2. **webServer Config:** Playwright manages the dev server lifecycle automatically
+3. **Label-Based Selectors:** Use `page.getByLabel()` and `page.getByRole()` for robust element selection
+4. **Transaction Isolation:** Database fixtures provide transaction-based test isolation
+
+**Writing E2E Tests:**
+
+```typescript
+import { test, expect } from "../../fixtures";
+import { registerUser } from "../../helpers/navigation";
+
+test.describe("Feature Name", () => {
+  test("should do something", async ({ page }) => {
+    await registerUser(page, "Test User", "test@example.com", "Password123!");
+    await expect(page).toHaveURL("/");
+  });
+});
+```
+
+**CI Integration:** `.github/workflows/e2e.yml` runs E2E tests with artifact upload for reports.
+
+See [docs/E2E-TESTING.md](./docs/E2E-TESTING.md) for comprehensive documentation.
 
 ### Manual OIDC Tests
 

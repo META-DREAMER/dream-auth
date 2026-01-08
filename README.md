@@ -43,7 +43,29 @@ pnpm start        # Start production server
 pnpm lint         # Run linter
 pnpm format       # Format code
 pnpm check        # Run all checks
+pnpm typecheck    # TypeScript type checking
 ```
+
+## Testing
+
+```bash
+# Unit tests (Vitest)
+pnpm test                    # Run all unit tests
+pnpm test:coverage           # Run with coverage report
+
+# Integration tests (Testcontainers)
+pnpm test:integration        # Run integration tests with real PostgreSQL
+
+# E2E tests (Playwright)
+pnpm test:e2e                # Run all E2E tests
+pnpm test:e2e:ui             # Interactive UI mode
+pnpm test:e2e:report         # View HTML report
+
+# Run all tests
+pnpm test:all                # Unit + Integration + E2E
+```
+
+See [docs/E2E-TESTING.md](./docs/E2E-TESTING.md) for detailed E2E testing documentation.
 
 ## Database Migrations
 

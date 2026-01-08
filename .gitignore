@@ -19,3 +19,9 @@ coverage
 
 # Local settings (editor-specific)
 .claude/settings.local.json
+
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+e2e/test-results/
