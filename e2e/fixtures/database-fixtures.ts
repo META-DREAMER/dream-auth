@@ -1,5 +1,5 @@
 import { test as base } from "@playwright/test";
-import { Pool, type PoolClient } from "pg";
+import { Pool } from "pg";
 
 /**
  * Database fixtures for E2E tests
@@ -12,7 +12,12 @@ let globalPool: Pool | null = null;
 
 function getPool(): Pool {
 	if (!globalPool) {
-		const connectionString = process.env.DATABASE_URL;
+		// Try process.env first, then fall back to globalThis (set by global-setup.ts)
+		const connectionString =
+			process.env.DATABASE_URL ||
+			((globalThis as Record<string, unknown>).__E2E_DATABASE_URL__ as
+				| string
+				| undefined);
 		if (!connectionString) {
 			throw new Error(
 				"DATABASE_URL not set. Make sure global-setup.ts ran successfully.",
@@ -26,15 +31,9 @@ function getPool(): Pool {
 export type DatabaseFixtures = {
 	/**
 	 * Database pool for direct queries
-	 * Use for seeding test data
+	 * Use for seeding test data and cleanup
 	 */
 	pool: Pool;
-
-	/**
-	 * Transaction-scoped client for test isolation
-	 * All changes are rolled back after each test
-	 */
-	dbClient: PoolClient;
 
 	/**
 	 * Clean up specific tables after a test
@@ -50,21 +49,10 @@ export const databaseFixtures = base.extend<DatabaseFixtures>({
 		// Pool is kept alive across tests (worker-scoped cleanup happens in global teardown)
 	},
 
-	dbClient: async ({ pool }, use) => {
-		const client = await pool.connect();
-		await client.query("BEGIN");
-
-		await use(client);
-
-		// Rollback transaction to clean up test data
-		await client.query("ROLLBACK");
-		client.release();
-	},
-
 	cleanupTables: async ({ pool }, use) => {
 		const cleanup = async (tables: string[]) => {
-			// Truncate in reverse order to handle foreign key constraints
-			for (const table of tables.reverse()) {
+			// Use spread to avoid mutating the input array
+			for (const table of [...tables].reverse()) {
 				await pool.query(`TRUNCATE TABLE "${table}" CASCADE`);
 			}
 		};

@@ -1,11 +1,16 @@
 import { test as base, type Page } from "@playwright/test";
-import type { Pool, PoolClient } from "pg";
-import { createTestUser, type TestUser } from "../helpers/test-user-factory";
+import type { Pool } from "pg";
+import {
+	cleanupTestUsers,
+	createTestUserViaAPI,
+	type TestUser,
+} from "../helpers/test-user-factory";
 
 /**
  * Authentication fixtures for E2E tests
  *
  * Provides utilities for creating test users and authenticated sessions.
+ * Uses API-based user creation to properly hash passwords via BetterAuth.
  */
 
 export type AuthFixtures = {
@@ -16,7 +21,7 @@ export type AuthFixtures = {
 	authenticatedPage: Page;
 
 	/**
-	 * The test user created by authenticatedPage fixture
+	 * The test user created for this test
 	 */
 	testUser: TestUser;
 
@@ -40,30 +45,66 @@ export type AuthFixtures = {
 	logout: () => Promise<void>;
 };
 
-export const authFixtures = base.extend<
-	AuthFixtures & { pool: Pool; dbClient: PoolClient }
->({
-	// Create an authenticated page with a test user
-	authenticatedPage: async ({ page, dbClient }, use) => {
-		// Create a test user in the database
-		const user = await createTestUser(dbClient);
+/**
+ * Generate unique test user data for each test
+ */
+function generateTestUserData(): TestUser {
+	const timestamp = Date.now();
+	const random = Math.random().toString(36).substring(2, 8);
+	return {
+		id: "", // Will be assigned by BetterAuth
+		email: `e2e-test-${timestamp}-${random}@example.com`,
+		password: "TestPassword123!",
+		name: "E2E Test User",
+	};
+}
+
+export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
+	// Create a test user via API and sign them in via UI
+	authenticatedPage: async ({ page, pool, baseURL }, use) => {
+		if (!baseURL) {
+			throw new Error("baseURL is required - ensure webServer is configured");
+		}
+		const userData = generateTestUserData();
+
+		// Create user via API (properly hashes password)
+		const result = await createTestUserViaAPI(baseURL, userData);
+		if (!result.success) {
+			throw new Error(`Failed to create test user: ${result.error}`);
+		}
 
 		// Login via UI
 		await page.goto("/login");
-		await page.fill('input[type="email"]', user.email);
-		await page.fill('input[type="password"]', user.password);
+		await page.fill('input[type="email"]', userData.email);
+		await page.fill('input[type="password"]', userData.password);
 		await page.click('button[type="submit"]');
 
 		// Wait for successful redirect
 		await page.waitForURL("/", { timeout: 10000 });
 
 		await use(page);
+
+		// Cleanup: delete this specific test user
+		await cleanupTestUsers(pool, userData.email);
 	},
 
-	// Expose the test user created by authenticatedPage
-	testUser: async ({ dbClient }, use) => {
-		const user = await createTestUser(dbClient);
-		await use(user);
+	// Create a test user via API and expose it
+	testUser: async ({ pool, baseURL }, use) => {
+		if (!baseURL) {
+			throw new Error("baseURL is required - ensure webServer is configured");
+		}
+		const userData = generateTestUserData();
+
+		// Create user via API (properly hashes password)
+		const result = await createTestUserViaAPI(baseURL, userData);
+		if (!result.success) {
+			throw new Error(`Failed to create test user: ${result.error}`);
+		}
+
+		await use(userData);
+
+		// Cleanup: delete this specific test user
+		await cleanupTestUsers(pool, userData.email);
 	},
 
 	// Helper to login via UI
@@ -101,8 +142,7 @@ export const authFixtures = base.extend<
 	// Helper to logout
 	logout: async ({ page }, use) => {
 		const logout = async () => {
-			// Navigate to settings to find logout button
-			// Or clear cookies directly
+			// Clear cookies directly
 			await page.context().clearCookies();
 			await page.goto("/login");
 		};

@@ -33,6 +33,9 @@ async function globalSetup(_config: FullConfig) {
 	const connectionString = container.getConnectionUri();
 	console.log("[E2E Setup] PostgreSQL started:", connectionString);
 
+	// Set in process.env so Playwright workers inherit it
+	process.env.DATABASE_URL = connectionString;
+
 	// Create environment file for the dev server
 	const envContent = `
 DATABASE_URL=${connectionString}
@@ -71,9 +74,11 @@ OIDC_CLIENTS=${JSON.stringify([
 	fs.writeFileSync(envPath, envContent);
 	console.log("[E2E Setup] Environment written to", envPath);
 
-	// Store container reference for teardown
+	// Store references for teardown and worker access
 	(globalThis as Record<string, unknown>).__E2E_CONTAINER__ = container;
 	(globalThis as Record<string, unknown>).__E2E_ENV_PATH__ = envPath;
+	(globalThis as Record<string, unknown>).__E2E_DATABASE_URL__ =
+		connectionString;
 
 	console.log(
 		"[E2E Setup] Global setup complete - webServer will start the dev server",
