@@ -54,7 +54,7 @@ export default defineConfig({
 	// Web server config - starts dev server with env file
 	webServer: {
 		command: isCI
-			? `pnpm exec dotenv -e .env.e2e.local -- sh -c "pnpm build && pnpm start"`
+			? `pnpm exec dotenv -e .env.e2e.local -- pnpm start`
 			: `pnpm exec dotenv -e .env.e2e.local -- pnpm dev --port ${port}`,
 		url: `${baseUrl}/api/health`,
 		reuseExistingServer: !process.env.CI,
