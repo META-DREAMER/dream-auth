@@ -70,8 +70,8 @@ OIDC_CLIENTS=${JSON.stringify([
 	])}
 `.trim();
 
-	// Write to .env.e2e for the dev server
-	const envPath = path.resolve(process.cwd(), ".env.e2e.local");
+	// Write to .env.test.local - Vite will automatically load this when NODE_ENV=test
+	const envPath = path.resolve(process.cwd(), ".env.test.local");
 	fs.writeFileSync(envPath, envContent);
 	console.log("[E2E Setup] Environment written to", envPath);
 
