@@ -5,6 +5,11 @@ import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
+import {
+	configToEnvFile,
+	configToEnvVars,
+	getE2ETestConfig,
+} from "./test-config";
 
 // Store reference for teardown
 let container: StartedPostgreSqlContainer | null = null;
@@ -12,15 +17,14 @@ let container: StartedPostgreSqlContainer | null = null;
 /**
  * Global setup for E2E tests
  *
- * 1. Starts PostgreSQL container via testcontainers
- * 2. Writes environment variables to a file for the webServer to use
+ * 1. Loads test configuration from test-config.ts (can be overridden by env vars)
+ * 2. Starts PostgreSQL container via testcontainers
+ * 3. Sets complete configuration in process.env (inherited by webServer)
+ * 4. Writes configuration to .env.test.local (fallback for Vite)
  *
  * The dev server is started by Playwright's webServer config
  */
 async function globalSetup(_config: FullConfig) {
-	const port = process.env.E2E_PORT || "3001";
-	const baseUrl = `http://localhost:${port}`;
-
 	console.log("[E2E Setup] Starting PostgreSQL container...");
 
 	// Start PostgreSQL container
@@ -33,46 +37,23 @@ async function globalSetup(_config: FullConfig) {
 	const connectionString = container.getConnectionUri();
 	console.log("[E2E Setup] PostgreSQL started:", connectionString);
 
-	// Set in process.env so Playwright workers inherit it
+	// Get test configuration and inject dynamic DATABASE_URL
 	process.env.DATABASE_URL = connectionString;
+	const config = getE2ETestConfig();
 
-	// Create environment file for the dev server
-	const envContent = `
-PORT=${port}
-DATABASE_URL=${connectionString}
-NODE_ENV=test
-SKIP_ENV_VALIDATION=true
-BETTER_AUTH_SECRET=test-secret-at-least-32-characters-long-for-testing
-BETTER_AUTH_URL=${baseUrl}
-BETTER_AUTH_AUTO_MIGRATE=true
-ENABLE_REGISTRATION=true
-ENABLE_OIDC_PROVIDER=true
-ENABLE_PASSKEYS=true
-ENABLE_SIWE=true
-OIDC_REQUIRE_PKCE=true
-OIDC_CLIENTS=${JSON.stringify([
-		{
-			clientId: "test-client",
-			clientSecret: "test-secret",
-			name: "Test Client",
-			type: "web",
-			redirectURLs: [`${baseUrl}/callback`],
-			skipConsent: false,
-		},
-		{
-			clientId: "trusted-client",
-			clientSecret: "trusted-secret",
-			name: "Trusted Client",
-			type: "web",
-			redirectURLs: [`${baseUrl}/callback`],
-			skipConsent: true,
-		},
-	])}
-`.trim();
+	// Apply all configuration to process.env for webServer and workers
+	const envVars = configToEnvVars(config);
+	for (const [key, value] of Object.entries(envVars)) {
+		process.env[key] = value;
+	}
 
-	// Write to .env.test.local - Vite will automatically load this when NODE_ENV=test
+	console.log(
+		"[E2E Setup] Environment variables configured from test-config.ts",
+	);
+
+	// Write to .env.test.local as fallback for Vite
 	const envPath = path.resolve(process.cwd(), ".env.test.local");
-	fs.writeFileSync(envPath, envContent);
+	fs.writeFileSync(envPath, configToEnvFile(config));
 	console.log("[E2E Setup] Environment written to", envPath);
 
 	// Store references for teardown and worker access

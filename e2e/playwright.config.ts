@@ -51,7 +51,7 @@ export default defineConfig({
 	outputDir: "./test-results",
 
 	// Web server config - starts dev server
-	// Vite automatically loads .env.test.local when NODE_ENV=test
+	// Environment variables are set in process.env by global setup
 	webServer: {
 		command: `pnpm dev --port ${port}`,
 		url: `${baseUrl}/api/health`,
@@ -59,8 +59,5 @@ export default defineConfig({
 		timeout: 120000, // 2 minutes for server startup
 		stdout: "pipe",
 		stderr: "pipe",
-		env: {
-			NODE_ENV: "test",
-		},
 	},
 });
