@@ -5,6 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const port = process.env.E2E_PORT || "3001";
 const baseUrl = `http://localhost:${port}`;
+const isCI = !!process.env.CI;
 
 /**
  * Playwright configuration for Dream Auth E2E tests
@@ -52,7 +53,9 @@ export default defineConfig({
 
 	// Web server config - starts dev server with env file
 	webServer: {
-		command: `pnpm exec dotenv -e .env.e2e.local -- pnpm dev --port ${port}`,
+		command: isCI
+			? `pnpm exec dotenv -e .env.e2e.local -- sh -c "pnpm build && pnpm start"`
+			: `pnpm exec dotenv -e .env.e2e.local -- pnpm dev --port ${port}`,
 		url: `${baseUrl}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120000, // 2 minutes for server startup

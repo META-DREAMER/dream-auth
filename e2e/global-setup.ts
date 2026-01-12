@@ -38,6 +38,7 @@ async function globalSetup(_config: FullConfig) {
 
 	// Create environment file for the dev server
 	const envContent = `
+PORT=${port}
 DATABASE_URL=${connectionString}
 NODE_ENV=test
 SKIP_ENV_VALIDATION=true
