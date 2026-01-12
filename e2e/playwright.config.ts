@@ -5,7 +5,6 @@ import { defineConfig, devices } from "@playwright/test";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const port = process.env.E2E_PORT || "3001";
 const baseUrl = `http://localhost:${port}`;
-const isCI = !!process.env.CI;
 
 /**
  * Playwright configuration for Dream Auth E2E tests
