@@ -11,6 +11,7 @@ export interface E2ETestConfig {
 	databaseUrl?: string; // Set dynamically by global-setup after container starts
 	nodeEnv: string;
 	skipEnvValidation: string;
+	disableDevtools: string; // Disable TanStack devtools to avoid port conflicts
 	betterAuthSecret: string;
 	betterAuthUrl: string;
 	betterAuthAutoMigrate: string;
@@ -36,6 +37,7 @@ export function getE2ETestConfig(): E2ETestConfig {
 		databaseUrl: process.env.DATABASE_URL, // Set by global-setup
 		nodeEnv: process.env.NODE_ENV || "test",
 		skipEnvValidation: process.env.SKIP_ENV_VALIDATION || "true",
+		disableDevtools: process.env.DISABLE_DEVTOOLS || "true", // Disable devtools by default in E2E
 		betterAuthSecret:
 			process.env.BETTER_AUTH_SECRET ||
 			"test-secret-at-least-32-characters-long-for-testing",
@@ -77,6 +79,7 @@ export function configToEnvVars(config: E2ETestConfig): Record<string, string> {
 		PORT: config.port,
 		NODE_ENV: config.nodeEnv,
 		SKIP_ENV_VALIDATION: config.skipEnvValidation,
+		DISABLE_DEVTOOLS: config.disableDevtools,
 		BETTER_AUTH_SECRET: config.betterAuthSecret,
 		BETTER_AUTH_URL: config.betterAuthUrl,
 		BETTER_AUTH_AUTO_MIGRATE: config.betterAuthAutoMigrate,

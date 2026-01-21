@@ -1,18 +1,28 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { FullConfig } from "@playwright/test";
-import {
-	PostgreSqlContainer,
-	type StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
+import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import {
 	configToEnvFile,
 	configToEnvVars,
 	getE2ETestConfig,
 } from "./test-config";
 
-// Store reference for teardown
-let container: StartedPostgreSqlContainer | null = null;
+/**
+ * Redact credentials from a PostgreSQL connection string for safe logging
+ */
+function redactConnectionString(connectionString: string): string {
+	try {
+		const url = new URL(connectionString);
+		if (url.password) {
+			url.password = "***";
+		}
+		return url.toString();
+	} catch {
+		// If URL parsing fails, do basic redaction
+		return connectionString.replace(/:[^:@]+@/, ":***@");
+	}
+}
 
 /**
  * Global setup for E2E tests
@@ -28,14 +38,17 @@ async function globalSetup(_config: FullConfig) {
 	console.log("[E2E Setup] Starting PostgreSQL container...");
 
 	// Start PostgreSQL container
-	container = await new PostgreSqlContainer("postgres:16-alpine")
+	const container = await new PostgreSqlContainer("postgres:16-alpine")
 		.withDatabase("e2e_auth")
 		.withUsername("test")
 		.withPassword("test")
 		.start();
 
 	const connectionString = container.getConnectionUri();
-	console.log("[E2E Setup] PostgreSQL started:", connectionString);
+	console.log(
+		"[E2E Setup] PostgreSQL started:",
+		redactConnectionString(connectionString),
+	);
 
 	// Get test configuration and inject dynamic DATABASE_URL
 	process.env.DATABASE_URL = connectionString;

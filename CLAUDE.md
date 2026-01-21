@@ -273,7 +273,7 @@ pnpm typecheck               # Ensure type safety (run before committing)
 
 The E2E test suite uses Playwright with Testcontainers for database isolation:
 
-```
+```text
 e2e/
 ├── fixtures/                 # Playwright fixtures
 │   ├── auth-fixtures.ts     # Authentication helpers
@@ -288,17 +288,19 @@ e2e/
 │   ├── health/              # Health check tests
 │   ├── oidc/                # OIDC provider tests
 │   └── protected-routes/    # Route protection tests
-├── global-setup.ts          # Starts PostgreSQL container
+├── test-config.ts           # Single source of truth for E2E environment config
+├── global-setup.ts          # Starts PostgreSQL container and loads config
 ├── global-teardown.ts       # Cleanup
 └── playwright.config.ts     # Playwright configuration
 ```
 
 **Key Concepts:**
 
-1. **Global Setup/Teardown:** Starts PostgreSQL via Testcontainers, writes `.env.e2e.local`
-2. **webServer Config:** Playwright manages the dev server lifecycle automatically
-3. **Label-Based Selectors:** Use `page.getByLabel()` and `page.getByRole()` for robust element selection
-4. **Transaction Isolation:** Database fixtures provide transaction-based test isolation
+1. **Configuration Management:** `test-config.ts` provides centralized E2E environment configuration with sensible defaults. Environment variables can override these defaults (e.g., in GitHub Actions).
+2. **Global Setup/Teardown:** Starts PostgreSQL via Testcontainers, loads config, injects into `process.env` for webServer inheritance
+3. **webServer Config:** Playwright manages the dev server lifecycle automatically with full environment
+4. **Label-Based Selectors:** Use `page.getByLabel()` and `page.getByRole()` for robust element selection
+5. **Transaction Isolation:** Database fixtures provide transaction-based test isolation
 
 **Writing E2E Tests:**
 
