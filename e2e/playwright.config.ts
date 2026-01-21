@@ -59,5 +59,6 @@ export default defineConfig({
 		timeout: 120000, // 2 minutes for server startup
 		stdout: "pipe",
 		stderr: "pipe",
+		env: process.env as Record<string, string>, // Pass environment variables from global setup to dev server
 	},
 });
