@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node .output/server/index.mjs",
+    "start": "node --import=reflect-metadata .output/server/index.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -63,6 +63,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.68.0",
+    "reflect-metadata": "^0.2.2",
     "siwe": "^3.0.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",

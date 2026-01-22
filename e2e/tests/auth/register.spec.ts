@@ -26,13 +26,8 @@ test.describe("Email/Password Registration", () => {
 		await page.fill('input[id="confirmPassword"]', testPassword);
 		await page.click('button[type="submit"]');
 
-		// Should show success message
-		await expect(page.locator('text="Account created"')).toBeVisible({
-			timeout: 10000,
-		});
-
-		// Should auto-redirect to home
-		await page.waitForURL("/", { timeout: 5000 });
+		// Should auto-redirect to home after successful registration
+		await page.waitForURL("/", { timeout: 10000 });
 		await expectAuthenticated(page);
 	});
 

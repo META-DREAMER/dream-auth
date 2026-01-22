@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from "node:child_process";
+import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 
@@ -18,25 +18,32 @@ function redactConnectionString(connectionString: string): string {
 }
 
 /**
- * Wait for a URL to become ready (return 2xx-4xx status)
+ * Wait for a URL to become ready (return 2xx status specifically)
  */
 async function waitForUrlReady(url: string, timeoutMs: number): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	let lastError: unknown;
+	let lastStatus: number | undefined;
+
+	// Give the server a moment to start up
+	await new Promise((r) => setTimeout(r, 3000));
 
 	while (Date.now() < deadline) {
 		try {
 			const res = await fetch(url, { redirect: "manual" });
-			if (res.status >= 200 && res.status < 500) return;
+			lastStatus = res.status;
+			// Only accept 2xx as ready - 503 means server is starting
+			if (res.status >= 200 && res.status < 300) return;
 			lastError = new Error(`Got HTTP ${res.status}`);
 		} catch (err) {
 			lastError = err;
 		}
-		await new Promise((r) => setTimeout(r, 500));
+		// Wait longer between retries to let server initialize
+		await new Promise((r) => setTimeout(r, 1000));
 	}
 
 	throw new Error(
-		`Timed out waiting for ${url} to become ready. Last error: ${String(lastError)}`,
+		`Timed out waiting for ${url} to become ready. Last status: ${lastStatus}, Last error: ${String(lastError)}`,
 	);
 }
 
@@ -91,26 +98,47 @@ async function globalSetup(_config: FullConfig) {
 		},
 	]);
 
+	// Common environment variables for build and server
+	const serverEnv = {
+		...process.env,
+		DATABASE_URL: connectionString,
+		BETTER_AUTH_URL: `http://localhost:${port}`,
+		BETTER_AUTH_SECRET: "test-secret-at-least-32-characters-long-for-testing",
+		BETTER_AUTH_AUTO_MIGRATE: "true",
+		ENABLE_REGISTRATION: "true",
+		ENABLE_OIDC_PROVIDER: "true",
+		ENABLE_PASSKEYS: "true",
+		ENABLE_SIWE: "true",
+		OIDC_REQUIRE_PKCE: "true",
+		OIDC_CLIENTS: oidcClients,
+	};
+
+	// Build the app first (production mode avoids Nitro/Vite dev server issues)
+	console.log("[E2E Setup] Building application...");
+	const buildResult = spawnSync("pnpm", ["build"], {
+		cwd: process.cwd(),
+		env: {
+			...serverEnv,
+			SKIP_ENV_VALIDATION: "true", // Skip env validation during build
+		},
+		stdio: "inherit",
+	});
+
+	if (buildResult.status !== 0) {
+		throw new Error(`Build failed with exit code ${buildResult.status}`);
+	}
+	console.log("[E2E Setup] Build complete");
+
+	// Start the production server (more stable than dev mode)
+	// --import flag loads reflect-metadata before the server (required by @simplewebauthn/server → tsyringe)
 	const server: ChildProcess = spawn(
-		"pnpm",
-		["dev", "--port", port, "--strictPort"],
+		"node",
+		["--import=reflect-metadata", ".output/server/index.mjs"],
 		{
 			cwd: process.cwd(),
 			env: {
-				...process.env,
-				DATABASE_URL: connectionString,
-				BETTER_AUTH_URL: `http://localhost:${port}`,
-				BETTER_AUTH_SECRET:
-					"test-secret-at-least-32-characters-long-for-testing",
-				BETTER_AUTH_AUTO_MIGRATE: "true",
-				ENABLE_REGISTRATION: "true",
-				ENABLE_OIDC_PROVIDER: "true",
-				ENABLE_PASSKEYS: "true",
-				ENABLE_SIWE: "true",
-				OIDC_REQUIRE_PKCE: "true",
-				OIDC_CLIENTS: oidcClients,
-				// Disable TanStack devtools to avoid port conflicts
-				DISABLE_DEVTOOLS: "true",
+				...serverEnv,
+				PORT: port,
 			},
 			stdio: ["ignore", "pipe", "pipe"],
 		},

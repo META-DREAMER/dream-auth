@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main, setup-test-suite]
+    branches: [main, setup-e2e-tests]
   pull_request:
     branches: [main]
 
@@ -37,11 +37,11 @@ jobs:
         run: pnpm test:e2e
         env:
           CI: true
-          # Static config is defined in .env.test
-          # DATABASE_URL is written to .env.test.local by global-setup (from testcontainers)
-          # Better Auth is validated from process.env (server-side), so ensure it's set in CI.
+          # Build happens in global-setup with SKIP_ENV_VALIDATION=true
+          # DATABASE_URL is passed directly to the server from testcontainers
+          SKIP_ENV_VALIDATION: true
           BETTER_AUTH_SECRET: test-secret-at-least-32-characters-long-for-testing
-          BETTER_AUTH_URL: http://localhost:3001
+          BETTER_AUTH_URL: http://localhost:3000
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
