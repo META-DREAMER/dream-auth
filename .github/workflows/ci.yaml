@@ -34,8 +34,6 @@ jobs:
 
       - name: TypeScript type check
         run: pnpm exec tsc --noEmit
-        env:
-          SKIP_ENV_VALIDATION: true
 
   test:
     name: Unit Tests
@@ -62,7 +60,6 @@ jobs:
       - name: Run unit tests with coverage
         run: pnpm test:ci
         env:
-          SKIP_ENV_VALIDATION: true
           NODE_ENV: test
 
   test-integration:
@@ -90,7 +87,6 @@ jobs:
       - name: Run integration tests
         run: pnpm test:ci:integration
         env:
-          SKIP_ENV_VALIDATION: true
           NODE_ENV: test
           # Testcontainers will spin up PostgreSQL automatically
 

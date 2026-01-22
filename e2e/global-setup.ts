@@ -98,15 +98,10 @@ async function globalSetup(_config: FullConfig) {
 		},
 	]);
 
-	// Filter out SKIP_ENV_VALIDATION from process.env - it should only be used
-	// during build time. When SKIP_ENV_VALIDATION=true at runtime, t3-env bypasses
-	// Zod transforms, causing OIDC_CLIENTS to remain a raw JSON string instead of
-	// a parsed array (spreading a string yields characters, not objects).
-	const { SKIP_ENV_VALIDATION: _, ...baseEnv } = process.env;
-
 	// Common environment variables for build and server
+	// All required env vars are provided, so no need for SKIP_ENV_VALIDATION
 	const serverEnv = {
-		...baseEnv,
+		...process.env,
 		DATABASE_URL: connectionString,
 		BETTER_AUTH_URL: `http://localhost:${port}`,
 		BETTER_AUTH_SECRET: "test-secret-at-least-32-characters-long-for-testing",
@@ -120,13 +115,11 @@ async function globalSetup(_config: FullConfig) {
 	};
 
 	// Build the app first (production mode avoids Nitro/Vite dev server issues)
+	// All required env vars are provided in serverEnv, so validation will pass
 	console.log("[E2E Setup] Building application...");
 	const buildResult = spawnSync("pnpm", ["build"], {
 		cwd: process.cwd(),
-		env: {
-			...serverEnv,
-			SKIP_ENV_VALIDATION: "true", // Skip env validation during build
-		},
+		env: serverEnv,
 		stdio: "inherit",
 	});
 

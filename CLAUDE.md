@@ -46,4 +46,4 @@ pnpm dlx shadcn@latest add <component>
 | OIDC token exchange FK error | Ensure `ENABLE_OIDC_PROVIDER=true`, check "Seeding N client(s)" in logs |
 | Session not loading in SSR | Use `createServerFn()` from `src/lib/session.server.ts` |
 | Env vars not working | Server: `serverEnv`/`serverEnvWithOidc`, Client: `clientEnv` (needs `VITE_` prefix) |
-| Docker build fails | Set `SKIP_ENV_VALIDATION=true` in Dockerfile |
+| Docker build fails | `SKIP_ENV_VALIDATION=true` only in Dockerfile builder stage (already set) |

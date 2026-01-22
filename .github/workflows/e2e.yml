@@ -37,11 +37,8 @@ jobs:
         run: pnpm test:e2e
         env:
           CI: true
-          # Build happens in global-setup with SKIP_ENV_VALIDATION=true
-          # DATABASE_URL is passed directly to the server from testcontainers
-          SKIP_ENV_VALIDATION: true
-          BETTER_AUTH_SECRET: test-secret-at-least-32-characters-long-for-testing
-          BETTER_AUTH_URL: http://localhost:3000
+          # All required env vars are provided by global-setup.ts from testcontainers
+          # DATABASE_URL comes from testcontainers, auth vars are set explicitly
           # Increase Node.js heap size for build (GitHub Actions has limited default)
           NODE_OPTIONS: --max-old-space-size=4096
 
