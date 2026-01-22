@@ -53,8 +53,8 @@ e2e/
 │   └── protected-routes/    # Route protection tests
 │       ├── auth-required.spec.ts
 │       └── forward-auth.spec.ts
-├── global-setup.ts          # Starts PostgreSQL container, writes .env.test.local
-├── global-teardown.ts       # Stops container, removes .env.test.local
+├── global-setup.ts          # Starts PostgreSQL container and web server
+├── global-teardown.ts       # Stops web server and container
 ├── playwright.config.ts     # Playwright configuration
 └── README.md                # Detailed E2E documentation
 ```
@@ -92,18 +92,18 @@ e2e/
 The E2E tests use a global setup that:
 
 1. Starts a PostgreSQL container via Testcontainers
-2. Writes the dynamic `DATABASE_URL` to `.env.test.local`
-3. Playwright's `webServer` spawns `pnpm dev --mode test`
-4. Vite loads `.env.test` (static config) + `.env.test.local` (dynamic DATABASE_URL)
-5. Global teardown stops container and removes `.env.test.local`
+2. Spawns the web server (`pnpm dev`) with environment variables passed directly
+3. Waits for the server to be ready (health check)
+4. Global teardown stops the web server and PostgreSQL container
 
-**Why file-based approach?** Playwright's `globalSetup` runs in a separate worker process. Any `process.env` modifications there are isolated and NOT inherited by the main Playwright process or its webServer child. Writing to `.env.test.local` leverages Vite's native env file loading.
+**Why direct env passing?** This approach is simpler and more reliable than file-based configuration. The `DATABASE_URL` and all other test config are passed directly to the server process environment, avoiding race conditions and complexity.
 
-**Configuration Sources:**
+**Configuration passed to server:**
 
-- **Static config**: `.env.test` contains BETTER_AUTH_SECRET, OIDC_CLIENTS, etc.
-- **Dynamic config**: `.env.test.local` contains DATABASE_URL (from testcontainers)
-- **Override**: Environment variables set in CI take precedence
+- `DATABASE_URL` - Dynamic connection string from Testcontainers
+- `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` - Authentication config
+- `OIDC_CLIENTS` - Test OIDC clients (JSON array)
+- `ENABLE_*` flags - Feature toggles for testing
 
 ### Database Isolation
 
@@ -227,47 +227,33 @@ The OIDC client simulator in `e2e/helpers/oidc-client.ts` (to be implemented) pr
 
 ### Test Configuration
 
-Static E2E test environment variables are defined in `.env.test`. The dynamic `DATABASE_URL` is written to `.env.test.local` at runtime by `global-setup.ts`.
+All E2E test environment variables are set directly by `global-setup.ts` when spawning the web server. No `.env` files are needed.
 
-**Configuration in `.env.test`:**
+**Default configuration passed by global-setup:**
 
-| Variable                   | Default Value                     |
-| -------------------------- | --------------------------------- |
-| `PORT`                     | `3001`                            |
-| `DATABASE_URL`             | Set dynamically by Testcontainers |
-| `NODE_ENV`                 | `test`                            |
-| `SKIP_ENV_VALIDATION`      | `true`                            |
-| `BETTER_AUTH_SECRET`       | Test secret (32+ chars)           |
-| `BETTER_AUTH_URL`          | `http://localhost:3001`           |
-| `BETTER_AUTH_AUTO_MIGRATE` | `true`                            |
-| `ENABLE_REGISTRATION`      | `true`                            |
-| `ENABLE_OIDC_PROVIDER`     | `true`                            |
-| `ENABLE_PASSKEYS`          | `true`                            |
-| `ENABLE_SIWE`              | `true`                            |
-| `OIDC_REQUIRE_PKCE`        | `true`                            |
-| `OIDC_CLIENTS`             | Test client JSON (2 clients)      |
+| Variable                   | Value                                                 |
+| -------------------------- | ----------------------------------------------------- |
+| `DATABASE_URL`             | Dynamic connection string from Testcontainers         |
+| `BETTER_AUTH_SECRET`       | `test-secret-at-least-32-characters-long-for-testing` |
+| `BETTER_AUTH_URL`          | `http://localhost:${port}` (default port: 3001)       |
+| `BETTER_AUTH_AUTO_MIGRATE` | `true`                                                |
+| `ENABLE_REGISTRATION`      | `true`                                                |
+| `ENABLE_OIDC_PROVIDER`     | `true`                                                |
+| `ENABLE_PASSKEYS`          | `true`                                                |
+| `ENABLE_SIWE`              | `true`                                                |
+| `OIDC_REQUIRE_PKCE`        | `true`                                                |
+| `OIDC_CLIENTS`             | Test client JSON (2 clients)                          |
 
-**Overriding in GitHub Actions:**
+**Overriding configuration:**
 
-To use different values in CI (e.g., production-like secrets), set environment variables in the workflow:
-
-```yaml
-- name: Run E2E tests
-  run: pnpm test:e2e
-  env:
-    CI: true
-    BETTER_AUTH_SECRET: ${{ secrets.TEST_BETTER_AUTH_SECRET }}
-    # Other overrides as needed
-```
-
-**Overriding Locally:**
-
-Set environment variables before running tests:
+To override defaults, set environment variables before running tests:
 
 ```bash
-export BETTER_AUTH_SECRET="my-custom-secret"
-pnpm test:e2e
+# Override port
+E2E_PORT=3002 pnpm test:e2e
 ```
+
+The global-setup spreads `process.env` when spawning the server, so any environment variables you set will be passed through (but hardcoded values in global-setup take precedence).
 
 ### Playwright Config
 

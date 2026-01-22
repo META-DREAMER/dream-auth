@@ -132,8 +132,8 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 			await page.fill('input[id="password"]', password);
 			await page.fill('input[id="confirmPassword"]', password);
 			await page.click('button[type="submit"]');
-			// Wait for success message or redirect
-			await page.waitForSelector('text="Account created"', { timeout: 10000 });
+			// Wait for redirect after successful registration
+			await page.waitForURL("/", { timeout: 10000 });
 		};
 
 		await use(register);

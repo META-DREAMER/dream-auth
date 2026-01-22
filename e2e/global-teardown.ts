@@ -5,13 +5,13 @@ import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 /**
  * Global teardown for E2E tests
  *
- * 1. Stops the web server (CI only - locally Playwright manages it)
+ * 1. Stops the web server spawned by global setup
  * 2. Stops the PostgreSQL container started by global setup
  */
 async function globalTeardown(_config: FullConfig) {
 	console.log("[E2E Teardown] Starting cleanup...");
 
-	// Stop web server first (CI only)
+	// Stop web server first
 	const server = (globalThis as Record<string, unknown>).__E2E_SERVER__ as
 		| ChildProcess
 		| undefined;

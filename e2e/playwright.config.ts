@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const port = process.env.E2E_PORT || "3001";
+const port = process.env.E2E_PORT || "3000";
 const baseUrl = `http://localhost:${port}`;
 
 /**
@@ -21,7 +21,7 @@ export default defineConfig({
 		? [["html"], ["github"], ["list"]]
 		: [["html"], ["list"]],
 
-	// Global setup/teardown (starts DB container)
+	// Global setup/teardown (starts DB container and web server)
 	globalSetup: path.resolve(__dirname, "./global-setup.ts"),
 	globalTeardown: path.resolve(__dirname, "./global-teardown.ts"),
 
@@ -50,18 +50,5 @@ export default defineConfig({
 	// Output directory for test artifacts
 	outputDir: "./test-results",
 
-	// Web server config
-	// In CI, the server is started by globalSetup AFTER the DB container is ready.
-	// This avoids a race where webServer starts before globalSetup runs.
-	// Locally, Playwright manages the server lifecycle for convenience.
-	webServer: process.env.CI
-		? undefined
-		: {
-				command: `pnpm dev --mode test --port ${port}`,
-				url: `${baseUrl}/api/health`,
-				reuseExistingServer: true,
-				timeout: 120000, // 2 minutes for server startup
-				stdout: "pipe",
-				stderr: "pipe",
-			},
+	// No webServer - globalSetup handles server lifecycle
 });

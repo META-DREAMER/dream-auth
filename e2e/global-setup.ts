@@ -1,9 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
-import dotenv from "dotenv";
 
 /**
  * Redact credentials from a PostgreSQL connection string for safe logging
@@ -46,27 +43,13 @@ async function waitForUrlReady(url: string, timeoutMs: number): Promise<void> {
 /**
  * Global setup for E2E tests
  *
- * Loads `.env.test` for required server-side configuration (Better Auth, etc.).
+ * 1. Starts a PostgreSQL container via Testcontainers
+ * 2. Spawns the web server with DATABASE_URL passed directly in the environment
  *
- * In CI, we spawn the web server manually AFTER the database container is ready.
- * This avoids the race condition where Playwright's webServer starts before
- * globalSetup completes and DATABASE_URL is available.
- *
- * Locally, we let Playwright's webServer handle server lifecycle since developers
- * can use reuseExistingServer for faster iteration.
+ * This approach avoids the race condition where Playwright's webServer starts
+ * before globalSetup completes, and eliminates the need for .env.test files.
  */
 async function globalSetup(_config: FullConfig) {
-	// Ensure required server-side env vars (BETTER_AUTH_SECRET/URL, etc.) are loaded.
-	// Vite exposes env vars to `import.meta.env`, but our server code validates via `process.env`.
-	const envTestPath = path.resolve(process.cwd(), ".env.test");
-	if (existsSync(envTestPath)) {
-		dotenv.config({ path: envTestPath });
-	}
-	const envTestLocalPath = path.resolve(process.cwd(), ".env.test.local");
-	if (existsSync(envTestLocalPath)) {
-		dotenv.config({ path: envTestLocalPath, override: true });
-	}
-
 	console.log("[E2E Setup] Starting PostgreSQL container...");
 
 	const container = await new PostgreSqlContainer("postgres:16-alpine")
@@ -84,42 +67,66 @@ async function globalSetup(_config: FullConfig) {
 	// Store container reference for teardown
 	(globalThis as Record<string, unknown>).__E2E_CONTAINER__ = container;
 
-	if (process.env.CI) {
-		// In CI, start the web server manually AFTER DATABASE_URL is known
-		// This avoids the race condition where Playwright's webServer starts before globalSetup
-		console.log("[E2E Setup] Starting web server...");
+	// Always spawn the web server with DATABASE_URL passed directly
+	const port = process.env.E2E_PORT || "3000";
+	console.log("[E2E Setup] Starting web server on port", port);
 
-		const port = process.env.E2E_PORT || "3001";
-		const server: ChildProcess = spawn(
-			"pnpm",
-			["dev", "--mode", "test", "--port", port],
-			{
-				cwd: process.cwd(),
-				env: {
-					...process.env,
-					DATABASE_URL: connectionString,
-				},
-				stdio: ["ignore", "pipe", "pipe"],
+	// Test-specific OIDC clients for E2E tests
+	const oidcClients = JSON.stringify([
+		{
+			clientId: "test-client",
+			clientSecret: "test-secret",
+			name: "Test Client",
+			type: "web",
+			redirectURLs: [`http://localhost:${port}/callback`],
+			skipConsent: false,
+		},
+		{
+			clientId: "trusted-client",
+			clientSecret: "trusted-secret",
+			name: "Trusted Client",
+			type: "web",
+			redirectURLs: [`http://localhost:${port}/callback`],
+			skipConsent: true,
+		},
+	]);
+
+	const server: ChildProcess = spawn(
+		"pnpm",
+		["dev", "--port", port, "--strictPort"],
+		{
+			cwd: process.cwd(),
+			env: {
+				...process.env,
+				DATABASE_URL: connectionString,
+				BETTER_AUTH_URL: `http://localhost:${port}`,
+				BETTER_AUTH_SECRET:
+					"test-secret-at-least-32-characters-long-for-testing",
+				BETTER_AUTH_AUTO_MIGRATE: "true",
+				ENABLE_REGISTRATION: "true",
+				ENABLE_OIDC_PROVIDER: "true",
+				ENABLE_PASSKEYS: "true",
+				ENABLE_SIWE: "true",
+				OIDC_REQUIRE_PKCE: "true",
+				OIDC_CLIENTS: oidcClients,
+				// Disable TanStack devtools to avoid port conflicts
+				DISABLE_DEVTOOLS: "true",
 			},
-		);
+			stdio: ["ignore", "pipe", "pipe"],
+		},
+	);
 
-		server.stdout?.on("data", (buf) =>
-			process.stdout.write(`[WebServer] ${String(buf)}`),
-		);
-		server.stderr?.on("data", (buf) =>
-			process.stderr.write(`[WebServer] ${String(buf)}`),
-		);
+	server.stdout?.on("data", (buf) =>
+		process.stdout.write(`[WebServer] ${String(buf)}`),
+	);
+	server.stderr?.on("data", (buf) =>
+		process.stderr.write(`[WebServer] ${String(buf)}`),
+	);
 
-		await waitForUrlReady(`http://localhost:${port}/api/health`, 120000);
-		console.log("[E2E Setup] Web server is ready");
+	await waitForUrlReady(`http://localhost:${port}/api/health`, 120000);
+	console.log("[E2E Setup] Web server is ready");
 
-		(globalThis as Record<string, unknown>).__E2E_SERVER__ = server;
-	} else {
-		// Locally, Playwright's webServer needs DATABASE_URL in the environment
-		// Set it here so it's available when the webServer spawns
-		process.env.DATABASE_URL = connectionString;
-	}
-
+	(globalThis as Record<string, unknown>).__E2E_SERVER__ = server;
 	console.log("[E2E Setup] Global setup complete");
 }
 
