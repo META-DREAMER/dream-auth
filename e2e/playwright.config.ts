@@ -50,15 +50,18 @@ export default defineConfig({
 	// Output directory for test artifacts
 	outputDir: "./test-results",
 
-	// Web server config - starts dev server
-	// NO env: property - webServer inherits process.env at spawn time (after globalSetup)
-	// --mode test makes Vite load .env.test which overrides .env values
-	webServer: {
-		command: `pnpm dev --mode test --port ${port}`,
-		url: `${baseUrl}/api/health`,
-		reuseExistingServer: !process.env.CI,
-		timeout: 120000, // 2 minutes for server startup
-		stdout: "pipe",
-		stderr: "pipe",
-	},
+	// Web server config
+	// In CI, the server is started by globalSetup AFTER the DB container is ready.
+	// This avoids a race where webServer starts before globalSetup runs.
+	// Locally, Playwright manages the server lifecycle for convenience.
+	webServer: process.env.CI
+		? undefined
+		: {
+				command: `pnpm dev --mode test --port ${port}`,
+				url: `${baseUrl}/api/health`,
+				reuseExistingServer: true,
+				timeout: 120000, // 2 minutes for server startup
+				stdout: "pipe",
+				stderr: "pipe",
+			},
 });

@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import { type ChildProcess, spawn } from "node:child_process";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 
@@ -19,16 +18,37 @@ function redactConnectionString(connectionString: string): string {
 }
 
 /**
+ * Wait for a URL to become ready (return 2xx-4xx status)
+ */
+async function waitForUrlReady(url: string, timeoutMs: number): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	let lastError: unknown;
+
+	while (Date.now() < deadline) {
+		try {
+			const res = await fetch(url, { redirect: "manual" });
+			if (res.status >= 200 && res.status < 500) return;
+			lastError = new Error(`Got HTTP ${res.status}`);
+		} catch (err) {
+			lastError = err;
+		}
+		await new Promise((r) => setTimeout(r, 500));
+	}
+
+	throw new Error(
+		`Timed out waiting for ${url} to become ready. Last error: ${String(lastError)}`,
+	);
+}
+
+/**
  * Global setup for E2E tests
  *
- * Playwright's globalSetup runs in a SEPARATE worker process. Any process.env
- * changes here are isolated to this worker and NOT inherited by the main
- * Playwright process or its webServer child process.
+ * In CI, we spawn the web server manually AFTER the database container is ready.
+ * This avoids the race condition where Playwright's webServer starts before
+ * globalSetup completes and DATABASE_URL is available.
  *
- * Solution: Write the dynamic DATABASE_URL to .env.test.local, which Vite
- * automatically loads when started with --mode test (higher priority than .env.test).
- *
- * Static config (BETTER_AUTH_SECRET, etc.) lives in .env.test.
+ * Locally, we let Playwright's webServer handle server lifecycle since developers
+ * can use reuseExistingServer for faster iteration.
  */
 async function globalSetup(_config: FullConfig) {
 	console.log("[E2E Setup] Starting PostgreSQL container...");
@@ -45,15 +65,44 @@ async function globalSetup(_config: FullConfig) {
 		redactConnectionString(connectionString),
 	);
 
-	// Write DATABASE_URL to .env.test.local
-	// Vite automatically loads .env.[mode].local with highest priority
-	const envPath = path.resolve(process.cwd(), ".env.test.local");
-	fs.writeFileSync(envPath, `DATABASE_URL=${connectionString}\n`);
-	console.log("[E2E Setup] DATABASE_URL written to .env.test.local");
-
-	// Store references for teardown
+	// Store container reference for teardown
 	(globalThis as Record<string, unknown>).__E2E_CONTAINER__ = container;
-	(globalThis as Record<string, unknown>).__E2E_ENV_PATH__ = envPath;
+
+	if (process.env.CI) {
+		// In CI, start the web server manually AFTER DATABASE_URL is known
+		// This avoids the race condition where Playwright's webServer starts before globalSetup
+		console.log("[E2E Setup] Starting web server...");
+
+		const port = process.env.E2E_PORT || "3001";
+		const server: ChildProcess = spawn(
+			"pnpm",
+			["dev", "--mode", "test", "--port", port],
+			{
+				cwd: process.cwd(),
+				env: {
+					...process.env,
+					DATABASE_URL: connectionString,
+				},
+				stdio: ["ignore", "pipe", "pipe"],
+			},
+		);
+
+		server.stdout?.on("data", (buf) =>
+			process.stdout.write(`[WebServer] ${String(buf)}`),
+		);
+		server.stderr?.on("data", (buf) =>
+			process.stderr.write(`[WebServer] ${String(buf)}`),
+		);
+
+		await waitForUrlReady(`http://localhost:${port}/api/health`, 120000);
+		console.log("[E2E Setup] Web server is ready");
+
+		(globalThis as Record<string, unknown>).__E2E_SERVER__ = server;
+	} else {
+		// Locally, Playwright's webServer needs DATABASE_URL in the environment
+		// Set it here so it's available when the webServer spawns
+		process.env.DATABASE_URL = connectionString;
+	}
 
 	console.log("[E2E Setup] Global setup complete");
 }

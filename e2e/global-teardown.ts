@@ -1,33 +1,41 @@
-import fs from "node:fs";
+import type { ChildProcess } from "node:child_process";
 import type { FullConfig } from "@playwright/test";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 /**
  * Global teardown for E2E tests
  *
- * 1. Stops the PostgreSQL container started by global setup
- * 2. Removes the .env.test.local file created by global setup
+ * 1. Stops the web server (CI only - locally Playwright manages it)
+ * 2. Stops the PostgreSQL container started by global setup
  */
 async function globalTeardown(_config: FullConfig) {
 	console.log("[E2E Teardown] Starting cleanup...");
 
+	// Stop web server first (CI only)
+	const server = (globalThis as Record<string, unknown>).__E2E_SERVER__ as
+		| ChildProcess
+		| undefined;
+
+	if (server) {
+		console.log("[E2E Teardown] Stopping web server...");
+		server.kill("SIGTERM");
+		await new Promise<void>((resolve) => {
+			if (server.exitCode !== null) return resolve();
+			server.once("exit", () => resolve());
+			setTimeout(() => resolve(), 5000).unref?.();
+		});
+		console.log("[E2E Teardown] Web server stopped");
+	}
+
+	// Stop PostgreSQL container
 	const container = (globalThis as Record<string, unknown>).__E2E_CONTAINER__ as
 		| StartedPostgreSqlContainer
-		| undefined;
-	const envPath = (globalThis as Record<string, unknown>).__E2E_ENV_PATH__ as
-		| string
 		| undefined;
 
 	if (container) {
 		console.log("[E2E Teardown] Stopping PostgreSQL container...");
 		await container.stop();
 		console.log("[E2E Teardown] Container stopped");
-	}
-
-	// Clean up .env.test.local
-	if (envPath && fs.existsSync(envPath)) {
-		fs.unlinkSync(envPath);
-		console.log("[E2E Teardown] Removed .env.test.local");
 	}
 
 	console.log("[E2E Teardown] Cleanup complete");
