@@ -53,9 +53,8 @@ e2e/
 │   └── protected-routes/    # Route protection tests
 │       ├── auth-required.spec.ts
 │       └── forward-auth.spec.ts
-├── test-config.ts           # Single source of truth for E2E config
-├── global-setup.ts          # Starts PostgreSQL container
-├── global-teardown.ts       # Cleanup
+├── global-setup.ts          # Starts PostgreSQL container, writes .env.test.local
+├── global-teardown.ts       # Stops container, removes .env.test.local
 ├── playwright.config.ts     # Playwright configuration
 └── README.md                # Detailed E2E documentation
 ```
@@ -92,18 +91,19 @@ e2e/
 
 The E2E tests use a global setup that:
 
-1. Loads test configuration from `e2e/test-config.ts` (single source of truth)
-2. Starts a PostgreSQL container via Testcontainers
-3. Injects complete configuration into `process.env` (inherited by webServer)
-4. Writes fallback `.env.test.local` file
-5. Playwright's `webServer` config starts the dev server with full environment
-6. Cleans up container and env file after tests
+1. Starts a PostgreSQL container via Testcontainers
+2. Writes the dynamic `DATABASE_URL` to `.env.test.local`
+3. Playwright's `webServer` spawns `pnpm dev --mode test`
+4. Vite loads `.env.test` (static config) + `.env.test.local` (dynamic DATABASE_URL)
+5. Global teardown stops container and removes `.env.test.local`
 
-**Configuration Hierarchy:**
+**Why file-based approach?** Playwright's `globalSetup` runs in a separate worker process. Any `process.env` modifications there are isolated and NOT inherited by the main Playwright process or its webServer child. Writing to `.env.test.local` leverages Vite's native env file loading.
 
-- **Default values**: Defined in `test-config.ts`
-- **Environment overrides**: Set via `process.env` or GitHub Actions
-- **Dynamic values**: `DATABASE_URL` is set after container starts
+**Configuration Sources:**
+
+- **Static config**: `.env.test` contains BETTER_AUTH_SECRET, OIDC_CLIENTS, etc.
+- **Dynamic config**: `.env.test.local` contains DATABASE_URL (from testcontainers)
+- **Override**: Environment variables set in CI take precedence
 
 ### Database Isolation
 
@@ -225,11 +225,11 @@ The OIDC client simulator in `e2e/helpers/oidc-client.ts` (to be implemented) pr
 
 ## Configuration
 
-### Test Configuration File
+### Test Configuration
 
-All E2E test environment variables are defined in `e2e/test-config.ts` as a single source of truth. This eliminates duplication and provides a clean way to override values.
+Static E2E test environment variables are defined in `.env.test`. The dynamic `DATABASE_URL` is written to `.env.test.local` at runtime by `global-setup.ts`.
 
-**Default Configuration:**
+**Configuration in `.env.test`:**
 
 | Variable                   | Default Value                     |
 | -------------------------- | --------------------------------- |

@@ -37,10 +37,8 @@ jobs:
         run: pnpm test:e2e
         env:
           CI: true
-          # Static config is defined in e2e/test-config.ts
-          # Override here if needed (e.g., for production-like secrets):
-          # BETTER_AUTH_SECRET: ${{ secrets.TEST_BETTER_AUTH_SECRET }}
-          # DATABASE_URL is set dynamically by global-setup from Testcontainers
+          # Static config is defined in .env.test
+          # DATABASE_URL is written to .env.test.local by global-setup (from testcontainers)
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

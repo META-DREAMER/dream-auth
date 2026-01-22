@@ -288,17 +288,16 @@ e2e/
 │   ├── health/              # Health check tests
 │   ├── oidc/                # OIDC provider tests
 │   └── protected-routes/    # Route protection tests
-├── test-config.ts           # Single source of truth for E2E environment config
-├── global-setup.ts          # Starts PostgreSQL container and loads config
-├── global-teardown.ts       # Cleanup
+├── global-setup.ts          # Starts PostgreSQL container, writes .env.test.local
+├── global-teardown.ts       # Stops container, removes .env.test.local
 └── playwright.config.ts     # Playwright configuration
 ```
 
 **Key Concepts:**
 
-1. **Configuration Management:** `test-config.ts` provides centralized E2E environment configuration with sensible defaults. Environment variables can override these defaults (e.g., in GitHub Actions).
-2. **Global Setup/Teardown:** Starts PostgreSQL via Testcontainers, loads config, injects into `process.env` for webServer inheritance
-3. **webServer Config:** Playwright manages the dev server lifecycle automatically with full environment
+1. **Configuration Management:** Static config lives in `.env.test`. Dynamic `DATABASE_URL` is written to `.env.test.local` by global-setup (Vite loads `.env.[mode].local` with highest priority).
+2. **Global Setup/Teardown:** Starts PostgreSQL via Testcontainers, writes DATABASE_URL to `.env.test.local`
+3. **webServer Config:** Playwright spawns `pnpm dev --mode test`, Vite loads `.env.test` + `.env.test.local`
 4. **Label-Based Selectors:** Use `page.getByLabel()` and `page.getByRole()` for robust element selection
 5. **Transaction Isolation:** Database fixtures provide transaction-based test isolation
 
