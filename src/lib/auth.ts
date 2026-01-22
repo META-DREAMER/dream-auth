@@ -14,7 +14,6 @@ import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
-import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
 const pool = new Pool({
 	connectionString: serverEnv.DATABASE_URL,
@@ -362,21 +361,3 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;
-
-/**
- * Ensure OIDC clients are seeded to DB on server startup.
- * This runs non-blocking in the background to avoid delaying server startup.
- * The existing ensureOidcReady() in the auth route handler ensures seeding is completed before handling auth requests.
- *
- * @see https://github.com/better-auth/better-auth/issues/6649
- */
-if (serverEnv.ENABLE_OIDC_PROVIDER) {
-	// Fire-and-forget: don't await, don't block server startup
-	ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS).catch((error) => {
-		console.error(
-			"[OIDC] Failed to seed clients on server startup (non-blocking):",
-			error,
-		);
-		// Don't throw - this is a background operation
-	});
-}

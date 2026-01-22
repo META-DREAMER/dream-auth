@@ -180,7 +180,12 @@ export async function ensureOidcClientsSeeded(
 		return seedingPromise;
 	}
 
-	seedingPromise = performSeeding(clients);
+	seedingPromise = performSeeding(clients).catch((error) => {
+		// Clear cache on failure so retries can attempt seeding again
+		// This handles the case where seeding fails before migrations run
+		seedingPromise = null;
+		throw error;
+	});
 	return seedingPromise;
 }
 

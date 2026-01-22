@@ -1,7 +1,8 @@
 import { getMigrations } from "better-auth/db";
 import { Pool } from "pg";
-import { serverEnv } from "@/env";
+import { serverEnv, serverEnvWithOidc } from "@/env";
 import { auth } from "@/lib/auth";
+import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
 /**
  * Better Auth Auto-Migration Plugin for Nitro
@@ -80,8 +81,23 @@ function formatMigrationSummary(
 	return lines.join("\n");
 }
 
+/**
+ * Seeds OIDC clients to the database if OIDC provider is enabled.
+ * Must be called AFTER migrations to ensure oauthApplication table exists.
+ */
+async function seedOidcClientsIfEnabled(): Promise<void> {
+	if (!serverEnv.ENABLE_OIDC_PROVIDER) {
+		return;
+	}
+
+	await ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS);
+}
+
 export default async () => {
 	if (!serverEnv.BETTER_AUTH_AUTO_MIGRATE) {
+		// Even when auto-migrate is disabled, seed OIDC clients
+		// (assumes schema already exists from manual migration)
+		await seedOidcClientsIfEnabled();
 		return;
 	}
 
@@ -103,6 +119,8 @@ export default async () => {
 		console.log(
 			"[BetterAuth] Database schema is up-to-date. No migrations needed.",
 		);
+		// Schema is up-to-date, seed OIDC clients
+		await seedOidcClientsIfEnabled();
 		return;
 	}
 
@@ -141,6 +159,8 @@ export default async () => {
 			console.log(
 				"[BetterAuth] Another instance already applied migrations. Schema is now up-to-date.",
 			);
+			// Another instance applied migrations, seed OIDC clients
+			await seedOidcClientsIfEnabled();
 			return;
 		}
 
@@ -153,6 +173,9 @@ export default async () => {
 		console.log(
 			`[BetterAuth] Migrations completed successfully in ${duration}ms.`,
 		);
+
+		// Migrations complete, seed OIDC clients
+		await seedOidcClientsIfEnabled();
 	} finally {
 		if (locked) {
 			try {
