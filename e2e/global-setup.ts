@@ -98,9 +98,15 @@ async function globalSetup(_config: FullConfig) {
 		},
 	]);
 
+	// Filter out SKIP_ENV_VALIDATION from process.env - it should only be used
+	// during build time. When SKIP_ENV_VALIDATION=true at runtime, t3-env bypasses
+	// Zod transforms, causing OIDC_CLIENTS to remain a raw JSON string instead of
+	// a parsed array (spreading a string yields characters, not objects).
+	const { SKIP_ENV_VALIDATION: _, ...baseEnv } = process.env;
+
 	// Common environment variables for build and server
 	const serverEnv = {
-		...process.env,
+		...baseEnv,
 		DATABASE_URL: connectionString,
 		BETTER_AUTH_URL: `http://localhost:${port}`,
 		BETTER_AUTH_SECRET: "test-secret-at-least-32-characters-long-for-testing",
