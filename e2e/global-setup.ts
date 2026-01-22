@@ -1,4 +1,5 @@
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 
@@ -115,18 +116,22 @@ async function globalSetup(_config: FullConfig) {
 	};
 
 	// Build the app first (production mode avoids Nitro/Vite dev server issues)
-	// All required env vars are provided in serverEnv, so validation will pass
-	console.log("[E2E Setup] Building application...");
-	const buildResult = spawnSync("pnpm", ["build"], {
-		cwd: process.cwd(),
-		env: serverEnv,
-		stdio: "inherit",
-	});
-
-	if (buildResult.status !== 0) {
-		throw new Error(`Build failed with exit code ${buildResult.status}`);
+	// Skip build if pre-built artifacts exist (e.g., from CI artifact download)
+	const outputPath = ".output/server/index.mjs";
+	if (existsSync(outputPath)) {
+		console.log("[E2E Setup] Using pre-built artifacts from .output/");
+	} else {
+		console.log("[E2E Setup] Building application...");
+		const buildResult = spawnSync("pnpm", ["build"], {
+			cwd: process.cwd(),
+			env: serverEnv,
+			stdio: "inherit",
+		});
+		if (buildResult.status !== 0) {
+			throw new Error(`Build failed with exit code ${buildResult.status}`);
+		}
+		console.log("[E2E Setup] Build complete");
 	}
-	console.log("[E2E Setup] Build complete");
 
 	// Start the production server (more stable than dev mode)
 	// --import flag loads reflect-metadata before the server (required by @simplewebauthn/server → tsyringe)
