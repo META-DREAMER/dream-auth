@@ -1,12 +1,9 @@
-import fs from "node:fs";
 import path from "node:path";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
-import {
-	configToEnvFile,
-	configToEnvVars,
-	getE2ETestConfig,
-} from "./test-config";
+import { config as dotenvConfig } from "dotenv";
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 /**
  * Redact credentials from a PostgreSQL connection string for safe logging
@@ -19,7 +16,6 @@ function redactConnectionString(connectionString: string): string {
 		}
 		return url.toString();
 	} catch {
-		// If URL parsing fails, do basic redaction
 		return connectionString.replace(/:[^:@]+@/, ":***@");
 	}
 }
@@ -27,17 +23,20 @@ function redactConnectionString(connectionString: string): string {
 /**
  * Global setup for E2E tests
  *
- * 1. Loads test configuration from test-config.ts (can be overridden by env vars)
+ * 1. Loads static defaults from .env.e2e.defaults (before any other env access)
  * 2. Starts PostgreSQL container via testcontainers
- * 3. Sets complete configuration in process.env (inherited by webServer)
- * 4. Writes configuration to .env.test.local (fallback for Vite)
+ * 3. Sets dynamic env vars (DATABASE_URL, BETTER_AUTH_URL, OIDC_CLIENTS)
  *
- * The dev server is started by Playwright's webServer config
+ * The webServer inherits process.env at spawn time (after this runs).
+ * Vite should not override existing process.env values.
  */
 async function globalSetup(_config: FullConfig) {
-	console.log("[E2E Setup] Starting PostgreSQL container...");
+	// 1. Load static defaults FIRST (before any other env access)
+	dotenvConfig({ path: path.resolve(__dirname, ".env.e2e.defaults") });
+	console.log("[E2E Setup] Loaded static environment defaults");
 
-	// Start PostgreSQL container
+	// 2. Start PostgreSQL container
+	console.log("[E2E Setup] Starting PostgreSQL container...");
 	const container = await new PostgreSqlContainer("postgres:16-alpine")
 		.withDatabase("e2e_auth")
 		.withUsername("test")
@@ -50,33 +49,44 @@ async function globalSetup(_config: FullConfig) {
 		redactConnectionString(connectionString),
 	);
 
-	// Get test configuration and inject dynamic DATABASE_URL
+	// 3. Set dynamic env vars
+	// DATABASE_URL comes from the container
+	// BETTER_AUTH_URL and OIDC_CLIENTS are set here to ensure they override .env file values
+	// Vite should not override process.env vars that are already set
+	const port = process.env.E2E_PORT || "3001";
+	const baseUrl = `http://localhost:${port}`;
+
 	process.env.DATABASE_URL = connectionString;
-	const config = getE2ETestConfig();
+	process.env.BETTER_AUTH_URL = baseUrl;
+	process.env.PORT = port;
 
-	// Apply all configuration to process.env for webServer and workers
-	const envVars = configToEnvVars(config);
-	for (const [key, value] of Object.entries(envVars)) {
-		process.env[key] = value;
-	}
+	// Set OIDC clients (must match what .env.test has, but we set here to ensure override)
+	process.env.OIDC_CLIENTS = JSON.stringify([
+		{
+			clientId: "test-client",
+			clientSecret: "test-secret",
+			name: "Test Client",
+			type: "web",
+			redirectURLs: [`${baseUrl}/callback`],
+			skipConsent: false,
+		},
+		{
+			clientId: "trusted-client",
+			clientSecret: "trusted-secret",
+			name: "Trusted Client",
+			type: "web",
+			redirectURLs: [`${baseUrl}/callback`],
+			skipConsent: true,
+		},
+	]);
 
-	console.log(
-		"[E2E Setup] Environment variables configured from test-config.ts",
-	);
+	console.log("[E2E Setup] Environment variables configured");
 
-	// Write to .env.test.local as fallback for Vite
-	const envPath = path.resolve(process.cwd(), ".env.test.local");
-	fs.writeFileSync(envPath, configToEnvFile(config));
-	console.log("[E2E Setup] Environment written to", envPath);
-
-	// Store references for teardown and worker access
+	// 5. Store container reference for teardown
 	(globalThis as Record<string, unknown>).__E2E_CONTAINER__ = container;
-	(globalThis as Record<string, unknown>).__E2E_ENV_PATH__ = envPath;
-	(globalThis as Record<string, unknown>).__E2E_DATABASE_URL__ =
-		connectionString;
 
 	console.log(
-		"[E2E Setup] Global setup complete - webServer will start the dev server",
+		"[E2E Setup] Global setup complete - webServer will inherit process.env",
 	);
 }
 

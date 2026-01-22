@@ -51,14 +51,14 @@ export default defineConfig({
 	outputDir: "./test-results",
 
 	// Web server config - starts dev server
-	// Environment variables are set in process.env by global setup
+	// NO env: property - webServer inherits process.env at spawn time (after globalSetup)
+	// --mode test makes Vite load .env.test which overrides .env values
 	webServer: {
-		command: `pnpm dev --port ${port}`,
+		command: `pnpm dev --mode test --port ${port}`,
 		url: `${baseUrl}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120000, // 2 minutes for server startup
 		stdout: "pipe",
 		stderr: "pipe",
-		env: process.env as Record<string, string>, // Pass environment variables from global setup to dev server
 	},
 });
