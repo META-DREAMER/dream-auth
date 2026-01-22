@@ -1,6 +1,9 @@
 import { type ChildProcess, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { FullConfig } from "@playwright/test";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import dotenv from "dotenv";
 
 /**
  * Redact credentials from a PostgreSQL connection string for safe logging
@@ -43,6 +46,8 @@ async function waitForUrlReady(url: string, timeoutMs: number): Promise<void> {
 /**
  * Global setup for E2E tests
  *
+ * Loads `.env.test` for required server-side configuration (Better Auth, etc.).
+ *
  * In CI, we spawn the web server manually AFTER the database container is ready.
  * This avoids the race condition where Playwright's webServer starts before
  * globalSetup completes and DATABASE_URL is available.
@@ -51,6 +56,17 @@ async function waitForUrlReady(url: string, timeoutMs: number): Promise<void> {
  * can use reuseExistingServer for faster iteration.
  */
 async function globalSetup(_config: FullConfig) {
+	// Ensure required server-side env vars (BETTER_AUTH_SECRET/URL, etc.) are loaded.
+	// Vite exposes env vars to `import.meta.env`, but our server code validates via `process.env`.
+	const envTestPath = path.resolve(process.cwd(), ".env.test");
+	if (existsSync(envTestPath)) {
+		dotenv.config({ path: envTestPath });
+	}
+	const envTestLocalPath = path.resolve(process.cwd(), ".env.test.local");
+	if (existsSync(envTestLocalPath)) {
+		dotenv.config({ path: envTestLocalPath, override: true });
+	}
+
 	console.log("[E2E Setup] Starting PostgreSQL container...");
 
 	const container = await new PostgreSqlContainer("postgres:16-alpine")

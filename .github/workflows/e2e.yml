@@ -39,6 +39,9 @@ jobs:
           CI: true
           # Static config is defined in .env.test
           # DATABASE_URL is written to .env.test.local by global-setup (from testcontainers)
+          # Better Auth is validated from process.env (server-side), so ensure it's set in CI.
+          BETTER_AUTH_SECRET: test-secret-at-least-32-characters-long-for-testing
+          BETTER_AUTH_URL: http://localhost:3001
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
