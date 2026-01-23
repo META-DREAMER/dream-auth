@@ -12,7 +12,6 @@ import { afterAll, vi } from "vitest";
 // Set test environment variables SYNCHRONOUSLY at module load
 // This runs before any imports that depend on env vars
 process.env.NODE_ENV = "test";
-process.env.SKIP_ENV_VALIDATION = "true";
 
 // Required env vars for unit tests (mocks DB anyway)
 // Integration tests override this via setup-db.ts with a real container

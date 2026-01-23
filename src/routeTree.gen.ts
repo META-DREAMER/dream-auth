@@ -8,406 +8,406 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ConsentRouteImport } from './routes/consent'
-import { Route as ComponentsRouteImport } from './routes/components'
-import { Route as AuthedRouteImport } from './routes/_authed'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as Oauth2SplatRouteImport } from './routes/oauth2/$'
-import { Route as InviteIdRouteImport } from './routes/invite.$id'
-import { Route as ApiVerifyRouteImport } from './routes/api/verify'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
-import { Route as AuthedOrgRouteImport } from './routes/_authed/org'
-import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
-import { Route as DotwellKnownJwksDotjsonRouteImport } from './routes/[.]well-known/jwks[.]json'
-import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthedOrgTeamsRouteImport } from './routes/_authed/org/teams'
-import { Route as AuthedOrgSettingsRouteImport } from './routes/_authed/org/settings'
-import { Route as AuthedOrgMembersRouteImport } from './routes/_authed/org/members'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as RegisterRouteImport } from "./routes/register";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as ConsentRouteImport } from "./routes/consent";
+import { Route as ComponentsRouteImport } from "./routes/components";
+import { Route as AuthedRouteImport } from "./routes/_authed";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as Oauth2SplatRouteImport } from "./routes/oauth2/$";
+import { Route as InviteIdRouteImport } from "./routes/invite.$id";
+import { Route as ApiVerifyRouteImport } from "./routes/api/verify";
+import { Route as ApiHealthRouteImport } from "./routes/api/health";
+import { Route as AuthedSettingsRouteImport } from "./routes/_authed/settings";
+import { Route as AuthedOrgRouteImport } from "./routes/_authed/org";
+import { Route as DotwellKnownOpenidConfigurationRouteImport } from "./routes/[.]well-known/openid-configuration";
+import { Route as DotwellKnownJwksDotjsonRouteImport } from "./routes/[.]well-known/jwks[.]json";
+import { Route as AuthedOrgIndexRouteImport } from "./routes/_authed/org/index";
+import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
+import { Route as AuthedOrgTeamsRouteImport } from "./routes/_authed/org/teams";
+import { Route as AuthedOrgSettingsRouteImport } from "./routes/_authed/org/settings";
+import { Route as AuthedOrgMembersRouteImport } from "./routes/_authed/org/members";
 
 const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
+  id: "/register",
+  path: "/register",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ConsentRoute = ConsentRouteImport.update({
-  id: '/consent',
-  path: '/consent',
+  id: "/consent",
+  path: "/consent",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ComponentsRoute = ComponentsRouteImport.update({
-  id: '/components',
-  path: '/components',
+  id: "/components",
+  path: "/components",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthedRoute = AuthedRouteImport.update({
-  id: '/_authed',
+  id: "/_authed",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const Oauth2SplatRoute = Oauth2SplatRouteImport.update({
-  id: '/oauth2/$',
-  path: '/oauth2/$',
+  id: "/oauth2/$",
+  path: "/oauth2/$",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const InviteIdRoute = InviteIdRouteImport.update({
-  id: '/invite/$id',
-  path: '/invite/$id',
+  id: "/invite/$id",
+  path: "/invite/$id",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiVerifyRoute = ApiVerifyRouteImport.update({
-  id: '/api/verify',
-  path: '/api/verify',
+  id: "/api/verify",
+  path: "/api/verify",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
+  id: "/api/health",
+  path: "/api/health",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => AuthedRoute,
-} as any)
+} as any);
 const AuthedOrgRoute = AuthedOrgRouteImport.update({
-  id: '/org',
-  path: '/org',
+  id: "/org",
+  path: "/org",
   getParentRoute: () => AuthedRoute,
-} as any)
+} as any);
 const DotwellKnownOpenidConfigurationRoute =
   DotwellKnownOpenidConfigurationRouteImport.update({
-    id: '/.well-known/openid-configuration',
-    path: '/.well-known/openid-configuration',
+    id: "/.well-known/openid-configuration",
+    path: "/.well-known/openid-configuration",
     getParentRoute: () => rootRouteImport,
-  } as any)
+  } as any);
 const DotwellKnownJwksDotjsonRoute = DotwellKnownJwksDotjsonRouteImport.update({
-  id: '/.well-known/jwks.json',
-  path: '/.well-known/jwks.json',
+  id: "/.well-known/jwks.json",
+  path: "/.well-known/jwks.json",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthedOrgIndexRoute = AuthedOrgIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => AuthedOrgRoute,
-} as any)
+} as any);
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
+  id: "/api/auth/$",
+  path: "/api/auth/$",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthedOrgTeamsRoute = AuthedOrgTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
+  id: "/teams",
+  path: "/teams",
   getParentRoute: () => AuthedOrgRoute,
-} as any)
+} as any);
 const AuthedOrgSettingsRoute = AuthedOrgSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => AuthedOrgRoute,
-} as any)
+} as any);
 const AuthedOrgMembersRoute = AuthedOrgMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
+  id: "/members",
+  path: "/members",
   getParentRoute: () => AuthedOrgRoute,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/components': typeof ComponentsRoute
-  '/consent': typeof ConsentRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
-  '/.well-known/jwks.json': typeof DotwellKnownJwksDotjsonRoute
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
-  '/org': typeof AuthedOrgRouteWithChildren
-  '/settings': typeof AuthedSettingsRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/verify': typeof ApiVerifyRoute
-  '/invite/$id': typeof InviteIdRoute
-  '/oauth2/$': typeof Oauth2SplatRoute
-  '/org/members': typeof AuthedOrgMembersRoute
-  '/org/settings': typeof AuthedOrgSettingsRoute
-  '/org/teams': typeof AuthedOrgTeamsRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/org/': typeof AuthedOrgIndexRoute
+  "/": typeof IndexRoute;
+  "/components": typeof ComponentsRoute;
+  "/consent": typeof ConsentRoute;
+  "/login": typeof LoginRoute;
+  "/register": typeof RegisterRoute;
+  "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
+  "/.well-known/openid-configuration": typeof DotwellKnownOpenidConfigurationRoute;
+  "/org": typeof AuthedOrgRouteWithChildren;
+  "/settings": typeof AuthedSettingsRoute;
+  "/api/health": typeof ApiHealthRoute;
+  "/api/verify": typeof ApiVerifyRoute;
+  "/invite/$id": typeof InviteIdRoute;
+  "/oauth2/$": typeof Oauth2SplatRoute;
+  "/org/members": typeof AuthedOrgMembersRoute;
+  "/org/settings": typeof AuthedOrgSettingsRoute;
+  "/org/teams": typeof AuthedOrgTeamsRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/org/": typeof AuthedOrgIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/components': typeof ComponentsRoute
-  '/consent': typeof ConsentRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
-  '/.well-known/jwks.json': typeof DotwellKnownJwksDotjsonRoute
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
-  '/settings': typeof AuthedSettingsRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/verify': typeof ApiVerifyRoute
-  '/invite/$id': typeof InviteIdRoute
-  '/oauth2/$': typeof Oauth2SplatRoute
-  '/org/members': typeof AuthedOrgMembersRoute
-  '/org/settings': typeof AuthedOrgSettingsRoute
-  '/org/teams': typeof AuthedOrgTeamsRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/org': typeof AuthedOrgIndexRoute
+  "/": typeof IndexRoute;
+  "/components": typeof ComponentsRoute;
+  "/consent": typeof ConsentRoute;
+  "/login": typeof LoginRoute;
+  "/register": typeof RegisterRoute;
+  "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
+  "/.well-known/openid-configuration": typeof DotwellKnownOpenidConfigurationRoute;
+  "/settings": typeof AuthedSettingsRoute;
+  "/api/health": typeof ApiHealthRoute;
+  "/api/verify": typeof ApiVerifyRoute;
+  "/invite/$id": typeof InviteIdRoute;
+  "/oauth2/$": typeof Oauth2SplatRoute;
+  "/org/members": typeof AuthedOrgMembersRoute;
+  "/org/settings": typeof AuthedOrgSettingsRoute;
+  "/org/teams": typeof AuthedOrgTeamsRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/org": typeof AuthedOrgIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/_authed': typeof AuthedRouteWithChildren
-  '/components': typeof ComponentsRoute
-  '/consent': typeof ConsentRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
-  '/.well-known/jwks.json': typeof DotwellKnownJwksDotjsonRoute
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
-  '/_authed/org': typeof AuthedOrgRouteWithChildren
-  '/_authed/settings': typeof AuthedSettingsRoute
-  '/api/health': typeof ApiHealthRoute
-  '/api/verify': typeof ApiVerifyRoute
-  '/invite/$id': typeof InviteIdRoute
-  '/oauth2/$': typeof Oauth2SplatRoute
-  '/_authed/org/members': typeof AuthedOrgMembersRoute
-  '/_authed/org/settings': typeof AuthedOrgSettingsRoute
-  '/_authed/org/teams': typeof AuthedOrgTeamsRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
-  '/_authed/org/': typeof AuthedOrgIndexRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/_authed": typeof AuthedRouteWithChildren;
+  "/components": typeof ComponentsRoute;
+  "/consent": typeof ConsentRoute;
+  "/login": typeof LoginRoute;
+  "/register": typeof RegisterRoute;
+  "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
+  "/.well-known/openid-configuration": typeof DotwellKnownOpenidConfigurationRoute;
+  "/_authed/org": typeof AuthedOrgRouteWithChildren;
+  "/_authed/settings": typeof AuthedSettingsRoute;
+  "/api/health": typeof ApiHealthRoute;
+  "/api/verify": typeof ApiVerifyRoute;
+  "/invite/$id": typeof InviteIdRoute;
+  "/oauth2/$": typeof Oauth2SplatRoute;
+  "/_authed/org/members": typeof AuthedOrgMembersRoute;
+  "/_authed/org/settings": typeof AuthedOrgSettingsRoute;
+  "/_authed/org/teams": typeof AuthedOrgTeamsRoute;
+  "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/_authed/org/": typeof AuthedOrgIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/components'
-    | '/consent'
-    | '/login'
-    | '/register'
-    | '/.well-known/jwks.json'
-    | '/.well-known/openid-configuration'
-    | '/org'
-    | '/settings'
-    | '/api/health'
-    | '/api/verify'
-    | '/invite/$id'
-    | '/oauth2/$'
-    | '/org/members'
-    | '/org/settings'
-    | '/org/teams'
-    | '/api/auth/$'
-    | '/org/'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/components"
+    | "/consent"
+    | "/login"
+    | "/register"
+    | "/.well-known/jwks.json"
+    | "/.well-known/openid-configuration"
+    | "/org"
+    | "/settings"
+    | "/api/health"
+    | "/api/verify"
+    | "/invite/$id"
+    | "/oauth2/$"
+    | "/org/members"
+    | "/org/settings"
+    | "/org/teams"
+    | "/api/auth/$"
+    | "/org/";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/components'
-    | '/consent'
-    | '/login'
-    | '/register'
-    | '/.well-known/jwks.json'
-    | '/.well-known/openid-configuration'
-    | '/settings'
-    | '/api/health'
-    | '/api/verify'
-    | '/invite/$id'
-    | '/oauth2/$'
-    | '/org/members'
-    | '/org/settings'
-    | '/org/teams'
-    | '/api/auth/$'
-    | '/org'
+    | "/"
+    | "/components"
+    | "/consent"
+    | "/login"
+    | "/register"
+    | "/.well-known/jwks.json"
+    | "/.well-known/openid-configuration"
+    | "/settings"
+    | "/api/health"
+    | "/api/verify"
+    | "/invite/$id"
+    | "/oauth2/$"
+    | "/org/members"
+    | "/org/settings"
+    | "/org/teams"
+    | "/api/auth/$"
+    | "/org";
   id:
-    | '__root__'
-    | '/'
-    | '/_authed'
-    | '/components'
-    | '/consent'
-    | '/login'
-    | '/register'
-    | '/.well-known/jwks.json'
-    | '/.well-known/openid-configuration'
-    | '/_authed/org'
-    | '/_authed/settings'
-    | '/api/health'
-    | '/api/verify'
-    | '/invite/$id'
-    | '/oauth2/$'
-    | '/_authed/org/members'
-    | '/_authed/org/settings'
-    | '/_authed/org/teams'
-    | '/api/auth/$'
-    | '/_authed/org/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/_authed"
+    | "/components"
+    | "/consent"
+    | "/login"
+    | "/register"
+    | "/.well-known/jwks.json"
+    | "/.well-known/openid-configuration"
+    | "/_authed/org"
+    | "/_authed/settings"
+    | "/api/health"
+    | "/api/verify"
+    | "/invite/$id"
+    | "/oauth2/$"
+    | "/_authed/org/members"
+    | "/_authed/org/settings"
+    | "/_authed/org/teams"
+    | "/api/auth/$"
+    | "/_authed/org/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthedRoute: typeof AuthedRouteWithChildren
-  ComponentsRoute: typeof ComponentsRoute
-  ConsentRoute: typeof ConsentRoute
-  LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
-  DotwellKnownJwksDotjsonRoute: typeof DotwellKnownJwksDotjsonRoute
-  DotwellKnownOpenidConfigurationRoute: typeof DotwellKnownOpenidConfigurationRoute
-  ApiHealthRoute: typeof ApiHealthRoute
-  ApiVerifyRoute: typeof ApiVerifyRoute
-  InviteIdRoute: typeof InviteIdRoute
-  Oauth2SplatRoute: typeof Oauth2SplatRoute
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  IndexRoute: typeof IndexRoute;
+  AuthedRoute: typeof AuthedRouteWithChildren;
+  ComponentsRoute: typeof ComponentsRoute;
+  ConsentRoute: typeof ConsentRoute;
+  LoginRoute: typeof LoginRoute;
+  RegisterRoute: typeof RegisterRoute;
+  DotwellKnownJwksDotjsonRoute: typeof DotwellKnownJwksDotjsonRoute;
+  DotwellKnownOpenidConfigurationRoute: typeof DotwellKnownOpenidConfigurationRoute;
+  ApiHealthRoute: typeof ApiHealthRoute;
+  ApiVerifyRoute: typeof ApiVerifyRoute;
+  InviteIdRoute: typeof InviteIdRoute;
+  Oauth2SplatRoute: typeof Oauth2SplatRoute;
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/consent': {
-      id: '/consent'
-      path: '/consent'
-      fullPath: '/consent'
-      preLoaderRoute: typeof ConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/components': {
-      id: '/components'
-      path: '/components'
-      fullPath: '/components'
-      preLoaderRoute: typeof ComponentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authed': {
-      id: '/_authed'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth2/$': {
-      id: '/oauth2/$'
-      path: '/oauth2/$'
-      fullPath: '/oauth2/$'
-      preLoaderRoute: typeof Oauth2SplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invite/$id': {
-      id: '/invite/$id'
-      path: '/invite/$id'
-      fullPath: '/invite/$id'
-      preLoaderRoute: typeof InviteIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/verify': {
-      id: '/api/verify'
-      path: '/api/verify'
-      fullPath: '/api/verify'
-      preLoaderRoute: typeof ApiVerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authed/settings': {
-      id: '/_authed/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthedSettingsRouteImport
-      parentRoute: typeof AuthedRoute
-    }
-    '/_authed/org': {
-      id: '/_authed/org'
-      path: '/org'
-      fullPath: '/org'
-      preLoaderRoute: typeof AuthedOrgRouteImport
-      parentRoute: typeof AuthedRoute
-    }
-    '/.well-known/openid-configuration': {
-      id: '/.well-known/openid-configuration'
-      path: '/.well-known/openid-configuration'
-      fullPath: '/.well-known/openid-configuration'
-      preLoaderRoute: typeof DotwellKnownOpenidConfigurationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/jwks.json': {
-      id: '/.well-known/jwks.json'
-      path: '/.well-known/jwks.json'
-      fullPath: '/.well-known/jwks.json'
-      preLoaderRoute: typeof DotwellKnownJwksDotjsonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authed/org/': {
-      id: '/_authed/org/'
-      path: '/'
-      fullPath: '/org/'
-      preLoaderRoute: typeof AuthedOrgIndexRouteImport
-      parentRoute: typeof AuthedOrgRoute
-    }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authed/org/teams': {
-      id: '/_authed/org/teams'
-      path: '/teams'
-      fullPath: '/org/teams'
-      preLoaderRoute: typeof AuthedOrgTeamsRouteImport
-      parentRoute: typeof AuthedOrgRoute
-    }
-    '/_authed/org/settings': {
-      id: '/_authed/org/settings'
-      path: '/settings'
-      fullPath: '/org/settings'
-      preLoaderRoute: typeof AuthedOrgSettingsRouteImport
-      parentRoute: typeof AuthedOrgRoute
-    }
-    '/_authed/org/members': {
-      id: '/_authed/org/members'
-      path: '/members'
-      fullPath: '/org/members'
-      preLoaderRoute: typeof AuthedOrgMembersRouteImport
-      parentRoute: typeof AuthedOrgRoute
-    }
+    "/register": {
+      id: "/register";
+      path: "/register";
+      fullPath: "/register";
+      preLoaderRoute: typeof RegisterRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/consent": {
+      id: "/consent";
+      path: "/consent";
+      fullPath: "/consent";
+      preLoaderRoute: typeof ConsentRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/components": {
+      id: "/components";
+      path: "/components";
+      fullPath: "/components";
+      preLoaderRoute: typeof ComponentsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_authed": {
+      id: "/_authed";
+      path: "";
+      fullPath: "/";
+      preLoaderRoute: typeof AuthedRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/oauth2/$": {
+      id: "/oauth2/$";
+      path: "/oauth2/$";
+      fullPath: "/oauth2/$";
+      preLoaderRoute: typeof Oauth2SplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/invite/$id": {
+      id: "/invite/$id";
+      path: "/invite/$id";
+      fullPath: "/invite/$id";
+      preLoaderRoute: typeof InviteIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/verify": {
+      id: "/api/verify";
+      path: "/api/verify";
+      fullPath: "/api/verify";
+      preLoaderRoute: typeof ApiVerifyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/health": {
+      id: "/api/health";
+      path: "/api/health";
+      fullPath: "/api/health";
+      preLoaderRoute: typeof ApiHealthRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_authed/settings": {
+      id: "/_authed/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof AuthedSettingsRouteImport;
+      parentRoute: typeof AuthedRoute;
+    };
+    "/_authed/org": {
+      id: "/_authed/org";
+      path: "/org";
+      fullPath: "/org";
+      preLoaderRoute: typeof AuthedOrgRouteImport;
+      parentRoute: typeof AuthedRoute;
+    };
+    "/.well-known/openid-configuration": {
+      id: "/.well-known/openid-configuration";
+      path: "/.well-known/openid-configuration";
+      fullPath: "/.well-known/openid-configuration";
+      preLoaderRoute: typeof DotwellKnownOpenidConfigurationRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/.well-known/jwks.json": {
+      id: "/.well-known/jwks.json";
+      path: "/.well-known/jwks.json";
+      fullPath: "/.well-known/jwks.json";
+      preLoaderRoute: typeof DotwellKnownJwksDotjsonRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_authed/org/": {
+      id: "/_authed/org/";
+      path: "/";
+      fullPath: "/org/";
+      preLoaderRoute: typeof AuthedOrgIndexRouteImport;
+      parentRoute: typeof AuthedOrgRoute;
+    };
+    "/api/auth/$": {
+      id: "/api/auth/$";
+      path: "/api/auth/$";
+      fullPath: "/api/auth/$";
+      preLoaderRoute: typeof ApiAuthSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/_authed/org/teams": {
+      id: "/_authed/org/teams";
+      path: "/teams";
+      fullPath: "/org/teams";
+      preLoaderRoute: typeof AuthedOrgTeamsRouteImport;
+      parentRoute: typeof AuthedOrgRoute;
+    };
+    "/_authed/org/settings": {
+      id: "/_authed/org/settings";
+      path: "/settings";
+      fullPath: "/org/settings";
+      preLoaderRoute: typeof AuthedOrgSettingsRouteImport;
+      parentRoute: typeof AuthedOrgRoute;
+    };
+    "/_authed/org/members": {
+      id: "/_authed/org/members";
+      path: "/members";
+      fullPath: "/org/members";
+      preLoaderRoute: typeof AuthedOrgMembersRouteImport;
+      parentRoute: typeof AuthedOrgRoute;
+    };
   }
 }
 
 interface AuthedOrgRouteChildren {
-  AuthedOrgMembersRoute: typeof AuthedOrgMembersRoute
-  AuthedOrgSettingsRoute: typeof AuthedOrgSettingsRoute
-  AuthedOrgTeamsRoute: typeof AuthedOrgTeamsRoute
-  AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
+  AuthedOrgMembersRoute: typeof AuthedOrgMembersRoute;
+  AuthedOrgSettingsRoute: typeof AuthedOrgSettingsRoute;
+  AuthedOrgTeamsRoute: typeof AuthedOrgTeamsRoute;
+  AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute;
 }
 
 const AuthedOrgRouteChildren: AuthedOrgRouteChildren = {
@@ -415,24 +415,24 @@ const AuthedOrgRouteChildren: AuthedOrgRouteChildren = {
   AuthedOrgSettingsRoute: AuthedOrgSettingsRoute,
   AuthedOrgTeamsRoute: AuthedOrgTeamsRoute,
   AuthedOrgIndexRoute: AuthedOrgIndexRoute,
-}
+};
 
 const AuthedOrgRouteWithChildren = AuthedOrgRoute._addFileChildren(
   AuthedOrgRouteChildren,
-)
+);
 
 interface AuthedRouteChildren {
-  AuthedOrgRoute: typeof AuthedOrgRouteWithChildren
-  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedOrgRoute: typeof AuthedOrgRouteWithChildren;
+  AuthedSettingsRoute: typeof AuthedSettingsRoute;
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedOrgRoute: AuthedOrgRouteWithChildren,
   AuthedSettingsRoute: AuthedSettingsRoute,
-}
+};
 
 const AuthedRouteWithChildren =
-  AuthedRoute._addFileChildren(AuthedRouteChildren)
+  AuthedRoute._addFileChildren(AuthedRouteChildren);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -448,16 +448,16 @@ const rootRouteChildren: RootRouteChildren = {
   InviteIdRoute: InviteIdRoute,
   Oauth2SplatRoute: Oauth2SplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { createStart } from "@tanstack/react-start";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

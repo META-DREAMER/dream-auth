@@ -13,6 +13,7 @@
 			"**/server/**/*",
 			"**/test/**/*",
 			"**/tests/**/*",
+			"**/e2e/**/*",
 			"**/index.html",
 			"**/vite.config.ts",
 			"**/vitest.config.ts",

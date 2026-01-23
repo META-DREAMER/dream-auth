@@ -48,6 +48,7 @@ export function ConnectSIWEButton({
 	if (!isConnected) {
 		return (
 			<Button
+				type="button"
 				onClick={openConnectModal}
 				className={cn("w-full ", className)}
 				variant="outline"
@@ -61,6 +62,7 @@ export function ConnectSIWEButton({
 	// State 2: Connected - show sign in button (auto-trigger happens, but manual retry available)
 	return (
 		<Button
+			type="button"
 			onClick={authenticate}
 			disabled={isAuthenticating}
 			className={cn("w-full", className)}
