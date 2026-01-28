@@ -35,6 +35,9 @@ RUN addgroup --system --gid 1001 app && \
 # Copy built application (node-server preset output is self-contained)
 COPY --from=builder /app/.output ./.output
 
+# Install reflect-metadata (required for tsyringe, a transitive dependency)
+RUN npm install --no-save reflect-metadata
+
 # Fix ownership for non-root user
 RUN chown -R app:app /app
 
@@ -53,4 +56,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Start the application using Node.js as recommended by TanStack Start
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "--import=reflect-metadata", ".output/server/index.mjs"]
