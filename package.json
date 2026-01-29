@@ -37,7 +37,7 @@
     "@fontsource-variable/merriweather": "^5.2.6",
     "@fontsource-variable/outfit": "^5.2.8",
     "@fontsource/geist-sans": "^5.2.5",
-    "@hammadj/better-auth": "1.5.0-beta.9",
+    "@hammadj/better-auth": "1.5.0-beta.11",
     "@hammadj/better-auth-passkey": "^1.5.0-beta.9",
     "@hookform/resolvers": "^5.2.2",
     "@phosphor-icons/react": "^2.1.10",

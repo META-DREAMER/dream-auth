@@ -364,14 +364,12 @@ export type User = typeof auth.$Infer.Session.user;
 
 /**
  * Type-safe wrapper for auth.api.getSession
- * Works around generic inference issues in better-auth 1.5.x
+ * Explicit generics <false, false> ensure proper return type inference:
+ * - R=false: Return parsed session, not Response
+ * - H=false: Don't include headers in result
  */
 export async function getSession(ctx: {
 	headers: Headers;
 }): Promise<Session | null> {
-	return (
-		auth.api as unknown as {
-			getSession: (ctx: { headers: Headers }) => Promise<Session | null>;
-		}
-	).getSession(ctx);
+	return auth.api.getSession<false, false>(ctx);
 }
