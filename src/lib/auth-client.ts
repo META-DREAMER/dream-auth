@@ -1,11 +1,11 @@
-import { passkeyClient } from "@better-auth/passkey/client";
 import {
 	emailOTPClient,
 	oidcClient,
 	organizationClient,
 	siweClient,
-} from "better-auth/client/plugins";
-import { createAuthClient } from "better-auth/react";
+} from "@hammadj/better-auth/client/plugins";
+import { createAuthClient } from "@hammadj/better-auth/react";
+import { passkeyClient } from "@hammadj/better-auth-passkey/client";
 import { clientEnv } from "@/env.client";
 
 export const authClient = createAuthClient({

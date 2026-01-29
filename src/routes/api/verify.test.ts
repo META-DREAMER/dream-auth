@@ -1,16 +1,12 @@
 import { createMockSession } from "@test/mocks/auth-client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock auth module
+// Mock auth module - mock the getSession helper function
 vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			getSession: vi.fn(),
-		},
-	},
+	getSession: vi.fn(),
 }));
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { GET } from "./verify";
 
 describe("GET /api/verify", () => {
@@ -19,7 +15,7 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns 401 when no session exists", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(null);
+		vi.mocked(getSession).mockResolvedValue(null);
 
 		const request = new Request("http://localhost:3000/api/verify");
 		const response = await GET({ request, params: {} });
@@ -28,7 +24,7 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns 200 with user headers when session exists", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(
+		vi.mocked(getSession).mockResolvedValue(
 			createMockSession({
 				user: { id: "user-123", email: "test@example.com", name: "Test User" },
 				session: { id: "session-123" },
@@ -49,7 +45,7 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns empty X-Auth-User when user has no name", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(
+		vi.mocked(getSession).mockResolvedValue(
 			createMockSession({
 				user: { id: "user-123", email: "test@example.com", name: "" },
 				session: { id: "session-123" },
@@ -63,7 +59,7 @@ describe("GET /api/verify", () => {
 	});
 
 	it("passes request headers to getSession", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(null);
+		vi.mocked(getSession).mockResolvedValue(null);
 
 		const request = new Request("http://localhost:3000/api/verify", {
 			headers: {
@@ -73,13 +69,13 @@ describe("GET /api/verify", () => {
 		});
 		await GET({ request, params: {} });
 
-		expect(auth.api.getSession).toHaveBeenCalledWith({
+		expect(getSession).toHaveBeenCalledWith({
 			headers: request.headers,
 		});
 	});
 
 	it("returns null body on success", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(
+		vi.mocked(getSession).mockResolvedValue(
 			createMockSession({
 				user: { id: "user-123", email: "test@example.com", name: "Test User" },
 				session: { id: "session-123" },
@@ -94,7 +90,7 @@ describe("GET /api/verify", () => {
 	});
 
 	it("returns null body on failure", async () => {
-		vi.mocked(auth.api.getSession).mockResolvedValue(null);
+		vi.mocked(getSession).mockResolvedValue(null);
 
 		const request = new Request("http://localhost:3000/api/verify");
 		const response = await GET({ request, params: {} });

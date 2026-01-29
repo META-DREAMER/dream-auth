@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import type { ServerRouteHandler } from "@/lib/server-handler";
 
 export const GET: ServerRouteHandler = async ({ request }) => {
-	const session = await auth.api.getSession({ headers: request.headers });
+	const session = await getSession({ headers: request.headers });
 
 	if (!session) {
 		return new Response(null, { status: 401 });

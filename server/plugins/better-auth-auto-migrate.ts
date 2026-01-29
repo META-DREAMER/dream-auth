@@ -1,4 +1,4 @@
-import { getMigrations } from "better-auth/db";
+import { getMigrations } from "@hammadj/better-auth/db/migration";
 import { Pool } from "pg";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { auth } from "@/lib/auth";

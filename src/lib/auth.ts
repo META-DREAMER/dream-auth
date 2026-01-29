@@ -1,14 +1,14 @@
-import { passkey } from "@better-auth/passkey";
-import { betterAuth } from "better-auth";
-import { APIError } from "better-auth/api";
+import { betterAuth } from "@hammadj/better-auth";
+import { APIError } from "@hammadj/better-auth/api";
 import {
 	emailOTP,
 	jwt,
 	oidcProvider,
 	organization,
 	siwe,
-} from "better-auth/plugins";
-import { tanstackStartCookies } from "better-auth/tanstack-start";
+} from "@hammadj/better-auth/plugins";
+import { tanstackStartCookies } from "@hammadj/better-auth/tanstack-start";
+import { passkey } from "@hammadj/better-auth-passkey";
 import { Pool } from "pg";
 import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
@@ -361,3 +361,17 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.Session.user;
+
+/**
+ * Type-safe wrapper for auth.api.getSession
+ * Works around generic inference issues in better-auth 1.5.x
+ */
+export async function getSession(ctx: {
+	headers: Headers;
+}): Promise<Session | null> {
+	return (
+		auth.api as unknown as {
+			getSession: (ctx: { headers: Headers }) => Promise<Session | null>;
+		}
+	).getSession(ctx);
+}
