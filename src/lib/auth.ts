@@ -262,7 +262,7 @@ export const auth = betterAuth({
 		// Email OTP for linking emails to accounts
 		emailOTP({
 			overrideDefaultEmailVerification: true,
-			async sendVerificationOTP({ email, otp, type }) {
+			async sendVerificationOTP({ email, otp, type }, _ctx) {
 				// TODO: Integrate with email service (Resend, SendGrid, etc.)
 				console.log(
 					`[Email OTP] Send to: ${email}, OTP: ${otp}, Type: ${type}`,
@@ -323,7 +323,7 @@ export const auth = betterAuth({
 			},
 
 			// Send invitation notifications
-			async sendInvitationEmail(data) {
+			async sendInvitationEmail(data, _ctx) {
 				const inviteLink = `${serverEnv.BETTER_AUTH_URL}/invite/${data.id}`;
 				const walletAddress = (data as typeof data & { walletAddress?: string })
 					.walletAddress;

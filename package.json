@@ -27,11 +27,15 @@
   "pnpm": {
     "overrides": {
       "@noble/hashes": "1.8.0"
+    },
+    "patchedDependencies": {
+      "@better-auth/core@1.5.0-beta.10": "patches/@better-auth__core@1.5.0-beta.10.patch",
+      "better-auth@1.5.0-beta.10": "patches/better-auth@1.5.0-beta.10.patch"
     }
   },
   "dependencies": {
     "@base-org/account": "~2.4.2",
-    "@better-auth/passkey": "^1.4.6",
+    "@better-auth/passkey": "1.5.0-beta.10",
     "@coinbase/wallet-sdk": "^4.3.7",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/manrope": "^5.2.8",
@@ -52,7 +56,7 @@
     "@tanstack/react-start": "^1.154.5",
     "@tanstack/router-plugin": "^1.154.5",
     "@walletconnect/ethereum-provider": "^2.23.0",
-    "better-auth": "^1.4.6",
+    "better-auth": "1.5.0-beta.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "input-otp": "^1.4.2",

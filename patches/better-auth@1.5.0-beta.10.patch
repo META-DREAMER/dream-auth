@@ -1,0 +1,512 @@
+diff --git a/dist/plugins/siwe/error-codes.mjs b/dist/plugins/siwe/error-codes.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..711a24ff23ba73dcd3f85d4450549a535a6d0f7f
+--- /dev/null
++++ b/dist/plugins/siwe/error-codes.mjs
+@@ -0,0 +1,13 @@
++import { defineErrorCodes } from "@better-auth/core/utils/error-codes";
++
++//#region src/plugins/siwe/error-codes.ts
++const SIWE_ERROR_CODES = defineErrorCodes({
++	INVALID_OR_EXPIRED_NONCE: "Invalid or expired nonce",
++	INVALID_SIWE_SIGNATURE: "Invalid SIWE signature",
++	WALLET_ALREADY_LINKED: "Wallet already linked to another user",
++	SESSION_CREATION_FAILED: "Failed to create session"
++});
++
++//#endregion
++export { SIWE_ERROR_CODES };
++//# sourceMappingURL=error-codes.mjs.map
+\ No newline at end of file
+diff --git a/dist/plugins/siwe/error-codes.mjs.map b/dist/plugins/siwe/error-codes.mjs.map
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f1706e8ede9261abe24cba41e648bbda1372301
+--- /dev/null
++++ b/dist/plugins/siwe/error-codes.mjs.map
+@@ -0,0 +1 @@
++{"version":3,"file":"error-codes.mjs","names":[],"sources":["../../../src/plugins/siwe/error-codes.ts"],"sourcesContent":["import { defineErrorCodes } from \"@better-auth/core/utils/error-codes\";\n\nexport const SIWE_ERROR_CODES = defineErrorCodes({\n\tINVALID_OR_EXPIRED_NONCE: \"Invalid or expired nonce\",\n\tINVALID_SIWE_SIGNATURE: \"Invalid SIWE signature\",\n\tWALLET_ALREADY_LINKED: \"Wallet already linked to another user\",\n\tSESSION_CREATION_FAILED: \"Failed to create session\",\n});\n"],"mappings":";;;AAEA,MAAa,mBAAmB,iBAAiB;CAChD,0BAA0B;CAC1B,wBAAwB;CACxB,uBAAuB;CACvB,yBAAyB;CACzB,CAAC"}
+\ No newline at end of file
+diff --git a/dist/plugins/siwe/index.d.mts b/dist/plugins/siwe/index.d.mts
+index 0a167e87cd7bdf5385478cf7d2c3a84bf4b30626..3ade3af9bd3f63d7a940cf0cee2ba2959dbaca08 100644
+--- a/dist/plugins/siwe/index.d.mts
++++ b/dist/plugins/siwe/index.d.mts
+@@ -2,7 +2,9 @@ import { InferOptionSchema } from "../../types/plugins.mjs";
+ import "../../types/index.mjs";
+ import { schema } from "./schema.mjs";
+ import { ENSLookupArgs, ENSLookupResult, SIWEVerifyMessageArgs } from "./types.mjs";
+-import * as better_call240 from "better-call";
++import * as _better_auth_core16 from "@better-auth/core";
++import { Account } from "@better-auth/core/db";
++import * as better_call213 from "better-call";
+ import * as z from "zod";
+ 
+ //#region src/plugins/siwe/index.d.ts
+@@ -55,8 +57,19 @@ declare const siwe: (options: SIWEPluginOptions) => {
+       };
+     };
+   };
++  init(ctx: _better_auth_core16.AuthContext): {
++    options: {
++      databaseHooks: {
++        account: {
++          delete: {
++            after(account: Account): Promise<void>;
++          };
++        };
++      };
++    };
++  };
+   endpoints: {
+-    getSiweNonce: better_call240.StrictEndpoint<"/siwe/nonce", {
++    getSiweNonce: better_call213.StrictEndpoint<"/siwe/nonce", {
+       method: "POST";
+       body: z.ZodObject<{
+         walletAddress: z.ZodString;
+@@ -65,7 +78,7 @@ declare const siwe: (options: SIWEPluginOptions) => {
+     }, {
+       nonce: string;
+     }>;
+-    verifySiweMessage: better_call240.StrictEndpoint<"/siwe/verify", {
++    verifySiweMessage: better_call213.StrictEndpoint<"/siwe/verify", {
+       method: "POST";
+       body: z.ZodObject<{
+         message: z.ZodString;
+@@ -86,6 +99,24 @@ declare const siwe: (options: SIWEPluginOptions) => {
+     }>;
+   };
+   options: SIWEPluginOptions;
++  $ERROR_CODES: {
++    readonly INVALID_OR_EXPIRED_NONCE: {
++      code: "INVALID_OR_EXPIRED_NONCE";
++      message: "Invalid or expired nonce";
++    };
++    readonly INVALID_SIWE_SIGNATURE: {
++      code: "INVALID_SIWE_SIGNATURE";
++      message: "Invalid SIWE signature";
++    };
++    readonly WALLET_ALREADY_LINKED: {
++      code: "WALLET_ALREADY_LINKED";
++      message: "Wallet already linked to another user";
++    };
++    readonly SESSION_CREATION_FAILED: {
++      code: "SESSION_CREATION_FAILED";
++      message: "Failed to create session";
++    };
++  };
+ };
+ //#endregion
+ export { SIWEPluginOptions, siwe };
+diff --git a/dist/plugins/siwe/index.mjs b/dist/plugins/siwe/index.mjs
+index b58d06676f54dde1b7cfc711c120a491e8b60957..3b0b01cd66693725abcd08ae4728b9e1c2725d24 100644
+--- a/dist/plugins/siwe/index.mjs
++++ b/dist/plugins/siwe/index.mjs
+@@ -1,21 +1,92 @@
+-import { isAPIError } from "../../utils/is-api-error.mjs";
+ import { getOrigin } from "../../utils/url.mjs";
+ import { mergeSchema } from "../../db/schema.mjs";
+ import { setSessionCookie } from "../../cookies/index.mjs";
++import { getSessionFromCtx } from "../../api/routes/session.mjs";
+ import { APIError } from "../../api/index.mjs";
+ import { toChecksumAddress } from "../../utils/hashing.mjs";
++import { SIWE_ERROR_CODES } from "./error-codes.mjs";
+ import { schema } from "./schema.mjs";
+ import { createAuthEndpoint } from "@better-auth/core/api";
+ import * as z from "zod";
+ 
+ //#region src/plugins/siwe/index.ts
++const walletAddressSchema = z.string().regex(/^0[xX][a-fA-F0-9]{40}$/i).length(42);
++const chainIdSchema = z.number().int().positive().max(2147483647).optional().default(1);
+ const getSiweNonceBodySchema = z.object({
+-	walletAddress: z.string().regex(/^0[xX][a-fA-F0-9]{40}$/i).length(42),
+-	chainId: z.number().int().positive().max(2147483647).optional().default(1)
++	walletAddress: walletAddressSchema,
++	chainId: chainIdSchema
+ });
++const verifySiweMessageBodyBaseSchema = z.object({
++	message: z.string().min(1),
++	signature: z.string().min(1),
++	walletAddress: walletAddressSchema,
++	chainId: chainIdSchema,
++	email: z.email().optional()
++});
++const createWalletAccountId = (walletAddress, chainId) => `${walletAddress}:${chainId}`;
++const createWalletVerificationIdentifier = (walletAddress, chainId) => `siwe:${createWalletAccountId(walletAddress, chainId)}`;
++const parseWalletAccountId = (accountId) => {
++	const [address, chainIdStr] = accountId.split(":");
++	const chainId = parseInt(chainIdStr ?? "", 10);
++	if (!address || Number.isNaN(chainId)) return null;
++	return {
++		address,
++		chainId
++	};
++};
++const verifySiweMessageOrThrow = async (options, args) => {
++	try {
++		if (!await options.verifyMessage({
++			message: args.message,
++			signature: args.signature,
++			address: args.address,
++			chainId: args.chainId,
++			cacao: {
++				h: { t: "caip122" },
++				p: {
++					domain: options.domain,
++					aud: options.domain,
++					nonce: args.nonce,
++					iss: options.domain,
++					version: "1"
++				},
++				s: {
++					t: "eip191",
++					s: args.signature
++				}
++			}
++		})) throw APIError.from("UNAUTHORIZED", SIWE_ERROR_CODES.INVALID_SIWE_SIGNATURE);
++	} catch {
++		throw APIError.from("UNAUTHORIZED", SIWE_ERROR_CODES.INVALID_SIWE_SIGNATURE);
++	}
++};
+ const siwe = (options) => ({
+ 	id: "siwe",
+ 	schema: mergeSchema(schema, options?.schema),
++	init(ctx) {
++		return { options: { databaseHooks: { account: { delete: { async after(account) {
++			if (account.providerId !== "siwe" || !account.accountId) return;
++			const parsed = parseWalletAccountId(account.accountId);
++			if (!parsed) return;
++			await ctx.adapter.deleteMany({
++				model: "walletAddress",
++				where: [
++					{
++						field: "address",
++						value: parsed.address
++					},
++					{
++						field: "chainId",
++						value: parsed.chainId
++					},
++					{
++						field: "userId",
++						value: account.userId
++					}
++				]
++			});
++		} } } } } };
++	},
+ 	endpoints: {
+ 		getSiweNonce: createAuthEndpoint("/siwe/nonce", {
+ 			method: "POST",
+@@ -25,7 +96,7 @@ const siwe = (options) => ({
+ 			const walletAddress = toChecksumAddress(rawWalletAddress);
+ 			const nonce = await options.getNonce();
+ 			await ctx.context.internalAdapter.createVerificationValue({
+-				identifier: `siwe:${walletAddress}:${chainId}`,
++				identifier: `siwe:${createWalletAccountId(walletAddress, chainId)}`,
+ 				value: nonce,
+ 				expiresAt: new Date(Date.now() + 900 * 1e3)
+ 			});
+@@ -33,13 +104,7 @@ const siwe = (options) => ({
+ 		}),
+ 		verifySiweMessage: createAuthEndpoint("/siwe/verify", {
+ 			method: "POST",
+-			body: z.object({
+-				message: z.string().min(1),
+-				signature: z.string().min(1),
+-				walletAddress: z.string().regex(/^0[xX][a-fA-F0-9]{40}$/i).length(42),
+-				chainId: z.number().int().positive().max(2147483647).optional().default(1),
+-				email: z.email().optional()
+-			}).refine((data) => options.anonymous !== false || !!data.email, {
++			body: verifySiweMessageBodyBaseSchema.refine((data) => options.anonymous !== false || !!data.email, {
+ 				message: "Email is required when the anonymous plugin option is disabled.",
+ 				path: ["email"]
+ 			}),
+@@ -47,156 +112,148 @@ const siwe = (options) => ({
+ 		}, async (ctx) => {
+ 			const { message, signature, walletAddress: rawWalletAddress, chainId, email } = ctx.body;
+ 			const walletAddress = toChecksumAddress(rawWalletAddress);
+-			const isAnon = options.anonymous ?? true;
+-			if (!isAnon && !email) throw APIError.fromStatus("BAD_REQUEST", {
+-				message: "Email is required when anonymous is disabled.",
+-				status: 400
++			const isAnonymous = options.anonymous ?? true;
++			const verificationIdentifier = createWalletVerificationIdentifier(walletAddress, chainId);
++			const verification = await ctx.context.internalAdapter.findVerificationValue(verificationIdentifier);
++			if (!verification || /* @__PURE__ */ new Date() > verification.expiresAt) throw APIError.from("UNAUTHORIZED", SIWE_ERROR_CODES.INVALID_OR_EXPIRED_NONCE);
++			await verifySiweMessageOrThrow(options, {
++				message,
++				signature,
++				address: walletAddress,
++				chainId,
++				nonce: verification.value
+ 			});
+-			try {
+-				const verification = await ctx.context.internalAdapter.findVerificationValue(`siwe:${walletAddress}:${chainId}`);
+-				if (!verification || /* @__PURE__ */ new Date() > verification.expiresAt) throw APIError.fromStatus("UNAUTHORIZED", {
+-					message: "Unauthorized: Invalid or expired nonce",
+-					status: 401,
+-					code: "UNAUTHORIZED_INVALID_OR_EXPIRED_NONCE"
+-				});
+-				const { value: nonce } = verification;
+-				if (!await options.verifyMessage({
+-					message,
+-					signature,
+-					address: walletAddress,
+-					chainId,
+-					cacao: {
+-						h: { t: "caip122" },
+-						p: {
+-							domain: options.domain,
+-							aud: options.domain,
+-							nonce,
+-							iss: options.domain,
+-							version: "1"
+-						},
+-						s: {
+-							t: "eip191",
+-							s: signature
+-						}
++			await ctx.context.internalAdapter.deleteVerificationValue(verification.id);
++			const walletAddressForChain = await ctx.context.adapter.findOne({
++				model: "walletAddress",
++				where: [{
++					field: "address",
++					operator: "eq",
++					value: walletAddress
++				}, {
++					field: "chainId",
++					operator: "eq",
++					value: chainId
++				}]
++			});
++			const walletAddressAnyChain = await ctx.context.adapter.findOne({
++				model: "walletAddress",
++				where: [{
++					field: "address",
++					operator: "eq",
++					value: walletAddress
++				}]
++			});
++			const currentSession = await getSessionFromCtx(ctx);
++			const accountLinking = ctx.context.options.account?.accountLinking;
++			const trustedProviders = accountLinking?.trustedProviders;
++			if (currentSession !== null && accountLinking?.enabled !== false && (trustedProviders === void 0 || trustedProviders.length === 0 || trustedProviders.includes("siwe"))) {
++				const sessionUser = currentSession.user;
++				if (walletAddressForChain && walletAddressForChain.userId === sessionUser.id) return ctx.json({
++					token: currentSession.session.token,
++					success: true,
++					user: {
++						id: sessionUser.id,
++						walletAddress,
++						chainId
+ 					}
+-				})) throw APIError.fromStatus("UNAUTHORIZED", {
+-					message: "Unauthorized: Invalid SIWE signature",
+-					status: 401
+ 				});
+-				await ctx.context.internalAdapter.deleteVerificationValue(verification.id);
+-				let user = null;
+-				const existingWalletAddress = await ctx.context.adapter.findOne({
++				const walletOwner = walletAddressForChain?.userId ?? walletAddressAnyChain?.userId;
++				if (walletOwner && walletOwner !== sessionUser.id) throw APIError.from("BAD_REQUEST", SIWE_ERROR_CODES.WALLET_ALREADY_LINKED);
++				await ctx.context.adapter.create({
+ 					model: "walletAddress",
+-					where: [{
+-						field: "address",
+-						operator: "eq",
+-						value: walletAddress
+-					}, {
+-						field: "chainId",
+-						operator: "eq",
+-						value: chainId
+-					}]
+-				});
+-				if (existingWalletAddress) user = await ctx.context.adapter.findOne({
+-					model: "user",
+-					where: [{
+-						field: "id",
+-						operator: "eq",
+-						value: existingWalletAddress.userId
+-					}]
+-				});
+-				else {
+-					const anyWalletAddress = await ctx.context.adapter.findOne({
+-						model: "walletAddress",
+-						where: [{
+-							field: "address",
+-							operator: "eq",
+-							value: walletAddress
+-						}]
+-					});
+-					if (anyWalletAddress) user = await ctx.context.adapter.findOne({
+-						model: "user",
+-						where: [{
+-							field: "id",
+-							operator: "eq",
+-							value: anyWalletAddress.userId
+-						}]
+-					});
+-				}
+-				if (!user) {
+-					const domain = options.emailDomainName ?? getOrigin(ctx.context.baseURL);
+-					const userEmail = !isAnon && email ? email : `${walletAddress}@${domain}`;
+-					const { name, avatar } = await options.ensLookup?.({ walletAddress }) ?? {};
+-					user = await ctx.context.internalAdapter.createUser({
+-						name: name ?? walletAddress,
+-						email: userEmail,
+-						image: avatar ?? ""
+-					});
+-					await ctx.context.adapter.create({
+-						model: "walletAddress",
+-						data: {
+-							userId: user.id,
+-							address: walletAddress,
+-							chainId,
+-							isPrimary: true,
+-							createdAt: /* @__PURE__ */ new Date()
+-						}
+-					});
+-					await ctx.context.internalAdapter.createAccount({
+-						userId: user.id,
+-						providerId: "siwe",
+-						accountId: `${walletAddress}:${chainId}`,
+-						createdAt: /* @__PURE__ */ new Date(),
+-						updatedAt: /* @__PURE__ */ new Date()
+-					});
+-				} else if (!existingWalletAddress) {
+-					await ctx.context.adapter.create({
+-						model: "walletAddress",
+-						data: {
+-							userId: user.id,
+-							address: walletAddress,
+-							chainId,
+-							isPrimary: false,
+-							createdAt: /* @__PURE__ */ new Date()
+-						}
+-					});
+-					await ctx.context.internalAdapter.createAccount({
+-						userId: user.id,
+-						providerId: "siwe",
+-						accountId: `${walletAddress}:${chainId}`,
+-						createdAt: /* @__PURE__ */ new Date(),
+-						updatedAt: /* @__PURE__ */ new Date()
+-					});
+-				}
+-				const session = await ctx.context.internalAdapter.createSession(user.id);
+-				if (!session) throw APIError.fromStatus("INTERNAL_SERVER_ERROR", {
+-					message: "Internal Server Error",
+-					status: 500
++					data: {
++						userId: sessionUser.id,
++						address: walletAddress,
++						chainId,
++						isPrimary: false,
++						createdAt: /* @__PURE__ */ new Date()
++					}
+ 				});
+-				await setSessionCookie(ctx, {
+-					session,
+-					user
++				await ctx.context.internalAdapter.linkAccount({
++					userId: sessionUser.id,
++					providerId: "siwe",
++					accountId: createWalletAccountId(walletAddress, chainId)
+ 				});
+ 				return ctx.json({
+-					token: session.token,
++					token: currentSession.session.token,
+ 					success: true,
+ 					user: {
+-						id: user.id,
++						id: sessionUser.id,
+ 						walletAddress,
+ 						chainId
+ 					}
+ 				});
+-			} catch (error) {
+-				if (isAPIError(error)) throw error;
+-				throw APIError.fromStatus("UNAUTHORIZED", {
+-					message: "Something went wrong. Please try again later.",
+-					error: error instanceof Error ? error.message : "Unknown error",
+-					status: 401
++			}
++			const existingUserId = walletAddressForChain?.userId ?? walletAddressAnyChain?.userId;
++			let user = existingUserId ? await ctx.context.adapter.findOne({
++				model: "user",
++				where: [{
++					field: "id",
++					operator: "eq",
++					value: existingUserId
++				}]
++			}) : null;
++			if (!user) {
++				const domain = options.emailDomainName ?? getOrigin(ctx.context.baseURL);
++				const userEmail = !isAnonymous && email ? email : `${walletAddress}@${domain}`;
++				const { name, avatar } = await options.ensLookup?.({ walletAddress }) ?? {};
++				user = await ctx.context.internalAdapter.createUser({
++					name: name ?? walletAddress,
++					email: userEmail,
++					image: avatar ?? ""
++				});
++				await ctx.context.adapter.create({
++					model: "walletAddress",
++					data: {
++						userId: user.id,
++						address: walletAddress,
++						chainId,
++						isPrimary: true,
++						createdAt: /* @__PURE__ */ new Date()
++					}
++				});
++				await ctx.context.internalAdapter.createAccount({
++					userId: user.id,
++					providerId: "siwe",
++					accountId: createWalletAccountId(walletAddress, chainId)
++				});
++			} else if (!walletAddressForChain) {
++				await ctx.context.adapter.create({
++					model: "walletAddress",
++					data: {
++						userId: user.id,
++						address: walletAddress,
++						chainId,
++						isPrimary: false,
++						createdAt: /* @__PURE__ */ new Date()
++					}
++				});
++				await ctx.context.internalAdapter.createAccount({
++					userId: user.id,
++					providerId: "siwe",
++					accountId: createWalletAccountId(walletAddress, chainId)
+ 				});
+ 			}
++			const session = await ctx.context.internalAdapter.createSession(user.id);
++			if (!session) throw APIError.from("INTERNAL_SERVER_ERROR", SIWE_ERROR_CODES.SESSION_CREATION_FAILED);
++			await setSessionCookie(ctx, {
++				session,
++				user
++			});
++			return ctx.json({
++				token: session.token,
++				success: true,
++				user: {
++					id: user.id,
++					walletAddress,
++					chainId
++				}
++			});
+ 		})
+ 	},
+-	options
++	options,
++	$ERROR_CODES: SIWE_ERROR_CODES
+ });
+ 
+ //#endregion
+diff --git a/dist/plugins/siwe/index.mjs.map b/dist/plugins/siwe/index.mjs.map
+index 5977a8b50bba136ef361db6e7731ed95bcf0a5d4..a293e759c0451c686e3fa2120281b392dca1c5c9 100644
+--- a/dist/plugins/siwe/index.mjs.map
++++ b/dist/plugins/siwe/index.mjs.map
+@@ -1 +1 @@
+-{"version":3,"file":"index.mjs","names":[],"sources":["../../../src/plugins/siwe/index.ts"],"sourcesContent":["import type { BetterAuthPlugin } from \"@better-auth/core\";\nimport { createAuthEndpoint } from \"@better-auth/core/api\";\nimport * as z from \"zod\";\nimport { APIError } from \"../../api\";\nimport { setSessionCookie } from \"../../cookies\";\nimport { mergeSchema } from \"../../db/schema\";\nimport type { InferOptionSchema, User } from \"../../types\";\nimport { toChecksumAddress } from \"../../utils/hashing\";\nimport { isAPIError } from \"../../utils/is-api-error\";\nimport { getOrigin } from \"../../utils/url\";\nimport { schema } from \"./schema\";\nimport type {\n\tENSLookupArgs,\n\tENSLookupResult,\n\tSIWEVerifyMessageArgs,\n\tWalletAddress,\n} from \"./types\";\n\ndeclare module \"@better-auth/core\" {\n\tinterface BetterAuthPluginRegistry<AuthOptions, Options> {\n\t\tsiwe: {\n\t\t\tcreator: typeof siwe;\n\t\t};\n\t}\n}\n\nexport interface SIWEPluginOptions {\n\tdomain: string;\n\temailDomainName?: string | undefined;\n\tanonymous?: boolean | undefined;\n\tgetNonce: () => Promise<string>;\n\tverifyMessage: (args: SIWEVerifyMessageArgs) => Promise<boolean>;\n\tensLookup?: ((args: ENSLookupArgs) => Promise<ENSLookupResult>) | undefined;\n\tschema?: InferOptionSchema<typeof schema> | undefined;\n}\n\nconst getSiweNonceBodySchema = z.object({\n\twalletAddress: z\n\t\t.string()\n\t\t.regex(/^0[xX][a-fA-F0-9]{40}$/i)\n\t\t.length(42),\n\tchainId: z.number().int().positive().max(2147483647).optional().default(1),\n});\n\nexport const siwe = (options: SIWEPluginOptions) =>\n\t({\n\t\tid: \"siwe\",\n\t\tschema: mergeSchema(schema, options?.schema),\n\t\tendpoints: {\n\t\t\tgetSiweNonce: createAuthEndpoint(\n\t\t\t\t\"/siwe/nonce\",\n\t\t\t\t{\n\t\t\t\t\tmethod: \"POST\",\n\t\t\t\t\tbody: getSiweNonceBodySchema,\n\t\t\t\t},\n\t\t\t\tasync (ctx) => {\n\t\t\t\t\tconst { walletAddress: rawWalletAddress, chainId } = ctx.body;\n\t\t\t\t\tconst walletAddress = toChecksumAddress(rawWalletAddress);\n\t\t\t\t\tconst nonce = await options.getNonce();\n\n\t\t\t\t\t// Store nonce with wallet address and chain ID context\n\t\t\t\t\tawait ctx.context.internalAdapter.createVerificationValue({\n\t\t\t\t\t\tidentifier: `siwe:${walletAddress}:${chainId}`,\n\t\t\t\t\t\tvalue: nonce,\n\t\t\t\t\t\texpiresAt: new Date(Date.now() + 15 * 60 * 1000),\n\t\t\t\t\t});\n\n\t\t\t\t\treturn ctx.json({ nonce });\n\t\t\t\t},\n\t\t\t),\n\t\t\tverifySiweMessage: createAuthEndpoint(\n\t\t\t\t\"/siwe/verify\",\n\t\t\t\t{\n\t\t\t\t\tmethod: \"POST\",\n\t\t\t\t\tbody: z\n\t\t\t\t\t\t.object({\n\t\t\t\t\t\t\tmessage: z.string().min(1),\n\t\t\t\t\t\t\tsignature: z.string().min(1),\n\t\t\t\t\t\t\twalletAddress: z\n\t\t\t\t\t\t\t\t.string()\n\t\t\t\t\t\t\t\t.regex(/^0[xX][a-fA-F0-9]{40}$/i)\n\t\t\t\t\t\t\t\t.length(42),\n\t\t\t\t\t\t\tchainId: z\n\t\t\t\t\t\t\t\t.number()\n\t\t\t\t\t\t\t\t.int()\n\t\t\t\t\t\t\t\t.positive()\n\t\t\t\t\t\t\t\t.max(2147483647)\n\t\t\t\t\t\t\t\t.optional()\n\t\t\t\t\t\t\t\t.default(1),\n\t\t\t\t\t\t\temail: z.email().optional(),\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.refine((data) => options.anonymous !== false || !!data.email, {\n\t\t\t\t\t\t\tmessage:\n\t\t\t\t\t\t\t\t\"Email is required when the anonymous plugin option is disabled.\",\n\t\t\t\t\t\t\tpath: [\"email\"],\n\t\t\t\t\t\t}),\n\t\t\t\t\trequireRequest: true,\n\t\t\t\t},\n\t\t\t\tasync (ctx) => {\n\t\t\t\t\tconst {\n\t\t\t\t\t\tmessage,\n\t\t\t\t\t\tsignature,\n\t\t\t\t\t\twalletAddress: rawWalletAddress,\n\t\t\t\t\t\tchainId,\n\t\t\t\t\t\temail,\n\t\t\t\t\t} = ctx.body;\n\t\t\t\t\tconst walletAddress = toChecksumAddress(rawWalletAddress);\n\t\t\t\t\tconst isAnon = options.anonymous ?? true;\n\n\t\t\t\t\tif (!isAnon && !email) {\n\t\t\t\t\t\tthrow APIError.fromStatus(\"BAD_REQUEST\", {\n\t\t\t\t\t\t\tmessage: \"Email is required when anonymous is disabled.\",\n\t\t\t\t\t\t\tstatus: 400,\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\n\t\t\t\t\ttry {\n\t\t\t\t\t\t// Find stored nonce with wallet address and chain ID context\n\t\t\t\t\t\tconst verification =\n\t\t\t\t\t\t\tawait ctx.context.internalAdapter.findVerificationValue(\n\t\t\t\t\t\t\t\t`siwe:${walletAddress}:${chainId}`,\n\t\t\t\t\t\t\t);\n\n\t\t\t\t\t\t// Ensure nonce is valid and not expired\n\t\t\t\t\t\tif (!verification || new Date() > verification.expiresAt) {\n\t\t\t\t\t\t\tthrow APIError.fromStatus(\"UNAUTHORIZED\", {\n\t\t\t\t\t\t\t\tmessage: \"Unauthorized: Invalid or expired nonce\",\n\t\t\t\t\t\t\t\tstatus: 401,\n\t\t\t\t\t\t\t\tcode: \"UNAUTHORIZED_INVALID_OR_EXPIRED_NONCE\",\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Verify SIWE message with enhanced parameters\n\t\t\t\t\t\tconst { value: nonce } = verification;\n\t\t\t\t\t\tconst verified = await options.verifyMessage({\n\t\t\t\t\t\t\tmessage,\n\t\t\t\t\t\t\tsignature,\n\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\tcacao: {\n\t\t\t\t\t\t\t\th: { t: \"caip122\" },\n\t\t\t\t\t\t\t\tp: {\n\t\t\t\t\t\t\t\t\tdomain: options.domain,\n\t\t\t\t\t\t\t\t\taud: options.domain,\n\t\t\t\t\t\t\t\t\tnonce,\n\t\t\t\t\t\t\t\t\tiss: options.domain,\n\t\t\t\t\t\t\t\t\tversion: \"1\",\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\ts: { t: \"eip191\", s: signature },\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tif (!verified) {\n\t\t\t\t\t\t\tthrow APIError.fromStatus(\"UNAUTHORIZED\", {\n\t\t\t\t\t\t\t\tmessage: \"Unauthorized: Invalid SIWE signature\",\n\t\t\t\t\t\t\t\tstatus: 401,\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Clean up used nonce\n\t\t\t\t\t\tawait ctx.context.internalAdapter.deleteVerificationValue(\n\t\t\t\t\t\t\tverification.id,\n\t\t\t\t\t\t);\n\n\t\t\t\t\t\t// Look for existing user by their wallet addresses\n\t\t\t\t\t\tlet user: User | null = null;\n\n\t\t\t\t\t\t// Check if there's a wallet address record for this exact address+chainId combination\n\t\t\t\t\t\tconst existingWalletAddress: WalletAddress | null =\n\t\t\t\t\t\t\tawait ctx.context.adapter.findOne({\n\t\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t\t{ field: \"address\", operator: \"eq\", value: walletAddress },\n\t\t\t\t\t\t\t\t\t{ field: \"chainId\", operator: \"eq\", value: chainId },\n\t\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\tif (existingWalletAddress) {\n\t\t\t\t\t\t\t// Get the user associated with this wallet address\n\t\t\t\t\t\t\tuser = await ctx.context.adapter.findOne({\n\t\t\t\t\t\t\t\tmodel: \"user\",\n\t\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\tfield: \"id\",\n\t\t\t\t\t\t\t\t\t\toperator: \"eq\",\n\t\t\t\t\t\t\t\t\t\tvalue: existingWalletAddress.userId,\n\t\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t// No exact match found, check if this address exists on any other chain\n\t\t\t\t\t\t\tconst anyWalletAddress: WalletAddress | null =\n\t\t\t\t\t\t\t\tawait ctx.context.adapter.findOne({\n\t\t\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t\t\t{ field: \"address\", operator: \"eq\", value: walletAddress },\n\t\t\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\tif (anyWalletAddress) {\n\t\t\t\t\t\t\t\t// Same address exists on different chain, get that user\n\t\t\t\t\t\t\t\tuser = await ctx.context.adapter.findOne({\n\t\t\t\t\t\t\t\t\tmodel: \"user\",\n\t\t\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\t\t\t\tfield: \"id\",\n\t\t\t\t\t\t\t\t\t\t\toperator: \"eq\",\n\t\t\t\t\t\t\t\t\t\t\tvalue: anyWalletAddress.userId,\n\t\t\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\t// Create new user if none exists\n\t\t\t\t\t\tif (!user) {\n\t\t\t\t\t\t\tconst domain =\n\t\t\t\t\t\t\t\toptions.emailDomainName ?? getOrigin(ctx.context.baseURL);\n\t\t\t\t\t\t\t// Use checksummed address for email generation\n\t\t\t\t\t\t\tconst userEmail =\n\t\t\t\t\t\t\t\t!isAnon && email ? email : `${walletAddress}@${domain}`;\n\t\t\t\t\t\t\tconst { name, avatar } =\n\t\t\t\t\t\t\t\t(await options.ensLookup?.({ walletAddress })) ?? {};\n\n\t\t\t\t\t\t\tuser = await ctx.context.internalAdapter.createUser({\n\t\t\t\t\t\t\t\tname: name ?? walletAddress,\n\t\t\t\t\t\t\t\temail: userEmail,\n\t\t\t\t\t\t\t\timage: avatar ?? \"\",\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Create wallet address record\n\t\t\t\t\t\t\tawait ctx.context.adapter.create({\n\t\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t\t\tisPrimary: true, // First address is primary\n\t\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Create account record for wallet authentication\n\t\t\t\t\t\t\tawait ctx.context.internalAdapter.createAccount({\n\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\tproviderId: \"siwe\",\n\t\t\t\t\t\t\t\taccountId: `${walletAddress}:${chainId}`,\n\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t\tupdatedAt: new Date(),\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t// User exists, but check if this specific address/chain combo exists\n\t\t\t\t\t\t\tif (!existingWalletAddress) {\n\t\t\t\t\t\t\t\t// Add this new chainId to existing user's addresses\n\t\t\t\t\t\t\t\tawait ctx.context.adapter.create({\n\t\t\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t\t\t\tisPrimary: false, // Additional addresses are not primary by default\n\t\t\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Create account record for this new wallet+chain combination\n\t\t\t\t\t\t\t\tawait ctx.context.internalAdapter.createAccount({\n\t\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\t\tproviderId: \"siwe\",\n\t\t\t\t\t\t\t\t\taccountId: `${walletAddress}:${chainId}`,\n\t\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t\t\tupdatedAt: new Date(),\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tconst session = await ctx.context.internalAdapter.createSession(\n\t\t\t\t\t\t\tuser.id,\n\t\t\t\t\t\t);\n\n\t\t\t\t\t\tif (!session) {\n\t\t\t\t\t\t\tthrow APIError.fromStatus(\"INTERNAL_SERVER_ERROR\", {\n\t\t\t\t\t\t\t\tmessage: \"Internal Server Error\",\n\t\t\t\t\t\t\t\tstatus: 500,\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tawait setSessionCookie(ctx, { session, user });\n\n\t\t\t\t\t\treturn ctx.json({\n\t\t\t\t\t\t\ttoken: session.token,\n\t\t\t\t\t\t\tsuccess: true,\n\t\t\t\t\t\t\tuser: {\n\t\t\t\t\t\t\t\tid: user.id,\n\t\t\t\t\t\t\t\twalletAddress,\n\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t});\n\t\t\t\t\t} catch (error: unknown) {\n\t\t\t\t\t\tif (isAPIError(error)) throw error;\n\t\t\t\t\t\tthrow APIError.fromStatus(\"UNAUTHORIZED\", {\n\t\t\t\t\t\t\tmessage: \"Something went wrong. Please try again later.\",\n\t\t\t\t\t\t\terror: error instanceof Error ? error.message : \"Unknown error\",\n\t\t\t\t\t\t\tstatus: 401,\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t),\n\t\t},\n\t\toptions,\n\t}) satisfies BetterAuthPlugin;\n"],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"index.mjs","names":[],"sources":["../../../src/plugins/siwe/index.ts"],"sourcesContent":["import type { BetterAuthPlugin } from \"@better-auth/core\";\nimport { createAuthEndpoint } from \"@better-auth/core/api\";\nimport type { Account } from \"@better-auth/core/db\";\n\nimport * as z from \"zod\";\nimport { APIError, getSessionFromCtx } from \"../../api\";\nimport { setSessionCookie } from \"../../cookies\";\nimport { mergeSchema } from \"../../db/schema\";\nimport type { InferOptionSchema, User } from \"../../types\";\nimport { toChecksumAddress } from \"../../utils/hashing\";\nimport { getOrigin } from \"../../utils/url\";\nimport { SIWE_ERROR_CODES } from \"./error-codes\";\nimport { schema } from \"./schema\";\nimport type {\n\tENSLookupArgs,\n\tENSLookupResult,\n\tSIWEVerifyMessageArgs,\n\tWalletAddress,\n} from \"./types\";\n\ndeclare module \"@better-auth/core\" {\n\tinterface BetterAuthPluginRegistry<AuthOptions, Options> {\n\t\tsiwe: {\n\t\t\tcreator: typeof siwe;\n\t\t};\n\t}\n}\n\nexport interface SIWEPluginOptions {\n\tdomain: string;\n\temailDomainName?: string | undefined;\n\tanonymous?: boolean | undefined;\n\tgetNonce: () => Promise<string>;\n\tverifyMessage: (args: SIWEVerifyMessageArgs) => Promise<boolean>;\n\tensLookup?: ((args: ENSLookupArgs) => Promise<ENSLookupResult>) | undefined;\n\tschema?: InferOptionSchema<typeof schema> | undefined;\n}\n\nconst walletAddressSchema = z\n\t.string()\n\t.regex(/^0[xX][a-fA-F0-9]{40}$/i)\n\t.length(42);\n\nconst chainIdSchema = z\n\t.number()\n\t.int()\n\t.positive()\n\t.max(2147483647)\n\t.optional()\n\t.default(1);\n\nconst getSiweNonceBodySchema = z.object({\n\twalletAddress: walletAddressSchema,\n\tchainId: chainIdSchema,\n});\n\nconst verifySiweMessageBodyBaseSchema = z.object({\n\tmessage: z.string().min(1),\n\tsignature: z.string().min(1),\n\twalletAddress: walletAddressSchema,\n\tchainId: chainIdSchema,\n\temail: z.email().optional(),\n});\n\nconst createWalletAccountId = (walletAddress: string, chainId: number) =>\n\t`${walletAddress}:${chainId}`;\n\nconst createWalletVerificationIdentifier = (\n\twalletAddress: string,\n\tchainId: number,\n) => `siwe:${createWalletAccountId(walletAddress, chainId)}`;\n\nconst parseWalletAccountId = (\n\taccountId: string,\n): { address: string; chainId: number } | null => {\n\tconst [address, chainIdStr] = accountId.split(\":\");\n\tconst chainId = parseInt(chainIdStr ?? \"\", 10);\n\n\tif (!address || Number.isNaN(chainId)) {\n\t\treturn null;\n\t}\n\n\treturn { address, chainId };\n};\n\nconst verifySiweMessageOrThrow = async (\n\toptions: SIWEPluginOptions,\n\targs: {\n\t\tmessage: string;\n\t\tsignature: string;\n\t\taddress: string;\n\t\tchainId: number;\n\t\tnonce: string;\n\t},\n) => {\n\ttry {\n\t\tconst verified = await options.verifyMessage({\n\t\t\tmessage: args.message,\n\t\t\tsignature: args.signature,\n\t\t\taddress: args.address,\n\t\t\tchainId: args.chainId,\n\t\t\tcacao: {\n\t\t\t\th: { t: \"caip122\" },\n\t\t\t\tp: {\n\t\t\t\t\tdomain: options.domain,\n\t\t\t\t\taud: options.domain,\n\t\t\t\t\tnonce: args.nonce,\n\t\t\t\t\tiss: options.domain,\n\t\t\t\t\tversion: \"1\",\n\t\t\t\t},\n\t\t\t\ts: { t: \"eip191\", s: args.signature },\n\t\t\t},\n\t\t});\n\n\t\tif (!verified) {\n\t\t\tthrow APIError.from(\n\t\t\t\t\"UNAUTHORIZED\",\n\t\t\t\tSIWE_ERROR_CODES.INVALID_SIWE_SIGNATURE,\n\t\t\t);\n\t\t}\n\t} catch {\n\t\tthrow APIError.from(\n\t\t\t\"UNAUTHORIZED\",\n\t\t\tSIWE_ERROR_CODES.INVALID_SIWE_SIGNATURE,\n\t\t);\n\t}\n};\n\nexport const siwe = (options: SIWEPluginOptions) =>\n\t({\n\t\tid: \"siwe\",\n\t\tschema: mergeSchema(schema, options?.schema),\n\t\tinit(ctx) {\n\t\t\treturn {\n\t\t\t\toptions: {\n\t\t\t\t\tdatabaseHooks: {\n\t\t\t\t\t\taccount: {\n\t\t\t\t\t\t\tdelete: {\n\t\t\t\t\t\t\t\tasync after(account: Account) {\n\t\t\t\t\t\t\t\t\tif (account.providerId !== \"siwe\" || !account.accountId) {\n\t\t\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\t\tconst parsed = parseWalletAccountId(account.accountId);\n\t\t\t\t\t\t\t\t\tif (!parsed) {\n\t\t\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\t\tawait ctx.adapter.deleteMany({\n\t\t\t\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t\t\t\t{ field: \"address\", value: parsed.address },\n\t\t\t\t\t\t\t\t\t\t\t{ field: \"chainId\", value: parsed.chainId },\n\t\t\t\t\t\t\t\t\t\t\t{ field: \"userId\", value: account.userId },\n\t\t\t\t\t\t\t\t\t\t],\n\t\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\t},\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t},\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t};\n\t\t},\n\t\tendpoints: {\n\t\t\tgetSiweNonce: createAuthEndpoint(\n\t\t\t\t\"/siwe/nonce\",\n\t\t\t\t{\n\t\t\t\t\tmethod: \"POST\",\n\t\t\t\t\tbody: getSiweNonceBodySchema,\n\t\t\t\t},\n\t\t\t\tasync (ctx) => {\n\t\t\t\t\tconst { walletAddress: rawWalletAddress, chainId } = ctx.body;\n\t\t\t\t\tconst walletAddress = toChecksumAddress(rawWalletAddress);\n\t\t\t\t\tconst nonce = await options.getNonce();\n\n\t\t\t\t\tawait ctx.context.internalAdapter.createVerificationValue({\n\t\t\t\t\t\tidentifier: `siwe:${createWalletAccountId(walletAddress, chainId)}`,\n\t\t\t\t\t\tvalue: nonce,\n\t\t\t\t\t\texpiresAt: new Date(Date.now() + 15 * 60 * 1000),\n\t\t\t\t\t});\n\n\t\t\t\t\treturn ctx.json({ nonce });\n\t\t\t\t},\n\t\t\t),\n\t\t\tverifySiweMessage: createAuthEndpoint(\n\t\t\t\t\"/siwe/verify\",\n\t\t\t\t{\n\t\t\t\t\tmethod: \"POST\",\n\t\t\t\t\tbody: verifySiweMessageBodyBaseSchema.refine(\n\t\t\t\t\t\t(data) => options.anonymous !== false || !!data.email,\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\tmessage:\n\t\t\t\t\t\t\t\t\"Email is required when the anonymous plugin option is disabled.\",\n\t\t\t\t\t\t\tpath: [\"email\"],\n\t\t\t\t\t\t},\n\t\t\t\t\t),\n\t\t\t\t\trequireRequest: true,\n\t\t\t\t},\n\t\t\t\tasync (ctx) => {\n\t\t\t\t\tconst {\n\t\t\t\t\t\tmessage,\n\t\t\t\t\t\tsignature,\n\t\t\t\t\t\twalletAddress: rawWalletAddress,\n\t\t\t\t\t\tchainId,\n\t\t\t\t\t\temail,\n\t\t\t\t\t} = ctx.body;\n\n\t\t\t\t\tconst walletAddress = toChecksumAddress(rawWalletAddress);\n\t\t\t\t\tconst isAnonymous = options.anonymous ?? true;\n\n\t\t\t\t\tconst verificationIdentifier = createWalletVerificationIdentifier(\n\t\t\t\t\t\twalletAddress,\n\t\t\t\t\t\tchainId,\n\t\t\t\t\t);\n\n\t\t\t\t\tconst verification =\n\t\t\t\t\t\tawait ctx.context.internalAdapter.findVerificationValue(\n\t\t\t\t\t\t\tverificationIdentifier,\n\t\t\t\t\t\t);\n\n\t\t\t\t\tif (!verification || new Date() > verification.expiresAt) {\n\t\t\t\t\t\tthrow APIError.from(\n\t\t\t\t\t\t\t\"UNAUTHORIZED\",\n\t\t\t\t\t\t\tSIWE_ERROR_CODES.INVALID_OR_EXPIRED_NONCE,\n\t\t\t\t\t\t);\n\t\t\t\t\t}\n\n\t\t\t\t\tawait verifySiweMessageOrThrow(options, {\n\t\t\t\t\t\tmessage,\n\t\t\t\t\t\tsignature,\n\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\tchainId,\n\t\t\t\t\t\tnonce: verification.value,\n\t\t\t\t\t});\n\n\t\t\t\t\t// Nonce is single-use: delete it after successful verification.\n\t\t\t\t\tawait ctx.context.internalAdapter.deleteVerificationValue(\n\t\t\t\t\t\tverification.id,\n\t\t\t\t\t);\n\n\t\t\t\t\tconst walletAddressForChain =\n\t\t\t\t\t\tawait ctx.context.adapter.findOne<WalletAddress>({\n\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t{ field: \"address\", operator: \"eq\", value: walletAddress },\n\t\t\t\t\t\t\t\t{ field: \"chainId\", operator: \"eq\", value: chainId },\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t});\n\n\t\t\t\t\tconst walletAddressAnyChain =\n\t\t\t\t\t\tawait ctx.context.adapter.findOne<WalletAddress>({\n\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\twhere: [\n\t\t\t\t\t\t\t\t{ field: \"address\", operator: \"eq\", value: walletAddress },\n\t\t\t\t\t\t\t],\n\t\t\t\t\t\t});\n\n\t\t\t\t\tconst currentSession = await getSessionFromCtx(ctx);\n\t\t\t\t\tconst accountLinking = ctx.context.options.account?.accountLinking;\n\t\t\t\t\tconst trustedProviders = accountLinking?.trustedProviders;\n\n\t\t\t\t\tconst shouldLink =\n\t\t\t\t\t\tcurrentSession !== null &&\n\t\t\t\t\t\taccountLinking?.enabled !== false &&\n\t\t\t\t\t\t(trustedProviders === undefined ||\n\t\t\t\t\t\t\ttrustedProviders.length === 0 ||\n\t\t\t\t\t\t\ttrustedProviders.includes(\"siwe\"));\n\n\t\t\t\t\tif (shouldLink) {\n\t\t\t\t\t\tconst sessionUser = currentSession.user;\n\n\t\t\t\t\t\tif (\n\t\t\t\t\t\t\twalletAddressForChain &&\n\t\t\t\t\t\t\twalletAddressForChain.userId === sessionUser.id\n\t\t\t\t\t\t) {\n\t\t\t\t\t\t\treturn ctx.json({\n\t\t\t\t\t\t\t\ttoken: currentSession.session.token,\n\t\t\t\t\t\t\t\tsuccess: true,\n\t\t\t\t\t\t\t\tuser: { id: sessionUser.id, walletAddress, chainId },\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tconst walletOwner =\n\t\t\t\t\t\t\twalletAddressForChain?.userId ?? walletAddressAnyChain?.userId;\n\t\t\t\t\t\tif (walletOwner && walletOwner !== sessionUser.id) {\n\t\t\t\t\t\t\tthrow APIError.from(\n\t\t\t\t\t\t\t\t\"BAD_REQUEST\",\n\t\t\t\t\t\t\t\tSIWE_ERROR_CODES.WALLET_ALREADY_LINKED,\n\t\t\t\t\t\t\t);\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tawait ctx.context.adapter.create({\n\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tuserId: sessionUser.id,\n\t\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t\tisPrimary: false,\n\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tawait ctx.context.internalAdapter.linkAccount({\n\t\t\t\t\t\t\tuserId: sessionUser.id,\n\t\t\t\t\t\t\tproviderId: \"siwe\",\n\t\t\t\t\t\t\taccountId: createWalletAccountId(walletAddress, chainId),\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\treturn ctx.json({\n\t\t\t\t\t\t\ttoken: currentSession.session.token,\n\t\t\t\t\t\t\tsuccess: true,\n\t\t\t\t\t\t\tuser: { id: sessionUser.id, walletAddress, chainId },\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\n\t\t\t\t\tconst existingUserId =\n\t\t\t\t\t\twalletAddressForChain?.userId ?? walletAddressAnyChain?.userId;\n\n\t\t\t\t\tlet user = existingUserId\n\t\t\t\t\t\t? await ctx.context.adapter.findOne<User>({\n\t\t\t\t\t\t\t\tmodel: \"user\",\n\t\t\t\t\t\t\t\twhere: [{ field: \"id\", operator: \"eq\", value: existingUserId }],\n\t\t\t\t\t\t\t})\n\t\t\t\t\t\t: null;\n\n\t\t\t\t\tif (!user) {\n\t\t\t\t\t\tconst domain =\n\t\t\t\t\t\t\toptions.emailDomainName ?? getOrigin(ctx.context.baseURL);\n\t\t\t\t\t\tconst userEmail =\n\t\t\t\t\t\t\t!isAnonymous && email ? email : `${walletAddress}@${domain}`;\n\t\t\t\t\t\tconst { name, avatar } =\n\t\t\t\t\t\t\t(await options.ensLookup?.({ walletAddress })) ?? {};\n\n\t\t\t\t\t\tuser = await ctx.context.internalAdapter.createUser({\n\t\t\t\t\t\t\tname: name ?? walletAddress,\n\t\t\t\t\t\t\temail: userEmail,\n\t\t\t\t\t\t\timage: avatar ?? \"\",\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tawait ctx.context.adapter.create({\n\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t\tisPrimary: true,\n\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tawait ctx.context.internalAdapter.createAccount({\n\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\tproviderId: \"siwe\",\n\t\t\t\t\t\t\taccountId: createWalletAccountId(walletAddress, chainId),\n\t\t\t\t\t\t});\n\t\t\t\t\t} else if (!walletAddressForChain) {\n\t\t\t\t\t\t// User exists but this specific address/chain combo doesn't\n\t\t\t\t\t\tawait ctx.context.adapter.create({\n\t\t\t\t\t\t\tmodel: \"walletAddress\",\n\t\t\t\t\t\t\tdata: {\n\t\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\t\taddress: walletAddress,\n\t\t\t\t\t\t\t\tchainId,\n\t\t\t\t\t\t\t\tisPrimary: false,\n\t\t\t\t\t\t\t\tcreatedAt: new Date(),\n\t\t\t\t\t\t\t},\n\t\t\t\t\t\t});\n\n\t\t\t\t\t\tawait ctx.context.internalAdapter.createAccount({\n\t\t\t\t\t\t\tuserId: user.id,\n\t\t\t\t\t\t\tproviderId: \"siwe\",\n\t\t\t\t\t\t\taccountId: createWalletAccountId(walletAddress, chainId),\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\n\t\t\t\t\tconst session = await ctx.context.internalAdapter.createSession(\n\t\t\t\t\t\tuser.id,\n\t\t\t\t\t);\n\n\t\t\t\t\tif (!session) {\n\t\t\t\t\t\tthrow APIError.from(\n\t\t\t\t\t\t\t\"INTERNAL_SERVER_ERROR\",\n\t\t\t\t\t\t\tSIWE_ERROR_CODES.SESSION_CREATION_FAILED,\n\t\t\t\t\t\t);\n\t\t\t\t\t}\n\n\t\t\t\t\tawait setSessionCookie(ctx, { session, user });\n\n\t\t\t\t\treturn ctx.json({\n\t\t\t\t\t\ttoken: session.token,\n\t\t\t\t\t\tsuccess: true,\n\t\t\t\t\t\tuser: { id: user.id, walletAddress, chainId },\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t),\n\t\t},\n\t\toptions,\n\t\t$ERROR_CODES: SIWE_ERROR_CODES,\n\t}) satisfies BetterAuthPlugin;\n"],"mappings":"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"}
