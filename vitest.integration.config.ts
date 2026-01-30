@@ -14,7 +14,10 @@ export default defineConfig({
 		}),
 	],
 	test: {
-		// Setup files - includes database setup with testcontainers
+		// Global setup runs BEFORE test files are loaded (starts DB container)
+		globalSetup: ["./test/global-setup.ts"],
+
+		// Setup files run after globalSetup but before tests (reads DB connection)
 		setupFiles: ["./test/setup.ts", "./test/setup-db.ts"],
 
 		// Only include integration tests

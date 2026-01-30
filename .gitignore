@@ -25,3 +25,6 @@ playwright-report/
 playwright/.cache/
 test-results/
 e2e/test-results/
+
+# Integration test state file (created by global-setup.ts)
+test/.test-db-state.json
