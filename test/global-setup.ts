@@ -1,9 +1,9 @@
+import { existsSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
-import { existsSync, unlinkSync, writeFileSync } from "fs";
-import { join } from "path";
 
 /**
  * Global setup for integration tests.
