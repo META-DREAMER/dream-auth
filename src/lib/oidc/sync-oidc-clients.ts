@@ -10,8 +10,8 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
-import { serverEnv } from "@/env";
+import type { PoolClient } from "pg";
+import { pool } from "@/lib/db";
 import type { OidcClientConfig } from "./schemas";
 
 /**
@@ -229,10 +229,7 @@ async function performSeeding(clients: OidcClientConfig[]): Promise<void> {
 		);
 	}
 
-	// Acquire a client from the pool for the transaction
-	const pool = new Pool({
-		connectionString: serverEnv.DATABASE_URL,
-	});
+	// Acquire a client from the shared pool for the transaction
 	const dbClient = await pool.connect();
 
 	try {
@@ -258,7 +255,6 @@ async function performSeeding(clients: OidcClientConfig[]): Promise<void> {
 	} finally {
 		// Always release the client back to the pool
 		dbClient.release();
-		await pool.end();
 	}
 }
 

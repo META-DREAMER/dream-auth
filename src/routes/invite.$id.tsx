@@ -10,7 +10,6 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { Pool } from "pg";
 import { useAccount } from "wagmi";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -27,8 +26,8 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { serverEnv } from "@/env";
 import { organization, useSession } from "@/lib/auth-client";
+import { pool } from "@/lib/db";
 import { formatAddress } from "@/lib/format";
 import {
 	getInvitationWalletAddress,
@@ -74,45 +73,39 @@ interface InvitationPreview {
 const getInvitationPreview = createServerFn({ method: "GET" })
 	.inputValidator((data: { invitationId: string }) => data)
 	.handler(async ({ data }): Promise<InvitationPreview | null> => {
-		const pool = new Pool({ connectionString: serverEnv.DATABASE_URL });
+		const result = await pool.query(
+			`SELECT
+				i.id,
+				i.role,
+				i.status,
+				i."expiresAt",
+				i."walletAddress",
+				o.name as "organizationName"
+			FROM invitation i
+			JOIN organization o ON i."organizationId" = o.id
+			WHERE i.id = $1
+			LIMIT 1`,
+			[data.invitationId],
+		);
 
-		try {
-			const result = await pool.query(
-				`SELECT 
-					i.id,
-					i.role,
-					i.status,
-					i."expiresAt",
-					i."walletAddress",
-					o.name as "organizationName"
-				FROM invitation i
-				JOIN organization o ON i."organizationId" = o.id
-				WHERE i.id = $1
-				LIMIT 1`,
-				[data.invitationId],
-			);
-
-			if (result.rows.length === 0) {
-				return null;
-			}
-
-			const row = result.rows[0];
-			const walletAddress = row.walletAddress as string | null;
-
-			return {
-				id: row.id,
-				organizationName: row.organizationName,
-				role: row.role,
-				status: row.status,
-				expiresAt: row.expiresAt,
-				isWalletInvitation: !!walletAddress,
-				walletAddressPreview: walletAddress
-					? formatAddress(walletAddress)
-					: undefined,
-			};
-		} finally {
-			await pool.end();
+		if (result.rows.length === 0) {
+			return null;
 		}
+
+		const row = result.rows[0];
+		const walletAddress = row.walletAddress as string | null;
+
+		return {
+			id: row.id,
+			organizationName: row.organizationName,
+			role: row.role,
+			status: row.status,
+			expiresAt: row.expiresAt,
+			isWalletInvitation: !!walletAddress,
+			walletAddressPreview: walletAddress
+				? formatAddress(walletAddress)
+				: undefined,
+		};
 	});
 
 export const Route = createFileRoute("/invite/$id")({

@@ -9,15 +9,11 @@ import {
 	siwe,
 } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { Pool } from "pg";
 import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
-
-const pool = new Pool({
-	connectionString: serverEnv.DATABASE_URL,
-});
+import { pool } from "@/lib/db";
 
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
 const authUrl = new URL(serverEnv.BETTER_AUTH_URL);
