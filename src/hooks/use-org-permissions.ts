@@ -1,21 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { authClient, useSession } from "@/lib/auth-client";
-import { orgMembersOptions } from "@/lib/org-queries";
+import { authClient, organization } from "@/lib/auth-client";
 
 export function useOrgPermissions() {
 	const { data: activeOrg } = authClient.useActiveOrganization();
-	const { data: session } = useSession();
-	const { data: membersData } = useQuery(orgMembersOptions(activeOrg?.id));
 
-	const members = membersData?.members ?? [];
-	const currentMember = members.find((m) => m.userId === session?.user?.id);
+	const { data: activeMember } = useQuery({
+		queryKey: ["organization", activeOrg?.id, "activeMemberRole"],
+		queryFn: async () => {
+			const result = await organization.getActiveMemberRole({});
+			return result.data ?? null;
+		},
+		enabled: !!activeOrg?.id,
+		staleTime: 1000 * 60 * 5,
+	});
+
+	const role = activeMember?.role;
 
 	return {
-		currentMember,
-		isOwner: currentMember?.role === "owner",
-		isAdmin: currentMember?.role === "admin",
-		isOwnerOrAdmin:
-			currentMember?.role === "owner" || currentMember?.role === "admin",
-		isMember: !!currentMember,
+		role,
+		isOwner: role === "owner",
+		isAdmin: role === "admin",
+		isOwnerOrAdmin: role === "owner" || role === "admin",
+		isMember: !!role,
 	};
 }

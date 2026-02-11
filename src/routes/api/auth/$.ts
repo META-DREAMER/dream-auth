@@ -5,14 +5,19 @@ import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
 
 /**
  * Ensure OIDC clients are seeded to DB before handling auth requests.
- * This guarantees FK integrity for /oauth2/token when using trustedClients.
+ * Uses a sync flag to skip the async call entirely after first success,
+ * avoiding unnecessary microtask overhead on every auth request.
  *
  * @see https://github.com/better-auth/better-auth/issues/6649
  */
+let oidcReady = false;
+
 async function ensureOidcReady(): Promise<void> {
-	if (serverEnv.ENABLE_OIDC_PROVIDER) {
-		await ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS);
+	if (oidcReady || !serverEnv.ENABLE_OIDC_PROVIDER) {
+		return;
 	}
+	await ensureOidcClientsSeeded(serverEnvWithOidc.OIDC_CLIENTS);
+	oidcReady = true;
 }
 
 export const Route = createFileRoute("/api/auth/$")({

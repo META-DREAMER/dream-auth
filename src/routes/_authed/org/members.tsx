@@ -136,6 +136,16 @@ function MembersPage() {
 	);
 
 	// Member mutations
+	const invalidateMemberQueries = () => {
+		queryClient.invalidateQueries({
+			queryKey: orgMembersOptions(activeOrg?.id).queryKey,
+		});
+		// Also refresh the active member role used by useOrgPermissions
+		queryClient.invalidateQueries({
+			queryKey: ["organization", activeOrg?.id, "activeMemberRole"],
+		});
+	};
+
 	const updateRoleMutation = useMutation({
 		mutationFn: async ({
 			memberId,
@@ -150,9 +160,7 @@ function MembersPage() {
 			});
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: orgMembersOptions(activeOrg?.id).queryKey,
-			});
+			invalidateMemberQueries();
 			setEditMember(null);
 		},
 	});
@@ -162,9 +170,7 @@ function MembersPage() {
 			return organization.removeMember({ memberIdOrEmail: memberId });
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: orgMembersOptions(activeOrg?.id).queryKey,
-			});
+			invalidateMemberQueries();
 			setRemoveMember(null);
 		},
 	});

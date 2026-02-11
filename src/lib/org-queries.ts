@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { organization } from "@/lib/auth-client";
 
+/** 5 minutes - org data changes infrequently */
+const ORG_STALE_TIME = 1000 * 60 * 5;
+
 export const orgMembersOptions = (orgId: string | undefined) =>
 	queryOptions({
 		queryKey: ["organization", orgId, "members"],
@@ -10,6 +13,7 @@ export const orgMembersOptions = (orgId: string | undefined) =>
 			return result.data ?? null;
 		},
 		enabled: !!orgId,
+		staleTime: ORG_STALE_TIME,
 	});
 
 export const orgInvitationsOptions = (orgId: string | undefined) =>
@@ -21,6 +25,7 @@ export const orgInvitationsOptions = (orgId: string | undefined) =>
 			return result.data ?? null;
 		},
 		enabled: !!orgId,
+		staleTime: ORG_STALE_TIME,
 	});
 
 export const orgFullOptions = (orgId: string | undefined) =>
@@ -32,6 +37,7 @@ export const orgFullOptions = (orgId: string | undefined) =>
 			return result.data ?? null;
 		},
 		enabled: !!orgId,
+		staleTime: ORG_STALE_TIME,
 	});
 
 export const orgTeamsOptions = (orgId: string | undefined) =>
@@ -43,4 +49,5 @@ export const orgTeamsOptions = (orgId: string | undefined) =>
 			return result.data ?? null;
 		},
 		enabled: !!orgId,
+		staleTime: ORG_STALE_TIME,
 	});
