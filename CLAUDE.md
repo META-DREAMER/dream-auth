@@ -25,6 +25,9 @@ pnpm dlx shadcn@latest add <component>
 ## Architecture Docs
 
 - [Auth System (BetterAuth)](./docs/AUTH.md) - Plugin ordering, account linking, session loading
+- [API Endpoints](./docs/API.md) - Route handlers, server functions, response patterns
+- [Web3 / SIWE](./docs/WEB3.md) - Wagmi config, SimpleKit UI, wallet auth flow, account linking
+- [Organization & Teams](./docs/ORGANIZATION.md) - Roles, invitations (email + wallet), team management
 - [OIDC Provider](./docs/OIDC.md) - Client seeding, FK constraint workaround, testing
 - [Kubernetes Integration](./docs/KUBERNETES.md) - Forward auth, auto-migrations, nginx config
 - [Coding Conventions](./docs/CONVENTIONS.md) - Database schema, env vars, styling
