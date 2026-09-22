@@ -10,8 +10,8 @@ pnpm typecheck                        # TypeScript checking
 pnpm check                            # Biome lint + format
 
 # Database
-pnpm dlx @better-auth/cli generate    # Generate migration SQL (review first!)
-pnpm dlx @better-auth/cli migrate     # Apply migrations
+pnpm dlx auth generate    # Generate migration SQL (review first!)
+pnpm dlx auth migrate     # Apply migrations
 
 # Testing
 pnpm test                             # Unit tests (Vitest)
@@ -40,13 +40,13 @@ pnpm dlx shadcn@latest add <component>
 
 **Database access:** Prefer `auth.api.*` methods over direct `pool.query()`. BetterAuth uses camelCase columns.
 
-**BetterAuth plugins:** Order matters - `jwt()` must come before `oidcProvider()`.
+**BetterAuth plugins:** Order matters - `jwt()` must come before `oauthProvider()`, and `tanstackStartCookies()` must be last.
 
 ## Common Pitfalls
 
 | Issue | Solution |
 |-------|----------|
-| OIDC token exchange FK error | Ensure `ENABLE_OIDC_PROVIDER=true`, check "Seeding N client(s)" in logs |
+| OIDC client not found / FK error | Ensure `ENABLE_OIDC_PROVIDER=true`, check "Seeding N client(s)" in logs; clients live in `oauthClient`, seeded from config |
 | Session not loading in SSR | Use `createServerFn()` from `src/lib/session.server.ts` |
 | Env vars not working | Server: `serverEnv`/`serverEnvWithOidc`, Client: `clientEnv` (needs `VITE_` prefix) |
 | Docker build fails | `SKIP_ENV_VALIDATION=true` only in Dockerfile builder stage (already set) |

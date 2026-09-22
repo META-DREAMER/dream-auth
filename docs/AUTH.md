@@ -5,7 +5,7 @@
 ## Configuration
 
 - **Database:** Uses PostgreSQL connection pool directly via `pg` (not Kysely ORM)
-- **Plugins:** Order matters! `jwt()` must come before `oidcProvider()` for OIDC to work
+- **Plugins:** Order matters! `jwt()` must come before `oauthProvider()` for OIDC to work, and `tanstackStartCookies()` must be last
 - **OIDC Client Seeding:** `ensureOidcClientsSeeded()` is called at module load to seed clients from config into DB (see [OIDC.md](./OIDC.md))
 - **Account Linking:** Enabled to allow users to link wallets/passkeys to existing email accounts
 - **Cookie Caching:** Currently disabled due to TanStack Start SSR context issues (see comments in auth.ts)

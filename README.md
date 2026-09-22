@@ -28,7 +28,7 @@ cp .env.example .env
 # Edit .env with your DATABASE_URL, BETTER_AUTH_SECRET, etc.
 
 # Run database migrations
-pnpm dlx @better-auth/cli migrate
+pnpm dlx auth migrate
 
 # Start development server
 pnpm dev
@@ -73,10 +73,10 @@ BetterAuth manages the database schema. Run migrations after pulling changes or 
 
 ```bash
 # Generate migration SQL (optional, to review)
-pnpm dlx @better-auth/cli generate
+pnpm dlx auth generate
 
 # Apply migrations
-pnpm dlx @better-auth/cli migrate
+pnpm dlx auth migrate
 ```
 
 ### Automatic Migrations (Kubernetes/GitOps)

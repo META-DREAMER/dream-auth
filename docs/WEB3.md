@@ -54,10 +54,10 @@ Custom lightweight wallet connection UI replacing RainbowKit/ConnectKit. Full co
 **Hook:** `src/hooks/use-siwe-auth.ts`
 
 ```
-1. Get Nonce     → siwe.nonce({ walletAddress, chainId })
+1. Get Nonce     → siwe.nonce()
 2. Create Message → viem/siwe.createSiweMessage({ domain, address, nonce, ... })
 3. Sign Message  → wallet.signMessageAsync({ message })
-4. Verify        → siwe.verify({ message, signature, walletAddress, chainId })
+4. Verify        → siwe.verify({ message, signature })
 ```
 
 Uses `viem/siwe.createSiweMessage()` — not the `siwe` package constructor (avoids v3 bugs).
@@ -119,7 +119,7 @@ Flow: Start linking → open wallet modal → connect → auto-sign SIWE → lin
 
 **Location:** `src/components/auth/wallet-list.tsx`
 
-Displays linked SIWE accounts. Supports unlinking via `authClient.unlinkAccount({ providerId: "siwe", accountId })`.
+Displays linked SIWE accounts. Supports unlinking via `authClient.unlinkAccount({ accountId })`, where `accountId` is the `account` row's primary key `id` from `listAccounts()`.
 
 ## Wallet Invitations
 
