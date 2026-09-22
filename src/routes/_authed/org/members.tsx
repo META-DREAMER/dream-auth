@@ -103,6 +103,24 @@ type Invitation = {
 	walletAddress?: string | null;
 };
 
+/**
+ * The better-auth client resolves with `{ data, error }` instead of rejecting,
+ * so a failed invite would otherwise land in the mutation's success path and
+ * the admin would be told an email went out that did not. Rejecting here puts
+ * the mutation into its error state, which the UI renders.
+ */
+function throwOnInviteError<T extends { error?: { message?: string } | null }>(
+	result: T,
+): T {
+	if (result?.error) {
+		throw new Error(
+			result.error.message ??
+				"The invitation could not be sent. Check the members list and try Resend.",
+		);
+	}
+	return result;
+}
+
 function MembersPage() {
 	const { data: activeOrg, isPending: isPendingOrg } =
 		authClient.useActiveOrganization();
@@ -187,10 +205,11 @@ function MembersPage() {
 			role: "member" | "admin";
 		}) => {
 			if (!activeOrg) throw new Error("No active organization");
-			if (type === "email") {
-				return inviteByEmail(value, role, activeOrg.id);
-			}
-			return inviteByWallet(value, role, activeOrg.id);
+			return throwOnInviteError(
+				type === "email"
+					? await inviteByEmail(value, role, activeOrg.id)
+					: await inviteByWallet(value, role, activeOrg.id),
+			);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -218,19 +237,24 @@ function MembersPage() {
 	const resendMutation = useMutation({
 		mutationFn: async (invitation: Invitation) => {
 			setResendingId(invitation.id);
-			// First cancel the old invitation, then create a new one
-			await organization.cancelInvitation({ invitationId: invitation.id });
-			if (isWalletInvitation(invitation) && invitation.walletAddress) {
-				return inviteByWallet(
-					invitation.walletAddress,
-					invitation.role as "member" | "admin",
-					invitation.organizationId,
-				);
-			}
-			return inviteByEmail(
-				invitation.email,
-				invitation.role as "member" | "admin",
-				invitation.organizationId,
+			// `resend: true` re-sends against the existing row: better-auth
+			// refreshes its expiry and calls sendInvitationEmail again. The
+			// previous shape cancelled first and then created, so a failed send
+			// destroyed a working invitation and left nothing behind.
+			return throwOnInviteError(
+				isWalletInvitation(invitation) && invitation.walletAddress
+					? await inviteByWallet(
+							invitation.walletAddress,
+							invitation.role as "member" | "admin",
+							invitation.organizationId,
+							{ resend: true },
+						)
+					: await inviteByEmail(
+							invitation.email,
+							invitation.role as "member" | "admin",
+							invitation.organizationId,
+							{ resend: true },
+						),
 			);
 		},
 		onSuccess: () => {
@@ -330,6 +354,11 @@ function MembersPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
+						{resendMutation.isError && (
+							<p className="mb-4 text-sm text-destructive">
+								{resendMutation.error.message}
+							</p>
+						)}
 						{isPendingInvitations ? (
 							<div className="space-y-4">
 								<Skeleton className="h-16 w-full" />
@@ -695,6 +724,12 @@ function MembersPage() {
 							<Label htmlFor="role">Role</Label>
 							<RoleSelect value={inviteRole} onValueChange={setInviteRole} />
 						</div>
+
+						{inviteMutation.isError && (
+							<p className="text-sm text-destructive">
+								{inviteMutation.error.message}
+							</p>
+						)}
 					</div>
 					<DialogFooter>
 						<Button

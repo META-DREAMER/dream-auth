@@ -27,7 +27,6 @@
 | `ENABLE_PASSKEYS` | `true` (WebAuthn support) |
 | `ENABLE_SIWE` | `true` (Ethereum Wallet support) |
 | `ENABLE_OIDC_PROVIDER`| `true` (if OIDC is needed for Grafana, ArgoCD, etc.) |
-| `ADMIN_EMAILS` | Comma-separated list of admin email addresses |
 | `OIDC_CLIENTS_FILE` | `/config/oidc-clients.json` (if mounting OIDC config via file) |
 | `NODE_ENV` | `production` |
 
