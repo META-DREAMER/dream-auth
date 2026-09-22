@@ -1,18 +1,47 @@
 /**
  * OIDC Client DB Seeding Module
  *
- * This module ensures configured OIDC clients are persisted to the oauthApplication
- * table before any OIDC token operations occur. This fixes the FK constraint failure
- * described in Better Auth issue #6649 where trustedClients are validated in-memory
- * but not persisted to the database.
+ * Persists the OIDC clients from configuration (`OIDC_CLIENTS`,
+ * `OIDC_CLIENTS_FILE`) into the `oauthClient` table.
  *
- * @see https://github.com/better-auth/better-auth/issues/6649
+ * Since Better Auth 1.7 this is the *only* way to register a config-driven
+ * client: `@better-auth/oauth-provider` dropped the `trustedClients` option
+ * that `oidcProvider` had, so every client - including a trusted one that skips
+ * consent - must exist as a database row. `cachedTrustedClients` on the plugin
+ * only controls caching of those rows, it does not define them.
+ *
+ * Rows are written through the Better Auth database adapter rather than raw
+ * SQL, so array columns (`redirectUris`, `grantTypes`, ...) and the JSON
+ * `metadata` column are serialized exactly the way the plugin reads them back.
  */
 
-import { randomUUID } from "node:crypto";
-import type { PoolClient } from "pg";
-import { pool } from "@/lib/db";
+import { serverEnv } from "@/env";
+import { hashClientSecret } from "./hash-client-secret";
 import type { OidcClientConfig } from "./schemas";
+
+/** The model name of the client table (`oauthApplication` before 1.7). */
+export const OAUTH_CLIENT_MODEL = "oauthClient";
+
+type Where = { field: string; value: unknown };
+
+/**
+ * The slice of the Better Auth database adapter this module needs.
+ *
+ * Declared structurally so tests can supply a real adapter from a test
+ * Better Auth instance without depending on the app's own `auth` singleton.
+ */
+export interface OidcSeedAdapter {
+	findOne<T>(data: { model: string; where: Where[] }): Promise<T | null>;
+	create<T extends Record<string, unknown>>(data: {
+		model: string;
+		data: Record<string, unknown>;
+	}): Promise<T>;
+	update<T>(data: {
+		model: string;
+		where: Where[];
+		update: Record<string, unknown>;
+	}): Promise<T | null>;
+}
 
 /**
  * Validation errors for OIDC client configuration
@@ -29,13 +58,27 @@ class OidcClientValidationError extends Error {
 }
 
 /**
- * Validate an OIDC client configuration for database insertion.
- * Mirrors the validation logic in Better Auth's registerOAuthApplication endpoint.
+ * Validate an OIDC client configuration before it is written to the database.
  *
  * @throws OidcClientValidationError if validation fails
  */
 function validateOidcClientForDb(client: OidcClientConfig): void {
-	// Validate redirectURLs are not empty (required for authorization_code flow)
+	if (!client.clientId || client.clientId.trim() === "") {
+		throw new OidcClientValidationError(
+			client.clientId || "(empty)",
+			"clientId",
+			"clientId cannot be empty",
+		);
+	}
+
+	if (!client.name || client.name.trim() === "") {
+		throw new OidcClientValidationError(
+			client.clientId,
+			"name",
+			"name cannot be empty",
+		);
+	}
+
 	if (!client.redirectURLs || client.redirectURLs.length === 0) {
 		throw new OidcClientValidationError(
 			client.clientId,
@@ -44,7 +87,6 @@ function validateOidcClientForDb(client: OidcClientConfig): void {
 		);
 	}
 
-	// Validate each redirect URL is a valid URL
 	for (const url of client.redirectURLs) {
 		try {
 			new URL(url);
@@ -57,97 +99,130 @@ function validateOidcClientForDb(client: OidcClientConfig): void {
 		}
 	}
 
-	// Validate clientSecret is present for non-public clients
-	if (client.type !== "public" && !client.clientSecret) {
+	if (client.tokenEndpointAuthMethod !== "none" && !client.clientSecret) {
 		throw new OidcClientValidationError(
 			client.clientId,
 			"clientSecret",
-			"clientSecret is required for non-public clients",
+			`clientSecret is required for tokenEndpointAuthMethod "${client.tokenEndpointAuthMethod}"`,
 		);
 	}
 
-	// Validate clientId is not empty
-	if (!client.clientId || client.clientId.trim() === "") {
-		throw new OidcClientValidationError(
-			client.clientId || "(empty)",
-			"clientId",
-			"clientId cannot be empty",
-		);
-	}
-
-	// Validate name is not empty
-	if (!client.name || client.name.trim() === "") {
+	if (!client.grantTypes || client.grantTypes.length === 0) {
 		throw new OidcClientValidationError(
 			client.clientId,
-			"name",
-			"name cannot be empty",
+			"grantTypes",
+			"At least one grant type is required",
+		);
+	}
+
+	if (!client.responseTypes || client.responseTypes.length === 0) {
+		throw new OidcClientValidationError(
+			client.clientId,
+			"responseTypes",
+			"At least one response type is required",
 		);
 	}
 }
 
 /**
- * Upsert a single OIDC client into the oauthApplication table.
- * Uses INSERT...ON CONFLICT DO UPDATE for idempotency.
+ * Build the `oauthClient` row for a configured client.
  *
- * Note: Table and column names use snake_case as per Better Auth's default
- * PostgreSQL adapter behavior with the Kysely adapter.
+ * `clientSecret` is hashed with {@link hashClientSecret}, which is also what
+ * the plugin is configured to use, so the stored value verifies against the
+ * secret the downstream app presents.
  */
-async function upsertOidcClient(
-	dbClient: PoolClient,
+export function toOauthClientRow(
 	client: OidcClientConfig,
-): Promise<void> {
+	options: { requirePKCE: boolean },
+): Record<string, unknown> {
 	const now = new Date();
 
-	// Prepare metadata as JSON string (or null)
-	const metadataJson = client.metadata ? JSON.stringify(client.metadata) : null;
+	return {
+		clientId: client.clientId,
+		clientSecret: client.clientSecret
+			? hashClientSecret(client.clientSecret)
+			: null,
+		name: client.name,
+		icon: client.icon ?? null,
+		redirectUris: client.redirectURLs,
+		grantTypes: client.grantTypes,
+		responseTypes: client.responseTypes,
+		applicationType: client.applicationType,
+		tokenEndpointAuthMethod: client.tokenEndpointAuthMethod,
+		skipConsent: client.skipConsent,
+		disabled: client.disabled,
+		// `requirePKCE` defaults to true inside the plugin, so OIDC_REQUIRE_PKCE
+		// has to be written onto every row to be able to turn it off.
+		requirePKCE: client.requirePKCE ?? options.requirePKCE,
+		// A real JSON column since 1.7 - pass the object, not a JSON string.
+		metadata: client.metadata ?? null,
+		// `null` means "every scope the provider supports".
+		scopes: client.scopes ?? null,
+		userId: client.userId ?? null,
+		createdAt: now,
+		updatedAt: now,
+	};
+}
 
-	// Join redirectURLs as comma-separated string (Better Auth format)
-	const redirectUrls = client.redirectURLs.join(",");
+/** Columns that are only meaningful when the row is first inserted. */
+const INSERT_ONLY_FIELDS = ["createdAt"] as const;
 
-	// Use INSERT...ON CONFLICT for idempotent upsert
-	// Note: Better Auth uses camelCase column names with the built-in Kysely adapter
-	await dbClient.query(
-		`
-		INSERT INTO "oauthApplication" (
-			"id",
-			"clientId",
-			"clientSecret",
-			"name",
-			"icon",
-			"redirectUrls",
-			"metadata",
-			"type",
-			"disabled",
-			"userId",
-			"createdAt",
-			"updatedAt"
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		ON CONFLICT ("clientId") DO UPDATE SET
-			"clientSecret" = EXCLUDED."clientSecret",
-			"name" = EXCLUDED."name",
-			"icon" = EXCLUDED."icon",
-			"redirectUrls" = EXCLUDED."redirectUrls",
-			"metadata" = EXCLUDED."metadata",
-			"type" = EXCLUDED."type",
-			"disabled" = EXCLUDED."disabled",
-			"userId" = EXCLUDED."userId",
-			"updatedAt" = EXCLUDED."updatedAt"
-		`,
-		[
-			randomUUID(), // id - generated for new records, ignored on conflict
-			client.clientId,
-			client.clientSecret || null,
-			client.name,
-			client.icon || null,
-			redirectUrls,
-			metadataJson,
-			client.type,
-			client.disabled ?? false,
-			client.userId || null,
-			now, // createdAt - only used for new records
-			now, // updatedAt - always updated
-		],
-	);
+function toUpdatePayload(
+	row: Record<string, unknown>,
+): Record<string, unknown> {
+	const update = { ...row };
+	for (const field of INSERT_ONLY_FIELDS) {
+		delete update[field];
+	}
+	return update;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+	if (typeof error !== "object" || error === null) return false;
+	const code = (error as { code?: unknown }).code;
+	if (code === "23505") return true;
+	const message = error instanceof Error ? error.message : String(error);
+	return /duplicate key|unique constraint/i.test(message);
+}
+
+/**
+ * Insert or update one client row.
+ *
+ * Two pods can race on first boot, so a unique-key violation on insert falls
+ * back to an update rather than failing startup.
+ */
+async function upsertOidcClient(
+	adapter: OidcSeedAdapter,
+	client: OidcClientConfig,
+	options: { requirePKCE: boolean },
+): Promise<void> {
+	const row = toOauthClientRow(client, options);
+	const where: Where[] = [{ field: "clientId", value: client.clientId }];
+
+	const existing = await adapter.findOne<{ id: string }>({
+		model: OAUTH_CLIENT_MODEL,
+		where,
+	});
+
+	if (existing) {
+		await adapter.update({
+			model: OAUTH_CLIENT_MODEL,
+			where,
+			update: toUpdatePayload(row),
+		});
+		return;
+	}
+
+	try {
+		await adapter.create({ model: OAUTH_CLIENT_MODEL, data: row });
+	} catch (error) {
+		if (!isUniqueViolation(error)) throw error;
+		await adapter.update({
+			model: OAUTH_CLIENT_MODEL,
+			where,
+			update: toUpdatePayload(row),
+		});
+	}
 }
 
 /**
@@ -157,16 +232,29 @@ async function upsertOidcClient(
 let seedingPromise: Promise<void> | null = null;
 
 /**
+ * Resolve the app's Better Auth database adapter.
+ *
+ * Imported lazily so this module can be unit-tested with a fake adapter
+ * without constructing the whole auth instance.
+ */
+async function getAppAdapter(): Promise<OidcSeedAdapter> {
+	const { auth } = await import("@/lib/auth");
+	const context = await auth.$context;
+	return context.adapter as unknown as OidcSeedAdapter;
+}
+
+/**
  * Ensure all configured OIDC clients are seeded into the database.
  * This function is idempotent and safe to call multiple times.
  *
- * Call this before any OIDC token operations to ensure FK constraints are satisfied.
+ * Must run after the Better Auth migrations have created `oauthClient`.
  *
- * @param pool - PostgreSQL connection pool
  * @param clients - Array of OIDC client configurations to seed
+ * @param overrides - Test seam for the adapter and the PKCE default
  */
 export async function ensureOidcClientsSeeded(
 	clients: OidcClientConfig[],
+	overrides?: { adapter?: OidcSeedAdapter; requirePKCE?: boolean },
 ): Promise<void> {
 	// Return existing promise if seeding is already in progress or complete
 	if (seedingPromise) {
@@ -180,7 +268,7 @@ export async function ensureOidcClientsSeeded(
 		return seedingPromise;
 	}
 
-	seedingPromise = performSeeding(clients).catch((error) => {
+	seedingPromise = performSeeding(clients, overrides).catch((error) => {
 		// Clear cache on failure so retries can attempt seeding again
 		// This handles the case where seeding fails before migrations run
 		seedingPromise = null;
@@ -191,9 +279,11 @@ export async function ensureOidcClientsSeeded(
 
 /**
  * Internal function to perform the actual seeding operation.
- * Runs in a transaction for atomicity.
  */
-async function performSeeding(clients: OidcClientConfig[]): Promise<void> {
+async function performSeeding(
+	clients: OidcClientConfig[],
+	overrides?: { adapter?: OidcSeedAdapter; requirePKCE?: boolean },
+): Promise<void> {
 	// Log client IDs but NEVER log secrets
 	console.log(
 		`[OIDC] Seeding ${clients.length} client(s) to database: ${clients.map((c) => c.clientId).join(", ")}`,
@@ -229,33 +319,21 @@ async function performSeeding(clients: OidcClientConfig[]): Promise<void> {
 		);
 	}
 
-	// Acquire a client from the shared pool for the transaction
-	const dbClient = await pool.connect();
+	const adapter = overrides?.adapter ?? (await getAppAdapter());
+	const requirePKCE = overrides?.requirePKCE ?? serverEnv.OIDC_REQUIRE_PKCE;
 
 	try {
-		// Begin transaction
-		await dbClient.query("BEGIN");
-
-		// Upsert each client
 		for (const client of clients) {
-			await upsertOidcClient(dbClient, client);
+			await upsertOidcClient(adapter, client, { requirePKCE });
 		}
-
-		// Commit transaction
-		await dbClient.query("COMMIT");
-
-		console.log(
-			`[OIDC] Successfully seeded ${clients.length} client(s) to database`,
-		);
 	} catch (error) {
-		// Rollback on any error
-		await dbClient.query("ROLLBACK");
 		console.error("[OIDC] Failed to seed clients to database:", error);
 		throw error;
-	} finally {
-		// Always release the client back to the pool
-		dbClient.release();
 	}
+
+	console.log(
+		`[OIDC] Successfully seeded ${clients.length} client(s) to database`,
+	);
 }
 
 /**

@@ -1,10 +1,18 @@
-import type { OidcClientConfig } from "@/lib/oidc/schemas";
+import { type OidcClientConfig, oidcClientSchema } from "@/lib/oidc/schemas";
 
 /**
  * Test fixtures for OIDC client configurations
+ *
+ * Fixtures are written in the shape a deployment actually configures (the
+ * schema *input*) and parsed through `oidcClientSchema`, so they pick up the
+ * 1.7 defaults - `applicationType`, `tokenEndpointAuthMethod`, `grantTypes`,
+ * `responseTypes` - the same way real config does.
  */
+function client(input: unknown): OidcClientConfig {
+	return oidcClientSchema.parse(input);
+}
 
-export const validWebClient: OidcClientConfig = {
+export const validWebClient: OidcClientConfig = client({
 	clientId: "test-web-client",
 	name: "Test Web Application",
 	clientSecret: "super-secret-key-at-least-16-chars",
@@ -12,18 +20,18 @@ export const validWebClient: OidcClientConfig = {
 	redirectURLs: ["https://app.example.com/callback"],
 	skipConsent: false,
 	disabled: false,
-};
+});
 
-export const validPublicClient: OidcClientConfig = {
+export const validPublicClient: OidcClientConfig = client({
 	clientId: "test-public-client",
 	name: "Test Public Application",
 	type: "public",
 	redirectURLs: ["https://spa.example.com/callback"],
 	skipConsent: true,
 	disabled: false,
-};
+});
 
-export const validNativeClient: OidcClientConfig = {
+export const validNativeClient: OidcClientConfig = client({
 	clientId: "test-native-client",
 	name: "Test Native Application",
 	clientSecret: "native-app-secret-key",
@@ -31,9 +39,9 @@ export const validNativeClient: OidcClientConfig = {
 	redirectURLs: ["com.example.app://callback"],
 	skipConsent: false,
 	disabled: false,
-};
+});
 
-export const validUserAgentClient: OidcClientConfig = {
+export const validUserAgentClient: OidcClientConfig = client({
 	clientId: "test-user-agent-client",
 	name: "Test User Agent Application",
 	clientSecret: "user-agent-secret-key",
@@ -41,7 +49,7 @@ export const validUserAgentClient: OidcClientConfig = {
 	redirectURLs: ["https://spa.example.com/callback"],
 	skipConsent: false,
 	disabled: false,
-};
+});
 
 export const multipleClients: OidcClientConfig[] = [
 	validWebClient,

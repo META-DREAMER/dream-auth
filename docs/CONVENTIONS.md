@@ -4,8 +4,9 @@
 
 BetterAuth uses **camelCase** column names via Kysely adapter (not snake_case):
 
-- Table: `"oauthApplication"`
-- Columns: `"clientId"`, `"clientSecret"`, `"redirectUrls"`, `"createdAt"`
+- Table: `"oauthClient"` (renamed from `"oauthApplication"` in Better Auth 1.7)
+- Columns: `"clientId"`, `"clientSecret"`, `"redirectUris"` (a text array, was the
+  comma-joined `"redirectUrls"`), `"createdAt"`
 
 When writing raw SQL queries, always quote identifiers and use camelCase.
 

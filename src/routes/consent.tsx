@@ -24,9 +24,12 @@ import { Separator } from "@/components/ui/separator";
 import { oauth2 } from "@/lib/auth-client";
 
 const searchSchema = z.object({
-	consent_code: z.string().optional(),
+	// @better-auth/oauth-provider redirects here with `code` (was `consent_code`
+	// under the removed `oidcProvider` plugin).
+	code: z.string().optional(),
 	client_id: z.string().optional(),
 	scope: z.string().optional(),
+	claims: z.string().optional(),
 });
 
 /**
@@ -72,7 +75,7 @@ export const Route = createFileRoute("/consent")({
 
 function ConsentPage() {
 	const navigate = useNavigate();
-	const { consent_code, client_id, scope } = Route.useSearch();
+	const { code, client_id, scope } = Route.useSearch();
 	const { session } = Route.useRouteContext();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +86,7 @@ function ConsentPage() {
 	const scopes = scope?.split(" ").filter(Boolean) || [];
 
 	// Handle missing required parameters
-	if (!consent_code || !client_id) {
+	if (!code || !client_id) {
 		return (
 			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />
@@ -119,19 +122,19 @@ function ConsentPage() {
 		}
 
 		try {
-			const result = await oauth2.consent({
-				accept,
-				consent_code,
-			});
+			// The oauthProviderClient() fetch plugin attaches the signed
+			// `oauth_query` from window.location.search; the server resolves the
+			// pending authorization from that, so no consent code is sent.
+			const result = await oauth2.consent({ accept });
 
 			if (result.error) {
 				setError(result.error.message || "Failed to process authorization");
 				return;
 			}
 
-			// Redirect to the URL provided by the OIDC provider
-			if (result.data?.redirectURI) {
-				window.location.href = result.data.redirectURI;
+			// Redirect to the URL provided by the OAuth provider
+			if (result.data?.url) {
+				window.location.href = result.data.url;
 			} else {
 				// Fallback: navigate home if no redirect URL
 				navigate({ to: "/" });

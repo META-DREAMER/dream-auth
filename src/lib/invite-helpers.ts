@@ -58,12 +58,12 @@ export async function inviteByEmail(
 	role: "member" | "admin" | "owner",
 	organizationId: string,
 ) {
+	// No walletAddress key at all: since 1.7 the generated type for an optional
+	// additional field rejects an explicit `undefined`.
 	return organization.inviteMember({
 		email: email.toLowerCase(),
 		role,
 		organizationId,
-		// No wallet address for email invitations
-		walletAddress: undefined,
 	});
 }
 

@@ -40,11 +40,10 @@ export function useSiweAuth({
 		setError(null);
 
 		try {
-			// Step 1: Get SIWE nonce
-			const nonceResponse = await siwe.nonce({
-				walletAddress: address,
-				chainId: chain.id,
-			});
+			// Step 1: Get SIWE nonce.
+			// Takes no arguments since better-auth 1.7 - the server derives the
+			// address and chain id from the signed message at verify time.
+			const nonceResponse = await siwe.nonce();
 
 			if (nonceResponse.error || !nonceResponse.data?.nonce) {
 				throw new Error(
@@ -75,11 +74,11 @@ export function useSiweAuth({
 			const signature = await signMessageAsync({ message });
 
 			// Step 4: Verify signature and authenticate
+			// /siwe/verify is .strict() since 1.7 - sending walletAddress or
+			// chainId is a 400. Both are parsed from the signed ERC-4361 message.
 			const verifyResult = await siwe.verify({
 				message,
 				signature,
-				walletAddress: address,
-				chainId: chain.id,
 			});
 
 			if (verifyResult.error) {

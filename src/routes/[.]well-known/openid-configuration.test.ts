@@ -23,7 +23,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 		};
 
 		const mockResponse = new Response(JSON.stringify(mockDiscoveryData), {
@@ -51,7 +51,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 		};
 
 		const mockResponse = new Response(JSON.stringify(mockDiscoveryData), {
@@ -78,7 +78,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			"https://auth.example.com/.well-known/jwks.json",
 		);
 		expect(data.end_session_endpoint).toBe(
-			"https://auth.example.com/oauth2/endsession",
+			"https://auth.example.com/oauth2/end-session",
 		);
 	});
 
@@ -91,7 +91,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 			revocation_endpoint: "https://auth.example.com/api/auth/oauth2/revoke",
 		};
 
@@ -122,7 +122,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 			introspection_endpoint:
 				"https://auth.example.com/api/auth/oauth2/introspect",
 		};
@@ -154,7 +154,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 		};
 
 		const mockResponse = new Response(JSON.stringify(mockDiscoveryData), {
@@ -215,7 +215,7 @@ describe("GET /.well-known/openid-configuration", () => {
 			userinfo_endpoint: "https://auth.example.com/api/auth/oauth2/userinfo",
 			jwks_uri: "https://auth.example.com/api/auth/jwks",
 			end_session_endpoint:
-				"https://auth.example.com/api/auth/oauth2/endsession",
+				"https://auth.example.com/api/auth/oauth2/end-session",
 			// Additional standard OIDC properties
 			scopes_supported: ["openid", "profile", "email"],
 			response_types_supported: ["code"],

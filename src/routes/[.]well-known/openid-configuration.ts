@@ -38,7 +38,7 @@ export const GET: ServerRouteHandler = async ({ request }) => {
 			token_endpoint: `${rootUrl}/oauth2/token`,
 			userinfo_endpoint: `${rootUrl}/oauth2/userinfo`,
 			jwks_uri: `${rootUrl}/.well-known/jwks.json`,
-			end_session_endpoint: `${rootUrl}/oauth2/endsession`,
+			end_session_endpoint: `${rootUrl}/oauth2/end-session`,
 			// Also rewrite optional endpoints if present
 			...(data.revocation_endpoint && {
 				revocation_endpoint: `${rootUrl}/oauth2/revoke`,

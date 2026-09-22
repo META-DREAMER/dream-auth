@@ -79,13 +79,17 @@ async function globalSetup(_config: FullConfig) {
 	const port = process.env.E2E_PORT || "3000";
 	console.log("[E2E Setup] Starting web server on port", port);
 
-	// Test-specific OIDC clients for E2E tests
+	// Test-specific OIDC clients for E2E tests.
+	// `test-client` uses the 1.7 fields; `trusted-client` deliberately keeps the
+	// pre-1.7 `type` field so the backward-compatibility mapping in
+	// src/lib/oidc/schemas.ts is exercised against a real server.
 	const oidcClients = JSON.stringify([
 		{
 			clientId: "test-client",
 			clientSecret: "test-secret",
 			name: "Test Client",
-			type: "web",
+			applicationType: "web",
+			tokenEndpointAuthMethod: "client_secret_basic",
 			redirectURLs: [`http://localhost:${port}/callback`],
 			skipConsent: false,
 		},

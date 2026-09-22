@@ -56,7 +56,7 @@ Proxies root-level OAuth2 requests to BetterAuth's internal `/api/auth/oauth2/*`
 | `/oauth2/token` | POST | Token exchange |
 | `/oauth2/userinfo` | GET | User info |
 | `/oauth2/consent` | POST | Consent submission |
-| `/oauth2/endsession` | GET/POST | Session termination |
+| `/oauth2/end-session` | GET/POST | Session termination |
 
 Converts BetterAuth JSON redirect responses to HTTP 302 redirects.
 
