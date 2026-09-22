@@ -27,8 +27,12 @@ Used for Kubernetes liveness probes and Docker health checks.
 
 `200` with the headers below for a valid session, `401` with no identity headers
 for no/expired session or a deleted user, `503` if the session cannot be checked.
-See [KUBERNETES.md](./KUBERNETES.md) for the nginx annotations and the header
-trust model.
+With `?mode=redirect` on the verify URL (Traefik `forwardAuth`), an
+unauthenticated `GET`/`HEAD` gets a `302` to `/login?redirect=<original url>`
+instead of the `401`, the original URL rebuilt from `X-Forwarded-Proto/Host/Uri`
+and validated like any other redirect target. See
+[KUBERNETES.md](./KUBERNETES.md) for the nginx and Traefik configuration and
+the header trust model.
 
 | Response Header | Value |
 |----------------|-------|
@@ -132,6 +136,6 @@ beforeLoad: async ({ context, location }) => {
 | Code | Usage |
 |------|-------|
 | 200 | Success, forward-auth authorized |
-| 302 | OIDC redirects, consent approved |
+| 302 | OIDC redirects, consent approved, forward-auth sign-in bounce (`?mode=redirect`) |
 | 401 | Unauthorized (missing/invalid session) |
 | 403 | Registration disabled without invitation |

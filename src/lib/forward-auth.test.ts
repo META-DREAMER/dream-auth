@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
 	buildForwardAuthHeaders,
+	buildForwardedReturnTo,
 	FORWARD_AUTH_HEADERS,
+	isNavigationMethod,
 	sanitizeHeaderValue,
 } from "./forward-auth";
 
@@ -107,5 +109,145 @@ describe("buildForwardAuthHeaders", () => {
 		expect(response.status).toBe(200);
 		expect(response.headers.get("X-Auth-User")).toBe("Jos");
 		expect(response.headers.get("X-Auth-Email")).toBe("jos@example.com");
+	});
+});
+
+describe("isNavigationMethod", () => {
+	it.each(["GET", "HEAD", "get", "head", " GET "])("accepts %j", (m) => {
+		expect(isNavigationMethod(m)).toBe(true);
+	});
+
+	it.each([
+		"POST",
+		"PUT",
+		"PATCH",
+		"DELETE",
+		"OPTIONS",
+		"",
+		null,
+		undefined,
+	])("rejects %j", (m) => {
+		expect(isNavigationMethod(m)).toBe(false);
+	});
+});
+
+describe("buildForwardedReturnTo", () => {
+	function headers(init: Record<string, string>) {
+		return new Headers(init);
+	}
+
+	it("rebuilds the original URL from the three Traefik headers", () => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": "https",
+					"X-Forwarded-Host": "app.example.com",
+					"X-Forwarded-Uri": "/dashboard?tab=1",
+				}),
+			),
+		).toBe("https://app.example.com/dashboard?tab=1");
+	});
+
+	it("keeps a non-default port on the host", () => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": "https",
+					"X-Forwarded-Host": "app.example.com:8443",
+					"X-Forwarded-Uri": "/x",
+				}),
+			),
+		).toBe("https://app.example.com:8443/x");
+	});
+
+	it("defaults a missing Uri to the root", () => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": "https",
+					"X-Forwarded-Host": "app.example.com",
+				}),
+			),
+		).toBe("https://app.example.com/");
+	});
+
+	it("returns null without a proto or host", () => {
+		expect(buildForwardedReturnTo(headers({}))).toBeNull();
+		expect(
+			buildForwardedReturnTo(
+				headers({ "X-Forwarded-Host": "app.example.com" }),
+			),
+		).toBeNull();
+		expect(
+			buildForwardedReturnTo(headers({ "X-Forwarded-Proto": "https" })),
+		).toBeNull();
+	});
+
+	it.each([
+		"ftp",
+		"javascript",
+		"HTTPS://",
+		"https,http",
+		"",
+	])("returns null for proto %j", (proto) => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": proto,
+					"X-Forwarded-Host": "app.example.com",
+					"X-Forwarded-Uri": "/",
+				}),
+			),
+		).toBeNull();
+	});
+
+	it.each([
+		"app.example.com, evil.com",
+		"evil.com,app.example.com",
+		"app.example.com@evil.com",
+		"app.example.com/evil",
+		"app.example.com?x",
+		"app.example.com#x",
+		"127.0.0.1",
+		"[::1]",
+		"app.example.com:",
+		"app.example.com:abc",
+		"-app.example.com",
+		"app..example.com",
+		"app.example.com\\evil",
+		"app.example.com evil.com",
+	])("returns null for a host that is not a bare DNS name: %j", (host) => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": "https",
+					"X-Forwarded-Host": host,
+					"X-Forwarded-Uri": "/",
+				}),
+			),
+		).toBeNull();
+	});
+
+	it.each([
+		"//evil.com",
+		"//evil.com/x",
+		"///evil.com",
+		"/\\evil.com",
+		"\\\\evil.com",
+		"https:evil",
+		"https://evil.com/",
+		"evil.com",
+		"?x=1",
+		"javascript:alert(1)",
+	])("drops a Uri that is not origin-form: %j", (uri) => {
+		expect(
+			buildForwardedReturnTo(
+				headers({
+					"X-Forwarded-Proto": "https",
+					"X-Forwarded-Host": "app.example.com",
+					"X-Forwarded-Uri": uri,
+				}),
+			),
+		).toBe("https://app.example.com/");
 	});
 });
