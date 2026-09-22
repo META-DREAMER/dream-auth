@@ -41,11 +41,11 @@ export function WalletList() {
 	});
 
 	const unlinkMutation = useMutation({
+		// `accountId` here is the account row's primary key. Since better-auth
+		// 1.7 /unlink-account takes `{ accountId }` only, matched against
+		// `account.id` - not `providerId` plus the provider's own account id.
 		mutationFn: async (accountId: string) => {
-			const result = await authClient.unlinkAccount({
-				providerId: "siwe",
-				accountId,
-			});
+			const result = await authClient.unlinkAccount({ accountId });
 			if (result.error) {
 				throw new Error(result.error.message);
 			}
@@ -124,8 +124,8 @@ export function WalletList() {
 											from your account. You can link it again later.
 										</>
 									}
-									onConfirm={() => handleUnlink(account.accountId)}
-									isDeleting={deletingId === account.accountId}
+									onConfirm={() => handleUnlink(account.id)}
+									isDeleting={deletingId === account.id}
 									confirmText="Unlink"
 									buttonSize="icon"
 								/>

@@ -112,10 +112,8 @@ describe("useSiweAuth", () => {
 		});
 
 		// Verify the flow
-		expect(siwe.nonce).toHaveBeenCalledWith({
-			walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
-			chainId: 1,
-		});
+		// Since better-auth 1.7 /siwe/nonce takes no arguments.
+		expect(siwe.nonce).toHaveBeenCalledWith();
 		expect(createSiweMessage).toHaveBeenCalledWith(
 			expect.objectContaining({
 				domain: "auth.example.com",
@@ -127,11 +125,11 @@ describe("useSiweAuth", () => {
 		expect(mockSignMessageAsync).toHaveBeenCalledWith({
 			message: "mock-siwe-message",
 		});
+		// /siwe/verify is .strict() since 1.7: walletAddress and chainId are
+		// parsed from the signed message, and sending them is a 400.
 		expect(siwe.verify).toHaveBeenCalledWith({
 			message: "mock-siwe-message",
 			signature: "0xsignature",
-			walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
-			chainId: 1,
 		});
 		expect(onSuccess).toHaveBeenCalled();
 	});
