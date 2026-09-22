@@ -16,6 +16,15 @@ import { ensureOidcClientsSeeded } from "@/lib/oidc/sync-oidc-clients";
  * - Skips entirely if no migrations are needed (no lock contention)
  * - Detailed logging for GitOps audit trails
  * - Configurable via environment variables
+ *
+ * Ordering vs. runtime schema validation (on by default since 1.7.3):
+ * Better Auth fires a schema check when the auth instance initializes and
+ * caches the verdict per database object. `runMigrations()` invalidates that
+ * cache for the same object, and `getMigrations(auth.options)` uses
+ * `auth.options.database` - the shared pool from `@/lib/db` - so the check is
+ * re-run after this plugin migrates. On a fresh database the init-time check
+ * logs a mismatch before migrations land; that log is expected and is cleared
+ * by the time the server accepts requests.
  */
 
 interface MigrationTable {
@@ -83,7 +92,7 @@ function formatMigrationSummary(
 
 /**
  * Seeds OIDC clients to the database if OIDC provider is enabled.
- * Must be called AFTER migrations to ensure oauthApplication table exists.
+ * Must be called AFTER migrations to ensure the `oauthClient` table exists.
  */
 async function seedOidcClientsIfEnabled(): Promise<void> {
 	if (!serverEnv.ENABLE_OIDC_PROVIDER) {

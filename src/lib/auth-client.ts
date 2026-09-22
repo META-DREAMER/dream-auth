@@ -1,7 +1,7 @@
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { passkeyClient } from "@better-auth/passkey/client";
 import {
 	emailOTPClient,
-	oidcClient,
 	organizationClient,
 	siweClient,
 } from "better-auth/client/plugins";
@@ -16,7 +16,7 @@ export const authClient = createAuthClient({
 		passkeyClient(),
 		siweClient(),
 		emailOTPClient(),
-		oidcClient(),
+		oauthProviderClient(),
 		// Organization plugin for invitation-based access control
 		organizationClient({
 			teams: { enabled: true },
@@ -24,8 +24,14 @@ export const authClient = createAuthClient({
 			schema: {
 				invitation: {
 					additionalFields: {
+						// `required: false` must be mirrored here, not just on the
+						// server: since 1.7 the client input type is derived from this
+						// object, and omitting it makes walletAddress mandatory on
+						// every inviteMember() call.
 						walletAddress: {
 							type: "string",
+							required: false,
+							input: true,
 						},
 					},
 				},

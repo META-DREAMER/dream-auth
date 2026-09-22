@@ -5,7 +5,7 @@ import {
 	mergeOidcClients,
 	parseOidcClientsJson,
 } from "./config";
-import type { OidcClientConfig } from "./schemas";
+import { type OidcClientConfig, oidcClientSchema } from "./schemas";
 
 // Mock fs module
 vi.mock("node:fs", () => ({
@@ -107,7 +107,13 @@ describe("parseOidcClientsJson", () => {
 		const json = JSON.stringify([clientWithoutDefaults]);
 		const result = parseOidcClientsJson(json, "TEST");
 
-		expect(result[0].type).toBe("web"); // default
+		expect(result[0].applicationType).toBe("web"); // default
+		expect(result[0].tokenEndpointAuthMethod).toBe("client_secret_basic");
+		expect(result[0].grantTypes).toEqual([
+			"authorization_code",
+			"refresh_token",
+		]);
+		expect(result[0].responseTypes).toEqual(["code"]);
 		expect(result[0].skipConsent).toBe(false); // default
 		expect(result[0].disabled).toBe(false); // default
 	});
@@ -263,25 +269,19 @@ describe("loadOidcClientsFromFile", () => {
 });
 
 describe("mergeOidcClients", () => {
-	const envClient: OidcClientConfig = {
+	const envClient: OidcClientConfig = oidcClientSchema.parse({
 		clientId: "env-app",
 		name: "Env App",
 		clientSecret: "secret",
-		type: "web",
 		redirectURLs: ["https://env.com/cb"],
-		skipConsent: false,
-		disabled: false,
-	};
+	});
 
-	const fileClient: OidcClientConfig = {
+	const fileClient: OidcClientConfig = oidcClientSchema.parse({
 		clientId: "file-app",
 		name: "File App",
 		clientSecret: "secret",
-		type: "web",
 		redirectURLs: ["https://file.com/cb"],
-		skipConsent: false,
-		disabled: false,
-	};
+	});
 
 	beforeEach(() => {
 		vi.spyOn(console, "error").mockImplementation(() => {});

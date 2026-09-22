@@ -13,7 +13,7 @@ import type { ServerRouteHandler } from "@/lib/server-handler";
  * - POST /oauth2/consent - Consent submission
  * - POST /oauth2/register - Dynamic client registration
  * - GET /oauth2/client/:id - Client info
- * - GET/POST /oauth2/endsession - Session termination
+ * - GET/POST /oauth2/end-session - Session termination
  *
  * This allows the OIDC provider to use root-level OAuth2 endpoints (Option B from PRD).
  */

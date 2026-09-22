@@ -1,45 +1,80 @@
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
-import {
-	emailOTP,
-	jwt,
-	oidcProvider,
-	organization,
-	siwe,
-} from "better-auth/plugins";
+import { emailOTP, jwt, organization, siwe } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { pool } from "@/lib/db";
+import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
+import {
+	collectWalletAddresses,
+	isSignupAllowed,
+	REGISTRATION_DISABLED_ERROR,
+} from "@/lib/registration-gate";
 
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
 const authUrl = new URL(serverEnv.BETTER_AUTH_URL);
 
 /**
- * Get trusted OIDC clients from environment and file configuration.
- * Transforms config to BetterAuth's expected format.
+ * Client IDs that @better-auth/oauth-provider may cache in memory.
+ *
+ * The 1.7 plugin has no `trustedClients` option: every client lives in the
+ * `oauthClient` table, seeded from config by `src/lib/oidc/sync-oidc-clients.ts`.
+ * `cachedTrustedClients` only says which of those rows may be cached (and are
+ * therefore immutable through the CRUD endpoints), which is exactly right for
+ * config-owned clients.
  */
-function getTrustedClients() {
-	return serverEnvWithOidc.OIDC_CLIENTS.map((client) => ({
-		clientId: client.clientId,
-		clientSecret: client.clientSecret,
-		name: client.name,
-		redirectUrls: client.redirectURLs,
-		skipConsent: client.skipConsent,
-		disabled: client.disabled,
-		metadata: client.metadata || null,
-		icon: client.icon,
-		type: client.type,
-	}));
+function getCachedTrustedClientIds(): Set<string> {
+	return new Set(
+		serverEnvWithOidc.OIDC_CLIENTS.map((client) => client.clientId),
+	);
+}
+
+/**
+ * Organization slugs for the `groups` claim, for RBAC in downstream apps
+ * (ArgoCD, Grafana, ...). Only returned when the `groups` scope was granted.
+ */
+async function getGroupsClaim(
+	userId: string,
+	scopes: readonly string[],
+): Promise<Record<string, unknown>> {
+	if (!scopes.includes("groups")) return {};
+
+	const memberships = await pool.query(
+		`SELECT o.slug FROM member m
+		 JOIN organization o ON m."organizationId" = o.id
+		 WHERE m."userId" = $1`,
+		[userId],
+	);
+
+	return { groups: memberships.rows.map((row: { slug: string }) => row.slug) };
 }
 
 export const auth = betterAuth({
 	database: pool,
 	baseURL: serverEnv.BETTER_AUTH_URL,
 	secret: serverEnv.BETTER_AUTH_SECRET,
+
+	/**
+	 * Since 1.7 the origin header is enforced on /sign-in/email,
+	 * /sign-up/email and /email-otp/send-verification-otp even for cookieless
+	 * requests. baseURL's own origin is trusted implicitly; COOKIE_DOMAIN is
+	 * added explicitly because a cross-subdomain deployment sets it precisely
+	 * so that sibling hosts can drive these endpoints.
+	 */
+	trustedOrigins: [
+		new URL(serverEnv.BETTER_AUTH_URL).origin,
+		...(serverEnv.COOKIE_DOMAIN
+			? [
+					`https://*.${serverEnv.COOKIE_DOMAIN.replace(/^\./, "")}`,
+					`https://${serverEnv.COOKIE_DOMAIN.replace(/^\./, "")}`,
+				]
+			: []),
+	],
 
 	// Disable default /token endpoint when using JWT plugin for OIDC
 	// OIDC uses /oauth2/token instead
@@ -55,8 +90,36 @@ export const auth = betterAuth({
 		disableSignUp: !serverEnv.ENABLE_REGISTRATION,
 	},
 
-	// Enable changing email address with verification link
 	user: {
+		/**
+		 * Registration gate for ENABLE_REGISTRATION=false.
+		 *
+		 * `validateUserInfo` (1.7.0) runs on every provisioning path, including
+		 * SIWE - unlike the `databaseHooks.user.create.before` hook it replaces,
+		 * which only saw the placeholder email SIWE mints and so made wallet
+		 * invitations unreachable for users without an existing account.
+		 *
+		 * Only `create-user` is gated. `link-account` must stay open so an
+		 * existing user can still link a wallet or a passkey.
+		 */
+		validateUserInfo: async ({ user, source }, ctx) => {
+			if (serverEnv.ENABLE_REGISTRATION) return;
+			if (source.action !== "create-user") return;
+
+			const email = typeof user.email === "string" ? user.email : undefined;
+			const allowed = await isSignupAllowed({
+				enableRegistration: false,
+				email,
+				walletAddresses: collectWalletAddresses({
+					email,
+					requestBody: ctx?.body,
+				}),
+			});
+
+			if (!allowed) return REGISTRATION_DISABLED_ERROR;
+		},
+
+		// Enable changing email address with verification link
 		changeEmail: {
 			enabled: true,
 			updateEmailWithoutVerification: true,
@@ -90,37 +153,6 @@ export const auth = betterAuth({
 		// },
 	},
 
-	// Block non-invitation signups when ENABLE_REGISTRATION is false
-	// This catches SIWE and other providers not covered by disableSignUp
-	databaseHooks: {
-		user: {
-			create: {
-				before: async (user) => {
-					// Allow if public registration is enabled
-					if (serverEnv.ENABLE_REGISTRATION) return;
-
-					// Check if user email matches a pending invitation
-					// This allows signup via invitation acceptance
-					const pendingInvitation = await pool.query(
-						`SELECT id FROM invitation WHERE email = $1 AND status = 'pending' AND "expiresAt" > NOW() LIMIT 1`,
-						[user.email.toLowerCase()],
-					);
-
-					if (pendingInvitation.rows.length > 0) {
-						// Allow signup - user has a pending invitation
-						return;
-					}
-
-					// Block signup - no valid invitation found
-					throw new APIError("FORBIDDEN", {
-						message:
-							"Registration is disabled. Please contact an administrator for an invitation.",
-					});
-				},
-			},
-		},
-	},
-
 	// advanced: {
 	// cookiePrefix: "auth",
 	// cookies: {
@@ -139,52 +171,38 @@ export const auth = betterAuth({
 
 	plugins: [
 		// JWT plugin for asymmetric token signing (required for OIDC provider)
-		// Must come before oidcProvider plugin
+		// Must come before the oauthProvider plugin
 		...(serverEnv.ENABLE_OIDC_PROVIDER ? [jwt()] : []),
 
-		// OIDC Provider for SSO with Kubernetes apps (Grafana, ArgoCD, Immich, etc.)
+		// OAuth/OIDC Provider for SSO with Kubernetes apps (Grafana, ArgoCD, Immich, etc.)
+		// Replaces the `oidcProvider` plugin, removed from better-auth in 1.7.0.
 		...(serverEnv.ENABLE_OIDC_PROVIDER
 			? [
-					oidcProvider({
+					oauthProvider({
 						loginPage: "/login",
 						consentPage: "/consent",
-						// Enable JWT plugin integration for asymmetric signing
-						useJWTPlugin: true,
-						// Require PKCE for security (recommended)
-						requirePKCE: serverEnv.OIDC_REQUIRE_PKCE,
 						// Token expiration settings
 						codeExpiresIn: 600, // 10 minutes
 						accessTokenExpiresIn: 3600, // 1 hour
 						refreshTokenExpiresIn: 604800, // 7 days
 						// Supported scopes - includes 'groups' for org membership claims
 						scopes: ["openid", "profile", "email", "groups", "offline_access"],
-						// Store client secrets in plain text (matching our DB seeding format)
-						// If you need hashed/encrypted storage, update sync-oidc-clients.ts accordingly
-						storeClientSecret: "plain",
-						// Trusted clients from environment configuration
-						// These are also seeded to DB via sync-oidc-clients.ts for FK integrity
-						// trustedClients provides skipConsent UX; DB seeding provides FK integrity
-						trustedClients: getTrustedClients(),
-						// Add custom claims to UserInfo endpoint and ID token
-						getAdditionalUserInfoClaim: async (user, scopes) => {
-							const claims: Record<string, unknown> = {};
-
-							// Add groups claim when 'groups' scope is requested
-							// Returns organization slugs for RBAC in downstream apps (ArgoCD, Grafana, etc.)
-							if (scopes.includes("groups")) {
-								const memberships = await pool.query(
-									`SELECT o.slug FROM member m 
-									 JOIN organization o ON m."organizationId" = o.id 
-									 WHERE m."userId" = $1`,
-									[user.id],
-								);
-								claims.groups = memberships.rows.map(
-									(row: { slug: string }) => row.slug,
-								);
-							}
-
-							return claims;
-						},
+						// Secrets are never stored in plain text since 1.7. The seeder in
+						// sync-oidc-clients.ts hashes with the same function, so a seeded
+						// row verifies against the secret the downstream app sends.
+						storeClientSecret: { hash: hashClientSecret },
+						// Config-owned clients: rows come from sync-oidc-clients.ts; this
+						// only marks them cacheable and immutable through the CRUD API.
+						// PKCE and consent-skipping are per-client columns now, written by
+						// the seeder from OIDC_REQUIRE_PKCE and `skipConsent`.
+						cachedTrustedClients: getCachedTrustedClientIds(),
+						// ID tokens no longer carry profile/email claims; consumers read
+						// those from /oauth2/userinfo. `groups` is surfaced in both so
+						// downstream RBAC keeps working wherever it reads it from.
+						customIdTokenClaims: async ({ user, scopes }) =>
+							getGroupsClaim(user.id, scopes),
+						customUserInfoClaims: async ({ user, scopes }) =>
+							getGroupsClaim(user.id, scopes),
 					}),
 				]
 			: []),
