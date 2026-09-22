@@ -3,12 +3,7 @@ import {
 	SpinnerIcon,
 	UserPlusIcon,
 } from "@phosphor-icons/react";
-import {
-	createFileRoute,
-	Link,
-	redirect,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -27,24 +22,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { signUp } from "@/lib/auth-client";
+import {
+	isInternalRedirect,
+	navigateToSafeRedirect,
+	resolveSafeRedirect,
+} from "@/lib/redirect";
 
+/** Same two parameters as `/login`; see the note there. */
 const searchSchema = z.object({
 	redirect: z.string().optional(),
+	rd: z.string().optional(),
 });
 
 export const Route = createFileRoute("/register")({
 	validateSearch: searchSchema,
 	beforeLoad: async ({ context, search }) => {
+		const safeRedirect = await resolveSafeRedirect(search);
+
 		if (context.session) {
-			throw redirect({ to: search.redirect || "/" });
+			throw redirect(
+				isInternalRedirect(safeRedirect)
+					? { to: safeRedirect }
+					: { href: safeRedirect, reloadDocument: true },
+			);
 		}
+
+		return { safeRedirect };
 	},
 	component: RegisterPage,
 });
 
 function RegisterPage() {
-	const navigate = useNavigate();
-	const { redirect: redirectTo } = Route.useSearch();
+	const { safeRedirect } = Route.useRouteContext();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
@@ -80,7 +89,7 @@ function RegisterPage() {
 
 			setSuccess(true);
 			setTimeout(() => {
-				navigate({ to: redirectTo || "/" });
+				navigateToSafeRedirect(safeRedirect);
 			}, 1500);
 		} catch {
 			setError("An unexpected error occurred");
@@ -128,7 +137,7 @@ function RegisterPage() {
 							onSuccess={() => {
 								setSuccess(true);
 								setTimeout(() => {
-									navigate({ to: redirectTo || "/" });
+									navigateToSafeRedirect(safeRedirect);
 								}, 1500);
 							}}
 							onError={(err) => setError(err)}
@@ -214,7 +223,7 @@ function RegisterPage() {
 							Already have an account?{" "}
 							<Link
 								to="/login"
-								search={{ redirect: redirectTo }}
+								search={{ redirect: safeRedirect }}
 								className="text-primary hover:text-primary/80 font-medium transition-colors"
 							>
 								Sign in

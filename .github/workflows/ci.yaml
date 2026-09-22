@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # No branch filter: this matches on the PR's BASE branch, so filtering to
+  # [main] silently gave stacked PRs no CI at all. A PR based on another
+  # feature branch is exactly the one you want gated.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 

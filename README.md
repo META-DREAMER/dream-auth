@@ -203,10 +203,18 @@ For nginx ingress:
 
 ```yaml
 annotations:
-  nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc:3000/api/verify"
-  nginx.ingress.kubernetes.io/auth-signin: "https://auth.example.com/login?rd=$escaped_request_uri"
-  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-User,X-Auth-Id,X-Auth-Email"
+  nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc.cluster.local:3000/api/verify"
+  nginx.ingress.kubernetes.io/auth-signin: "https://auth.example.com/login"
+  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Id,X-Auth-User,X-Auth-Email"
 ```
+
+`auth-signin` deliberately has no query string: ingress-nginx appends
+`?rd=<absolute url back to the app>` itself, which is the only form that works
+across subdomains. Requires `COOKIE_DOMAIN` to be set. Authorize on
+`X-Auth-Id`, never `X-Auth-Email`.
+
+See [docs/KUBERNETES.md](docs/KUBERNETES.md) for the header trust model and the
+headers that are *not* protected.
 
 ## API Endpoints
 

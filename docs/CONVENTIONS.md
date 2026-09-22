@@ -38,6 +38,13 @@ Split configuration for security:
 
 **Never import `src/env.ts` in client code - it will bundle secrets into the browser bundle!**
 
+## Vendored Better Auth Patch
+
+`patches/better-auth@<version>.patch` carries a SIWE wallet-account-linking fix
+that upstream has not merged. `better-auth` still installs from npm; the fork is
+not a dependency. See [BETTER-AUTH-FORK.md](./BETTER-AUTH-FORK.md) before
+touching the patch or bumping the version.
+
 ## Styling
 
 - Tailwind CSS v4 with Vite plugin (not PostCSS)
