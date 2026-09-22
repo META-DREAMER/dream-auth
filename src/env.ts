@@ -109,6 +109,14 @@ export const serverEnv = createEnv({
 		// When not set, cookies will use the current origin (works on localhost)
 		COOKIE_DOMAIN: z.string().min(1).optional(),
 
+		// Ordered, comma-separated list of request headers the client IP is
+		// resolved from, for rate limiting and session IP tracking. First header
+		// that yields a single valid address wins. Unset means better-auth's
+		// default (`x-forwarded-for` alone). Behind the Cloudflare tunnel this
+		// must be `cf-connecting-ip,x-forwarded-for`; see src/lib/client-ip.ts
+		// for why, and for what an attacker on the LAN can still do.
+		TRUSTED_CLIENT_IP_HEADERS: z.string().optional(),
+
 		// Feature flags
 		ENABLE_REGISTRATION: z
 			.string()

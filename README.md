@@ -121,6 +121,7 @@ docker-compose up -d
 | `BETTER_AUTH_SECRET`   | Yes      | Secret for signing sessions (min 32 chars)     |
 | `BETTER_AUTH_URL`      | Yes      | Public URL (e.g., `https://auth.example.com`)  |
 | `COOKIE_DOMAIN`        | No       | Share cookies across subdomains (`.example.com`) |
+| `TRUSTED_CLIENT_IP_HEADERS` | No  | Headers the client IP is read from, in order (default: `x-forwarded-for`; behind Cloudflare: `cf-connecting-ip,x-forwarded-for`) |
 | `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
 | `ENABLE_PASSKEYS`      | No       | Enable Passkey support (default: `true`)       |
 | `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
@@ -146,6 +147,27 @@ than only the session token.
 
 Leave `COOKIE_DOMAIN` unset for local development: cookies stay host-only,
 which is the only thing that works on `localhost`.
+
+## Client IP and rate limiting
+
+better-auth rate-limits per client IP, and since 1.6.17 it refuses to guess the
+IP from a forwarded chain, because the left-most `X-Forwarded-For` entry is
+whatever the client sent. With no resolvable IP every request shares one
+bucket per path, which is both a denial-of-service vector and no brute-force
+protection at all.
+
+`TRUSTED_CLIENT_IP_HEADERS` is the ordered list of headers the IP is read from;
+the first one holding a single valid address wins. Only list a header the proxy
+in front of this server **overwrites on every path a client can take**. Behind
+a Cloudflare tunnel that is `cf-connecting-ip,x-forwarded-for`: Cloudflare's
+edge sets the first on every request it proxies, and the ingress overwrites the
+second with its peer address, which is what makes it safe as the fallback for
+traffic that did not cross Cloudflare. The default trusts `x-forwarded-for`
+alone, and production logs a warning when the variable is unset.
+
+See [docs/KUBERNETES.md](docs/KUBERNETES.md) for the measured header table,
+the residual risk on the LAN path, and what to re-check after an ingress
+migration.
 
 ## Email
 

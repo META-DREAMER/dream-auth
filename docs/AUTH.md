@@ -11,6 +11,7 @@
 - **Cookie Caching:** Currently disabled due to TanStack Start SSR context issues (see comments on the `session` option in `auth.ts`)
 - **Trusted Origins:** `trustedOrigins` is the auth origin plus, when `COOKIE_DOMAIN` is set, the cookie domain and its subdomains. The redirect validator (`src/lib/redirect/policy.ts`) derives its allow-list from the same pair, so a host that may drive the auth endpoints is also a legal post-login bounce-back target - and nothing else is
 - **Cross-subdomain cookies:** the `advanced.cookies` block that would apply `COOKIE_DOMAIN` to the session cookie is commented out. `COOKIE_DOMAIN` currently only widens `trustedOrigins` and the redirect allow-list; the session cookie itself stays on the auth origin. Forward auth for sibling hosts needs that block enabled
+- **Client IP:** `advanced.ipAddress.ipAddressHeaders` comes from `TRUSTED_CLIENT_IP_HEADERS` via `src/lib/client-ip.ts`. It keys the rate limiter and the session `ipAddress` column. Behind the Cloudflare tunnel it must be `cf-connecting-ip,x-forwarded-for`; the threat model, the measured header table and the LAN residual risk are in [KUBERNETES.md](./KUBERNETES.md#client-ip-for-rate-limiting)
 - **Disabled Paths:** When OIDC is enabled, `/token` endpoint is disabled (OIDC uses `/oauth2/token`)
 
 ## TanStack Start Routing
