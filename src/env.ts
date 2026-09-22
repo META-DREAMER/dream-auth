@@ -8,6 +8,69 @@ import {
 import type { OidcClientConfig } from "@/lib/oidc/schemas";
 
 /**
+ * Email delivery configuration.
+ *
+ * `log` prints to stdout and sends nothing — the default, so a bare
+ * `pnpm dev` needs no credentials. `cloudflare` posts to the Cloudflare Email
+ * Sending REST API.
+ *
+ * `EMAIL_FROM` must sit on a domain that has been onboarded to Cloudflare
+ * Email Sending, or every send fails with `E_SENDER_NOT_VERIFIED`.
+ */
+/**
+ * `.invalid` is reserved by RFC 6761 and never resolves, so the dev default
+ * cannot accidentally deliver anywhere. Selecting the Cloudflare transport
+ * without replacing it is rejected below.
+ */
+const PLACEHOLDER_EMAIL_FROM = "noreply@example.invalid";
+
+const emailEnvShape = {
+	EMAIL_PROVIDER: z.enum(["log", "cloudflare"]).default("log"),
+	EMAIL_FROM: z.email().default(PLACEHOLDER_EMAIL_FROM),
+	EMAIL_FROM_NAME: z.string().min(1).default("Dream Auth"),
+	CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
+	CLOUDFLARE_API_TOKEN: z.string().min(1).optional(),
+};
+
+/**
+ * The Cloudflare credentials are optional in the schema and required in fact
+ * whenever the Cloudflare transport is selected. Making them unconditionally
+ * required would break every local `pnpm dev`; leaving them unchecked would
+ * let a pod boot with a transport that cannot send.
+ *
+ * Exported so the rule can be unit-tested without reparsing the whole env.
+ */
+export const emailEnvSchema = z
+	.object(emailEnvShape)
+	.superRefine((env, ctx) => {
+		if (env.EMAIL_PROVIDER !== "cloudflare") return;
+
+		for (const key of [
+			"CLOUDFLARE_ACCOUNT_ID",
+			"CLOUDFLARE_API_TOKEN",
+		] as const) {
+			if (!env[key]) {
+				ctx.addIssue({
+					code: "custom",
+					path: [key],
+					message: `${key} is required when EMAIL_PROVIDER="cloudflare"`,
+				});
+			}
+		}
+
+		// Cloudflare rejects a sender outside the onboarded domain with
+		// E_SENDER_NOT_VERIFIED, so the placeholder is never a working value here.
+		if (env.EMAIL_FROM === PLACEHOLDER_EMAIL_FROM) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["EMAIL_FROM"],
+				message:
+					'EMAIL_FROM must be set to an address on your onboarded sending domain when EMAIL_PROVIDER="cloudflare"',
+			});
+		}
+	});
+
+/**
  * Server-side environment variables.
  * Only import this in server-side code (API routes, server functions, etc.)
  */
@@ -86,11 +149,8 @@ export const serverEnv = createEnv({
 			.default("true")
 			.transform((val) => val === "true"),
 
-		// Admin configuration
-		ADMIN_EMAILS: z
-			.string()
-			.transform((val) => val.split(",").map((email) => email.trim()))
-			.optional(),
+		// Email delivery (see src/lib/email/)
+		...emailEnvShape,
 	},
 
 	/**
@@ -122,6 +182,21 @@ export const serverEnv = createEnv({
 	 */
 	skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
+
+/**
+ * Cross-field validation that the per-variable schemas above cannot express.
+ * Runs at import time so a misconfigured deployment fails at startup rather
+ * than on the first email.
+ */
+if (!process.env.SKIP_ENV_VALIDATION) {
+	emailEnvSchema.parse({
+		EMAIL_PROVIDER: serverEnv.EMAIL_PROVIDER,
+		EMAIL_FROM: serverEnv.EMAIL_FROM,
+		EMAIL_FROM_NAME: serverEnv.EMAIL_FROM_NAME,
+		CLOUDFLARE_ACCOUNT_ID: serverEnv.CLOUDFLARE_ACCOUNT_ID,
+		CLOUDFLARE_API_TOKEN: serverEnv.CLOUDFLARE_API_TOKEN,
+	});
+}
 
 /**
  * Cached merged OIDC clients (computed once at startup)

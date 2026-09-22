@@ -9,6 +9,14 @@ import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { pool } from "@/lib/db";
+import { sendEmail } from "@/lib/email/send";
+import {
+	type OtpType,
+	orgInvitationEmail,
+	otpEmail,
+	verificationEmail,
+	walletInvitationEmail,
+} from "@/lib/email/templates";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
 import {
 	collectWalletAddresses,
@@ -52,6 +60,60 @@ async function getGroupsClaim(
 	);
 
 	return { groups: memberships.rows.map((row: { slug: string }) => row.slug) };
+}
+
+/**
+ * Turn a failed send into an APIError.
+ *
+ * Known caveat on better-auth 1.7.5: the three email callbacks are invoked
+ * through `ctx.context.runInBackgroundOrAwait()`, which awaits the promise
+ * inside a try/catch and only logs whatever it caught
+ * (`dist/context/create-context.mjs`). A throw from here therefore does *not*
+ * reach the HTTP client. Throwing is still correct — it is the documented
+ * contract, it produces the log line, and it becomes visible again if
+ * better-auth stops swallowing — but for invitations we also bridge the
+ * failure into `afterCreateInvitation`, which is awaited normally and does
+ * propagate. See `recordInvitationSendFailure` below.
+ */
+function emailFailure(result: {
+	code: string;
+	message: string;
+	retryable: boolean;
+}) {
+	return new APIError("INTERNAL_SERVER_ERROR", {
+		message: result.retryable
+			? "Could not send the email right now. Please try again."
+			: "That email address could not be reached.",
+		code: result.code,
+	});
+}
+
+/**
+ * Invitation rows are inserted *before* `sendInvitationEmail` runs and are not
+ * rolled back when it fails, so a failed send leaves a `pending` row nobody
+ * was told about. The row self-heals (7-day expiry) and can be re-sent from
+ * the members page, but the admin has to know it happened — and the callback's
+ * own throw is swallowed (see `emailFailure`).
+ *
+ * So the failure is parked here and rethrown from `afterCreateInvitation`,
+ * which better-auth awaits directly. Bounded so a failure on the resend path
+ * (which never reaches `afterCreateInvitation`) cannot grow without limit.
+ */
+const MAX_PARKED_SEND_FAILURES = 50;
+const parkedInvitationSendFailures = new Map<string, APIError>();
+
+function recordInvitationSendFailure(invitationId: string, error: APIError) {
+	if (parkedInvitationSendFailures.size >= MAX_PARKED_SEND_FAILURES) {
+		const oldest = parkedInvitationSendFailures.keys().next().value;
+		if (oldest) parkedInvitationSendFailures.delete(oldest);
+	}
+	parkedInvitationSendFailures.set(invitationId, error);
+}
+
+function takeInvitationSendFailure(invitationId: string): APIError | undefined {
+	const error = parkedInvitationSendFailures.get(invitationId);
+	if (error) parkedInvitationSendFailures.delete(invitationId);
+	return error;
 }
 
 export const auth = betterAuth({
@@ -129,9 +191,9 @@ export const auth = betterAuth({
 	// Email verification config - used by changeEmail to send verification link
 	emailVerification: {
 		sendVerificationEmail: async ({ user, url }) => {
-			// TODO: Integrate with email service (Resend, SendGrid, etc.)
-			console.log(`[Email Verification] Send to: ${user.email}`);
-			console.log(`[Email Verification] URL: ${url}`);
+			const template = verificationEmail({ url });
+			const result = await sendEmail({ to: user.email, ...template });
+			if (!result.ok) throw emailFailure(result);
 		},
 	},
 
@@ -277,10 +339,9 @@ export const auth = betterAuth({
 		emailOTP({
 			overrideDefaultEmailVerification: true,
 			async sendVerificationOTP({ email, otp, type }, _ctx) {
-				// TODO: Integrate with email service (Resend, SendGrid, etc.)
-				console.log(
-					`[Email OTP] Send to: ${email}, OTP: ${otp}, Type: ${type}`,
-				);
+				const template = otpEmail({ otp, type: type as OtpType });
+				const result = await sendEmail({ to: email, ...template });
+				if (!result.ok) throw emailFailure(result);
 			},
 		}),
 		// Organization plugin for invitation-based access control
@@ -305,6 +366,18 @@ export const auth = betterAuth({
 
 			// Lifecycle hooks for invitation management
 			organizationHooks: {
+				/**
+				 * Surface a failed invitation email to the admin who triggered it.
+				 * better-auth swallows whatever `sendInvitationEmail` throws; this
+				 * hook is awaited normally, so rethrowing here reaches the client.
+				 * The `pending` row stays behind either way — it expires in 7 days
+				 * and the members page can re-send it.
+				 */
+				afterCreateInvitation: async ({ invitation }) => {
+					const failure = takeInvitationSendFailure(invitation.id);
+					if (failure) throw failure;
+				},
+
 				// Verify wallet ownership before accepting wallet-based invitations
 				beforeAcceptInvitation: async ({ invitation, user }) => {
 					// Skip verification for email-only invitations
@@ -342,26 +415,37 @@ export const auth = betterAuth({
 				const walletAddress = (data as typeof data & { walletAddress?: string })
 					.walletAddress;
 
-				if (walletAddress) {
-					// Wallet invitation - log for now, could integrate with push notification service
-					console.log(`[Wallet Invitation] Wallet: ${walletAddress}`);
-					console.log(
-						`[Wallet Invitation] Organization: ${data.organization.name}`,
+				// A wallet invitation still travels by email: the wallet is a
+				// constraint on who may accept, not a delivery channel. If one ever
+				// arrives with no address there is nowhere to send it.
+				if (!data.email) {
+					console.error(
+						JSON.stringify({
+							event: "email.send",
+							ok: false,
+							code: "NO_RECIPIENT",
+							message: "Invitation has no email address; nothing sent.",
+						}),
 					);
-					console.log(`[Wallet Invitation] Role: ${data.role}`);
-					console.log(`[Wallet Invitation] Link: ${inviteLink}`);
-				} else {
-					// Email invitation - integrate with email service
-					// TODO: Integrate with Resend, SendGrid, etc.
-					console.log(`[Email Invitation] To: ${data.email}`);
-					console.log(
-						`[Email Invitation] Organization: ${data.organization.name}`,
-					);
-					console.log(`[Email Invitation] Role: ${data.role}`);
-					console.log(
-						`[Email Invitation] Invited by: ${data.inviter.user.email}`,
-					);
-					console.log(`[Email Invitation] Link: ${inviteLink}`);
+					return;
+				}
+
+				const fields = {
+					orgName: data.organization.name,
+					inviterEmail: data.inviter.user.email,
+					role: data.role,
+					inviteLink,
+				};
+
+				const template = walletAddress
+					? walletInvitationEmail({ ...fields, walletAddress })
+					: orgInvitationEmail(fields);
+
+				const result = await sendEmail({ to: data.email, ...template });
+				if (!result.ok) {
+					const error = emailFailure(result);
+					recordInvitationSendFailure(data.id, error);
+					throw error;
 				}
 			},
 

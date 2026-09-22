@@ -128,9 +128,44 @@ docker-compose up -d
 | `OIDC_CLIENTS`         | No       | JSON array of OIDC client configs              |
 | `OIDC_CLIENTS_FILE`    | No       | Path to OIDC clients JSON file (for GitOps)    |
 | `OIDC_REQUIRE_PKCE`    | No       | Enforce PKCE for OIDC (default: `true`)        |
-| `ADMIN_EMAILS`         | No       | Comma-separated admin emails                   |
+| `EMAIL_PROVIDER`       | No       | `log` or `cloudflare` (default: `log`)         |
+| `EMAIL_FROM`           | No       | Sender address (default: a non-routable stub)  |
+| `EMAIL_FROM_NAME`      | No       | Sender display name (default: `Dream Auth`)    |
+| `CLOUDFLARE_ACCOUNT_ID`| Cond.    | Required when `EMAIL_PROVIDER=cloudflare`      |
+| `CLOUDFLARE_API_TOKEN` | Cond.    | Required when `EMAIL_PROVIDER=cloudflare`      |
 
 See `.env.example` for all options.
+
+## Email
+
+Verification links, one-time codes and organization invitations are sent through
+`src/lib/email/`. One `sendEmail()` primitive sits behind a transport interface
+with two implementations:
+
+- **`log`** (the default) sends nothing. Outside production it prints the message
+  to stdout, which is how local development sees an OTP. In production it prints
+  only `{ to, subject }` — never the body, because the body is a credential.
+- **`cloudflare`** posts to the Cloudflare Email Sending REST API
+  (`POST /accounts/{account_id}/email/sending/send`). `EMAIL_FROM` must be on a
+  domain onboarded to Cloudflare Email Sending, and both `CLOUDFLARE_ACCOUNT_ID`
+  and `CLOUDFLARE_API_TOKEN` must be set — `src/env.ts` refuses to start
+  otherwise. The API token needs only **Account → Email Sending → Edit**.
+
+A send is retried once on a transient failure (HTTP 429/5xx, network error) and
+never on a permanent one (bad address, suppressed recipient).
+
+### Failed invitation emails
+
+An `invitation` row is written before better-auth calls `sendInvitationEmail`,
+and better-auth does not roll it back when the callback throws. A failed send
+therefore leaves a `pending` invitation that nobody received. That row is
+harmless — it expires after 7 days, and until then it only widens the signup
+allowlist for the address an admin deliberately chose — but the admin is told
+about it: the members page surfaces the error and offers **Resend**.
+
+Resend re-sends against the existing row (better-auth's `resend` flag) rather
+than cancelling and recreating, so a second failure cannot destroy a working
+invitation.
 
 ## OIDC Configuration
 

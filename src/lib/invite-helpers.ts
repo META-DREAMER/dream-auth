@@ -15,6 +15,17 @@ export function getWalletEmail(walletAddress: string): string {
 	return `${walletAddress.toLowerCase()}@${domain}`;
 }
 
+/** Shared options for the invite helpers. */
+export type InviteOptions = {
+	/**
+	 * Re-send an existing pending invitation rather than creating a new one.
+	 * Maps to better-auth's `resend` body flag, which refreshes `expiresAt` on
+	 * the existing row and calls `sendInvitationEmail` again — so a failed send
+	 * cannot destroy a working invitation.
+	 */
+	resend?: boolean;
+};
+
 /**
  * Invite a user by wallet address.
  * Creates an invitation that requires SIWE sign-in with the specified wallet.
@@ -25,11 +36,15 @@ export function getWalletEmail(walletAddress: string): string {
  * @param walletAddress - Ethereum wallet address (0x...)
  * @param role - Role to assign (e.g., "member", "admin", "owner")
  * @param organizationId - Organization to invite the user to
+ * @param options.resend - Reuse the existing pending invitation instead of
+ *   failing with "already invited". The row keeps its id, its expiry is
+ *   refreshed and the email is sent again.
  */
 export async function inviteByWallet(
 	walletAddress: string,
 	role: "member" | "admin" | "owner",
 	organizationId: string,
+	options: InviteOptions = {},
 ) {
 	// Generate deterministic email matching SIWE pattern
 	const email = getWalletEmail(walletAddress);
@@ -40,6 +55,7 @@ export async function inviteByWallet(
 		organizationId,
 		// Store original wallet address for verification in beforeAcceptInvitation hook
 		walletAddress: walletAddress.toLowerCase(),
+		...(options.resend ? { resend: true } : {}),
 	});
 }
 
@@ -52,11 +68,15 @@ export async function inviteByWallet(
  * @param email - Email address to invite
  * @param role - Role to assign (e.g., "member", "admin", "owner")
  * @param organizationId - Organization to invite the user to
+ * @param options.resend - Reuse the existing pending invitation instead of
+ *   failing with "already invited". The row keeps its id, its expiry is
+ *   refreshed and the email is sent again.
  */
 export async function inviteByEmail(
 	email: string,
 	role: "member" | "admin" | "owner",
 	organizationId: string,
+	options: InviteOptions = {},
 ) {
 	// No walletAddress key at all: since 1.7 the generated type for an optional
 	// additional field rejects an explicit `undefined`.
@@ -64,6 +84,7 @@ export async function inviteByEmail(
 		email: email.toLowerCase(),
 		role,
 		organizationId,
+		...(options.resend ? { resend: true } : {}),
 	});
 }
 
