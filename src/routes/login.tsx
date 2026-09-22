@@ -1,10 +1,5 @@
 import { FingerprintIcon, KeyIcon, SpinnerIcon } from "@phosphor-icons/react";
-import {
-	createFileRoute,
-	Link,
-	redirect,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
@@ -23,25 +18,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { signIn } from "@/lib/auth-client";
+import {
+	isInternalRedirect,
+	navigateToSafeRedirect,
+	resolveSafeRedirect,
+} from "@/lib/redirect";
 
+/**
+ * `redirect` is this app's own bounce-back parameter. `rd` is the
+ * ingress-nginx convention (`auth-signin-redirect-param` defaults to `rd`), so
+ * a hand-written `auth-signin` annotation works either way. `redirect` wins
+ * when both are present, and both are validated - see `@/lib/redirect`.
+ */
 const searchSchema = z.object({
 	redirect: z.string().optional(),
+	rd: z.string().optional(),
 });
 
 export const Route = createFileRoute("/login")({
 	validateSearch: searchSchema,
 	ssr: false,
 	beforeLoad: async ({ context, search }) => {
+		// Never trust the raw parameter: an IdP that forwards it unchecked is a
+		// phishing primitive for every app behind it.
+		const safeRedirect = await resolveSafeRedirect(search);
+
 		if (context.session) {
-			throw redirect({ to: search.redirect || "/" });
+			throw redirect(
+				isInternalRedirect(safeRedirect)
+					? { to: safeRedirect }
+					: { href: safeRedirect, reloadDocument: true },
+			);
 		}
+
+		return { safeRedirect };
 	},
 	component: LoginPage,
 });
 
 function LoginPage() {
-	const navigate = useNavigate();
-	const { redirect: redirectParam } = Route.useSearch();
+	const { safeRedirect } = Route.useRouteContext();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -49,9 +65,10 @@ function LoginPage() {
 	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 	const [passkeySupported, setPasskeySupported] = useState(false);
 
-	// Use ref to capture redirect value for autofill callback without re-running effect
-	const redirectRef = useRef(redirectParam);
-	redirectRef.current = redirectParam;
+	// Use ref to capture the validated redirect target for the autofill callback
+	// without re-running the effect.
+	const redirectRef = useRef(safeRedirect);
+	redirectRef.current = safeRedirect;
 
 	// Check passkey support and enable conditional UI (autofill) - runs once on mount
 	useEffect(() => {
@@ -73,7 +90,7 @@ function LoginPage() {
 								autoFill: true,
 								fetchOptions: {
 									onSuccess() {
-										window.location.href = redirectRef.current || "/";
+										navigateToSafeRedirect(redirectRef.current);
 									},
 								},
 							})
@@ -98,7 +115,7 @@ function LoginPage() {
 			const result = await signIn.passkey({
 				fetchOptions: {
 					onSuccess() {
-						navigate({ to: redirectParam || "/" });
+						navigateToSafeRedirect(safeRedirect);
 					},
 					onError(ctx) {
 						setError(ctx.error.message || "Passkey authentication failed");
@@ -130,7 +147,7 @@ function LoginPage() {
 				return;
 			}
 
-			navigate({ to: redirectParam || "/" });
+			navigateToSafeRedirect(safeRedirect);
 		} catch {
 			setError("An unexpected error occurred");
 		} finally {
@@ -179,7 +196,7 @@ function LoginPage() {
 					)}
 
 					<ConnectSIWEButton
-						onSuccess={() => navigate({ to: redirectParam || "/" })}
+						onSuccess={() => navigateToSafeRedirect(safeRedirect)}
 						onError={(err) => setError(err)}
 					/>
 
@@ -239,7 +256,7 @@ function LoginPage() {
 						Don't have an account?{" "}
 						<Link
 							to="/register"
-							search={{ redirect: redirectParam }}
+							search={{ redirect: safeRedirect }}
 							className="text-primary hover:text-primary/80 font-medium transition-colors"
 						>
 							Create one

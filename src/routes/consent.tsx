@@ -61,7 +61,8 @@ export const Route = createFileRoute("/consent")({
 	validateSearch: searchSchema,
 	ssr: false,
 	beforeLoad: async ({ context, location }) => {
-		// Require authentication for consent page
+		// Require authentication for consent page. `location.href` is a
+		// same-origin path; `/login` validates it again before navigating.
 		if (!context.session) {
 			throw redirect({
 				to: "/login",

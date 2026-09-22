@@ -25,13 +25,18 @@ Used for Kubernetes liveness probes and Docker health checks.
 
 **Endpoint:** `GET /api/verify` (`src/routes/api/verify.ts`)
 
-Returns `200` with user headers or `401` for unauthorized. See [KUBERNETES.md](./KUBERNETES.md) for nginx config.
+`200` with the headers below for a valid session, `401` with no identity headers
+for no/expired session or a deleted user, `503` if the session cannot be checked.
+See [KUBERNETES.md](./KUBERNETES.md) for the nginx annotations and the header
+trust model.
 
 | Response Header | Value |
 |----------------|-------|
-| `X-Auth-User` | Display name |
-| `X-Auth-Id` | User ID |
-| `X-Auth-Email` | Email address |
+| `X-Auth-Id` | Better Auth user ID - opaque and stable, **authorize on this** |
+| `X-Auth-User` | Display name, user-controlled, stripped to printable ASCII |
+| `X-Auth-Email` | Email address - mutable and reusable, do not key ACLs on it |
+
+Every value is derived from the session. Nothing is reflected off the request.
 
 ### BetterAuth Handler
 
