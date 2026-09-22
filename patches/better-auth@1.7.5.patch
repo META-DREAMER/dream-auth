@@ -1,0 +1,166 @@
+diff --git a/dist/plugins/siwe/index.d.mts b/dist/plugins/siwe/index.d.mts
+index 229137d8c24f1751a50176d253e07f78b67a857a..ebf40f1f492714bc5cece3cff924ad25a0ac14a7 100644
+--- a/dist/plugins/siwe/index.d.mts
++++ b/dist/plugins/siwe/index.d.mts
+@@ -1,6 +1,7 @@
+ import { InferOptionSchema } from "../../types/plugins.mjs";
+ import { WalletAddressSchema, schema } from "./schema.mjs";
+ import { ENSLookupArgs, ENSLookupResult, SIWEVerifyMessageArgs } from "./types.mjs";
++import * as _$_better_auth_core0 from "@better-auth/core";
+ import * as _$better_call0 from "better-call";
+ import * as z from "zod";
+ 
+@@ -25,6 +26,21 @@ declare const siwe: (options: SIWEPluginOptions) => {
+   id: "siwe";
+   version: string;
+   schema: WalletAddressSchema;
++  init(ctx: _$_better_auth_core0.AuthContext): {
++    options: {
++      databaseHooks: {
++        account: {
++          delete: {
++            after(account: {
++              providerId: string;
++              accountId: string;
++              userId: string;
++            }): Promise<void>;
++          };
++        };
++      };
++    };
++  };
+   endpoints: {
+     getSiweNonce: _$better_call0.StrictEndpoint<"/siwe/nonce" | "/siwe/get-nonce", {
+       method: "POST";
+diff --git a/dist/plugins/siwe/index.mjs b/dist/plugins/siwe/index.mjs
+index 25e614e7b5da035daa91f052353abf117bb0f5e9..1f5be7eb0424c308606cfc2218556a79acd050fb 100644
+--- a/dist/plugins/siwe/index.mjs
++++ b/dist/plugins/siwe/index.mjs
+@@ -1,6 +1,7 @@
+ import { isAPIError } from "../../utils/is-api-error.mjs";
+ import { mergeSchema } from "../../db/schema.mjs";
+ import { setSessionCookie } from "../../cookies/index.mjs";
++import { getSessionFromCtx } from "../../api/routes/session.mjs";
+ import { APIError } from "../../api/index.mjs";
+ import { PACKAGE_VERSION } from "../../version.mjs";
+ import { toChecksumAddress } from "../../utils/hashing.mjs";
+@@ -16,6 +17,16 @@ const SIWE_NONCE_MAX_LENGTH = 250;
+ const SIWE_NONCE_ALPHANUMERIC_REGEX = /^[a-zA-Z0-9]+$/;
+ const isValidSiweNonce = (nonce) => typeof nonce === "string" && nonce.length >= 8 && nonce.length <= SIWE_NONCE_MAX_LENGTH && SIWE_NONCE_ALPHANUMERIC_REGEX.test(nonce);
+ const getSiweNonceBodySchema = z.object({}).strict().optional();
++const createWalletAccountId = (walletAddress, chainId) => `${walletAddress}:${chainId}`;
++const parseWalletAccountId = (accountId) => {
++	const [address, chainIdStr] = accountId.split(":");
++	const chainId = Number.parseInt(chainIdStr ?? "", 10);
++	if (!address || Number.isNaN(chainId)) return null;
++	return {
++		address,
++		chainId
++	};
++};
+ const siwe = (options) => {
+ 	const createSiweNonceEndpoint = (path) => createAuthEndpoint(path, {
+ 		method: "POST",
+@@ -38,6 +49,30 @@ const siwe = (options) => {
+ 		id: "siwe",
+ 		version: PACKAGE_VERSION,
+ 		schema: mergeSchema(schema, options?.schema),
++		init(ctx) {
++			return { options: { databaseHooks: { account: { delete: { async after(account) {
++				if (account.providerId !== "siwe" || !account.accountId) return;
++				const parsed = parseWalletAccountId(account.accountId);
++				if (!parsed) return;
++				await ctx.adapter.deleteMany({
++					model: "walletAddress",
++					where: [
++						{
++							field: "address",
++							value: parsed.address
++						},
++						{
++							field: "chainId",
++							value: parsed.chainId
++						},
++						{
++							field: "userId",
++							value: account.userId
++						}
++					]
++				});
++			} } } } } };
++		},
+ 		endpoints: {
+ 			getSiweNonce: createSiweNonceEndpoint("/siwe/nonce"),
+ 			getNonce: createSiweNonceEndpoint("/siwe/get-nonce"),
+@@ -121,6 +156,71 @@ const siwe = (options) => {
+ 						message: "Unauthorized: Invalid SIWE signature",
+ 						status: 401
+ 					});
++					const currentSession = await getSessionFromCtx(ctx);
++					const accountLinking = ctx.context.options.account?.accountLinking;
++					const trustedProviders = ctx.context.trustedProviders;
++					if (currentSession !== null && accountLinking?.enabled !== false && (trustedProviders.length === 0 || trustedProviders.includes("siwe"))) {
++						const sessionUser = currentSession.user;
++						const walletForChain = await ctx.context.adapter.findOne({
++							model: "walletAddress",
++							where: [{
++								field: "address",
++								operator: "eq",
++								value: walletAddress
++							}, {
++								field: "chainId",
++								operator: "eq",
++								value: chainId
++							}]
++						});
++						if (walletForChain && walletForChain.userId === sessionUser.id) return ctx.json({
++							token: currentSession.session.token,
++							success: true,
++							user: {
++								id: sessionUser.id,
++								walletAddress,
++								chainId
++							}
++						});
++						const walletAnyChain = walletForChain ? null : await ctx.context.adapter.findOne({
++							model: "walletAddress",
++							where: [{
++								field: "address",
++								operator: "eq",
++								value: walletAddress
++							}]
++						});
++						const walletOwner = walletForChain?.userId ?? walletAnyChain?.userId;
++						if (walletOwner && walletOwner !== sessionUser.id) throw APIError.fromStatus("BAD_REQUEST", {
++							message: "Wallet already linked to another user",
++							status: 400,
++							code: "SIWE_WALLET_ALREADY_LINKED"
++						});
++						await ctx.context.adapter.create({
++							model: "walletAddress",
++							data: {
++								userId: sessionUser.id,
++								address: walletAddress,
++								chainId,
++								isPrimary: false,
++								createdAt: /* @__PURE__ */ new Date()
++							}
++						});
++						await ctx.context.internalAdapter.linkAccount({
++							userId: sessionUser.id,
++							providerId: "siwe",
++							accountId: createWalletAccountId(walletAddress, chainId)
++						});
++						return ctx.json({
++							token: currentSession.session.token,
++							success: true,
++							user: {
++								id: sessionUser.id,
++								walletAddress,
++								chainId
++							}
++						});
++					}
+ 					let user = null;
+ 					const existingWalletAddress = await ctx.context.adapter.findOne({
+ 						model: "walletAddress",
