@@ -120,7 +120,7 @@ docker-compose up -d
 | `DATABASE_URL`         | Yes      | PostgreSQL connection string                   |
 | `BETTER_AUTH_SECRET`   | Yes      | Secret for signing sessions (min 32 chars)     |
 | `BETTER_AUTH_URL`      | Yes      | Public URL (e.g., `https://auth.example.com`)  |
-| `COOKIE_DOMAIN`        | No       | Cookie domain (e.g., `.example.com`)           |
+| `COOKIE_DOMAIN`        | No       | Share cookies across subdomains (`.example.com`) |
 | `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
 | `ENABLE_PASSKEYS`      | No       | Enable Passkey support (default: `true`)       |
 | `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
@@ -135,6 +135,17 @@ docker-compose up -d
 | `CLOUDFLARE_API_TOKEN` | Cond.    | Required when `EMAIL_PROVIDER=cloudflare`      |
 
 See `.env.example` for all options.
+
+## Cross-subdomain sessions
+
+Set `COOKIE_DOMAIN` to the parent domain (`.example.com`) and auth cookies are
+issued with a matching `Domain` attribute, so a session minted on
+`auth.example.com` is sent to every sibling host. This uses better-auth's
+`advanced.crossSubDomainCookies`, which scopes all four auth cookies rather
+than only the session token.
+
+Leave `COOKIE_DOMAIN` unset for local development: cookies stay host-only,
+which is the only thing that works on `localhost`.
 
 ## Email
 

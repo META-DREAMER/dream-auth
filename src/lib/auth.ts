@@ -8,6 +8,7 @@ import { createPublicClient, http, verifyMessage } from "viem";
 import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
+import { buildCookieAdvancedOptions } from "@/lib/auth-cookies";
 import { pool } from "@/lib/db";
 import { sendEmail } from "@/lib/email/send";
 import {
@@ -215,21 +216,12 @@ export const auth = betterAuth({
 		// },
 	},
 
-	// advanced: {
-	// cookiePrefix: "auth",
-	// cookies: {
-	// session_token: {
-	// attributes: {
-	// httpOnly: true,
-	// secure: process.env.NODE_ENV === "production",
-	// sameSite: "lax",
-	// Only set domain if explicitly configured (for cross-subdomain auth)
-	// When undefined, cookie uses current origin (works for localhost)
-	// ...(serverEnv.COOKIE_DOMAIN && { domain: serverEnv.COOKIE_DOMAIN }),
-	// },
-	// },
-	// },
-	// },
+	/**
+	 * Scope auth cookies to COOKIE_DOMAIN so a session minted on the auth host
+	 * is sent to sibling hosts. Empty when COOKIE_DOMAIN is unset, which keeps
+	 * cookies host-only for local development. See src/lib/auth-cookies.ts.
+	 */
+	advanced: buildCookieAdvancedOptions(serverEnv.COOKIE_DOMAIN),
 
 	plugins: [
 		// JWT plugin for asymmetric token signing (required for OIDC provider)
