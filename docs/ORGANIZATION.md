@@ -182,9 +182,11 @@ Checkbox list of org members. Visual indicators: checkmark (existing), `+` (addi
 ### Default team
 
 The 1.7 plugin creates a team named after the organization when the
-organization is created, with the creator as its only member. It shows up
-like any other team, so `team=home` on a forward-auth middleware (or
-`home:team:home` in the OIDC claim) effectively means "the owner".
+organization is created, with the creator as its first member. It is an
+ordinary team: owners and admins can add anyone to it, so `team=home` on a
+forward-auth middleware (or `home:team:home` in the OIDC claim) does not mean
+"the owner". Use `role=admin`, or `home:role:owner` in the OIDC claim, for
+that.
 
 ## Forward-auth access
 

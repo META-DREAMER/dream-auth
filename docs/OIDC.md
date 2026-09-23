@@ -96,7 +96,9 @@ So a user who is an admin of `home` and in its `media` team gets
 `["home", "home:role:admin", "home:team:media"]`. Map `home` for "anyone in
 the org", `home:role:admin` for its admins, `home:team:media` for a team.
 Note that the organization plugin creates a default team named after the org
-with its creator as the only member, so `home:team:home` means the owner.
+with its creator as its first member. That does not make `home:team:home` an
+owner group: an owner or admin can add anyone to that team. Map
+`home:role:owner` for owner-only access.
 
 Slugs are chosen by whoever creates an org, which is why org creation is
 restricted to existing owners and admins (`docs/ORGANIZATION.md`).

@@ -68,6 +68,10 @@ export function EditMemberRoleDialog({
 			queryClient.invalidateQueries({
 				queryKey: orgMembersOptions(orgId).queryKey,
 			});
+			// Being owner or admin somewhere is what allows creating an org.
+			queryClient.invalidateQueries({
+				queryKey: ["organizations", "can-create"],
+			});
 			handleOpenChange(false);
 		},
 		onError: (err: Error) => {

@@ -34,11 +34,21 @@ export function OrgSwitcher() {
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
 
+	const { data: session } = authClient.useSession();
+
 	// The server enforces this on the create endpoint; here it only decides
-	// whether to show the entry. Re-checked whenever the org list changes,
-	// since becoming an owner is what unlocks it.
+	// whether to show the entry. Keyed by user so a later sign-in on the same
+	// tab never sees another user's answer, and by the org list since joining
+	// or creating an org is what usually changes it. A role change made here
+	// invalidates it (`edit-member-role-dialog.tsx`); one made elsewhere shows
+	// up within the stale time.
 	const { data: canCreate = false } = useQuery({
-		queryKey: ["organizations", "can-create", organizations?.length ?? 0],
+		queryKey: [
+			"organizations",
+			"can-create",
+			session?.user.id ?? null,
+			organizations?.map((org) => org.id) ?? [],
+		],
 		queryFn: () => canCreateOrganizationFn(),
 		staleTime: 1000 * 60 * 5,
 	});

@@ -11,7 +11,9 @@ export function SelectOrgPrompt() {
 			</h2>
 			<p className="text-muted-foreground max-w-md">
 				Use the organization switcher in the sidebar to select an organization.
-				If you have none, ask an organization owner for an invitation.
+				If you have none, ask an organization owner for an invitation. On a new
+				installation with no organizations yet, create the first one from the
+				switcher.
 			</p>
 		</div>
 	);
