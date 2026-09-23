@@ -9,6 +9,11 @@ import { mainnet } from "viem/chains";
 import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { buildCookieAdvancedOptions } from "@/lib/auth-cookies";
+import {
+	buildClientIpAdvancedOptions,
+	logClientIpConfigWarnings,
+	parseTrustedClientIpHeaders,
+} from "@/lib/client-ip";
 import { pool } from "@/lib/db";
 import { sendEmail } from "@/lib/email/send";
 import {
@@ -27,6 +32,22 @@ import {
 
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
 const authUrl = new URL(serverEnv.BETTER_AUTH_URL);
+
+/**
+ * Which headers the rate limiter keys on. Getting this wrong in one direction
+ * shares a bucket between every visitor; in the other it reopens the
+ * X-Forwarded-For bypass upstream closed in 1.6.17. The reasoning, the
+ * measured header table and the LAN residual risk live in
+ * src/lib/client-ip.ts; an ambiguous configuration is warned about once here
+ * at startup rather than discovered from better-auth's own fallback warning.
+ */
+const trustedClientIpHeaders = parseTrustedClientIpHeaders(
+	serverEnv.TRUSTED_CLIENT_IP_HEADERS,
+);
+logClientIpConfigWarnings(trustedClientIpHeaders, {
+	configured: serverEnv.TRUSTED_CLIENT_IP_HEADERS !== undefined,
+	production: process.env.NODE_ENV === "production",
+});
 
 /**
  * Client IDs that @better-auth/oauth-provider may cache in memory.
@@ -220,8 +241,15 @@ export const auth = betterAuth({
 	 * Scope auth cookies to COOKIE_DOMAIN so a session minted on the auth host
 	 * is sent to sibling hosts. Empty when COOKIE_DOMAIN is unset, which keeps
 	 * cookies host-only for local development. See src/lib/auth-cookies.ts.
+	 *
+	 * `ipAddress` tells better-auth which headers may carry the client IP, for
+	 * the rate limiter and the session's `ipAddress` column. See
+	 * src/lib/client-ip.ts.
 	 */
-	advanced: buildCookieAdvancedOptions(serverEnv.COOKIE_DOMAIN),
+	advanced: {
+		...buildCookieAdvancedOptions(serverEnv.COOKIE_DOMAIN),
+		...buildClientIpAdvancedOptions(trustedClientIpHeaders),
+	},
 
 	plugins: [
 		// JWT plugin for asymmetric token signing (required for OIDC provider)
