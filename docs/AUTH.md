@@ -69,3 +69,25 @@ export const getSessionFn = createServerFn({ method: "GET" }).handler(
 - Generate nonce with `generateSiweNonce()` from `viem/siwe`
 - Verify signature with `verifyMessage()` from `viem`
 - Optional ENS lookup for name/avatar via `createPublicClient()`
+
+## Passkeys and the `@peculiar/asn1-schema` override
+
+`pnpm.overrides` in `package.json` pins `@peculiar/asn1-schema` to a single
+version. Keep it.
+
+`@simplewebauthn/server` (via `@better-auth/passkey`) verifies ES256 assertions
+by parsing the DER signature with `AsnParser.parse(sig, ECDSASigValue)`.
+`ECDSASigValue` comes from `@peculiar/asn1-ecc`, which registers its schema
+through class decorators into a module-level singleton inside
+`@peculiar/asn1-schema`. If pnpm resolves two copies of `asn1-schema` (which
+it did: `@simplewebauthn/server` took 2.6.0, `asn1-ecc` took 2.9.5), the
+decorator writes to one singleton and the parser reads the other, and every
+passkey sign-in fails with `Cannot get schema for 'ECDSASigValue' target`.
+Registration is unaffected because `fmt: "none"` attestations never touch
+ASN.1.
+
+The bug lives in dependency resolution, so `scripts/check-passkey-bundle.mjs`
+runs as part of `pnpm build` against the built `.output/server` chunks, not the
+source: it asserts one `AsnSchemaStorage` instance in the bundle and verifies a
+synthetic ES256 registration and assertion through the built
+`@simplewebauthn/server` chunk.
