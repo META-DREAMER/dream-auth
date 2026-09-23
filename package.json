@@ -5,7 +5,8 @@
 	"packageManager": "pnpm@10.34.5",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && pnpm check:bundle",
+		"check:bundle": "node --import=reflect-metadata scripts/check-passkey-bundle.mjs",
 		"start": "node --import=reflect-metadata .output/server/index.mjs",
 		"preview": "vite preview",
 		"test": "vitest run",
@@ -30,6 +31,7 @@
 			"@noble/hashes": "1.8.0",
 			"kysely": "^0.28.14",
 			"@better-auth/utils": "0.5.0",
+			"@peculiar/asn1-schema": "^2.9.5",
 			"zod@4": "^4.6.5"
 		},
 		"patchedDependencies": {
