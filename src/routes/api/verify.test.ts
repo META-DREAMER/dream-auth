@@ -1,5 +1,5 @@
 import { createMockSession } from "@test/mocks/auth-client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock auth module
 vi.mock("@/lib/auth", () => ({
@@ -20,7 +20,17 @@ vi.mock("@/lib/redirect/policy.env", () => ({
 	}),
 }));
 
+// Authorization inputs. Unset org id by default, which is the legacy
+// authentication-only behaviour every pre-existing test below assumes; the
+// authorization block pins it to an org and drives the membership lookup.
+vi.mock("@/lib/org-access", () => ({
+	getForwardAuthOrgId: vi.fn<() => string | undefined>(() => undefined),
+	orgAccessLookup: { getOrgAccess: vi.fn() },
+}));
+
 import { auth } from "@/lib/auth";
+import type { OrgAccess } from "@/lib/forward-auth-authz";
+import { getForwardAuthOrgId, orgAccessLookup } from "@/lib/org-access";
 import { GET } from "./verify";
 
 /** Exactly the headers Traefik's forwardAuth puts on the auth subrequest. */
@@ -492,6 +502,360 @@ describe("GET /api/verify", () => {
 
 			expect(response.status).toBe(401);
 			expect(response.headers.get("Location")).toBeNull();
+		});
+	});
+});
+
+describe("GET /api/verify authorization (FORWARD_AUTH_ORG_ID set)", () => {
+	const HOME = "org_home_01";
+
+	const owner: OrgAccess = {
+		role: "owner",
+		teams: [{ name: "media", isMember: false }],
+	};
+	const admin: OrgAccess = {
+		role: "admin",
+		teams: [{ name: "media", isMember: false }],
+	};
+	const memberInTeam: OrgAccess = {
+		role: "member",
+		teams: [{ name: "Media", isMember: true }],
+	};
+	const memberNotInTeam: OrgAccess = {
+		role: "member",
+		teams: [{ name: "media", isMember: false }],
+	};
+
+	const MODES = {
+		none: VERIFY_REDIRECT,
+		"role=admin": `${VERIFY_REDIRECT}&role=admin`,
+		"team=media": `${VERIFY_REDIRECT}&team=media`,
+	} as const;
+
+	function signedIn(id = "user-123") {
+		vi.mocked(auth.api.getSession).mockResolvedValue(
+			createMockSession({
+				user: { id, email: `${id}@example.com`, name: "Test User" },
+				session: { id: "session-123" },
+			}),
+		);
+	}
+
+	function access(value: OrgAccess | null) {
+		vi.mocked(orgAccessLookup.getOrgAccess).mockResolvedValue(value);
+	}
+
+	let consoleWarn: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(getForwardAuthOrgId).mockReturnValue(HOME);
+		consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		consoleWarn.mockRestore();
+	});
+
+	// The full matrix: mode x principal -> allowed?
+	const MATRIX: Array<[keyof typeof MODES, string, OrgAccess | null, boolean]> =
+		[
+			["none", "owner", owner, true],
+			["none", "admin", admin, true],
+			["none", "member in team", memberInTeam, true],
+			["none", "member not in team", memberNotInTeam, true],
+			["none", "non-member", null, false],
+			["role=admin", "owner", owner, true],
+			["role=admin", "admin", admin, true],
+			["role=admin", "member in team", memberInTeam, false],
+			["role=admin", "member not in team", memberNotInTeam, false],
+			["role=admin", "non-member", null, false],
+			["team=media", "owner", owner, true],
+			["team=media", "admin", admin, true],
+			["team=media", "member in team", memberInTeam, true],
+			["team=media", "member not in team", memberNotInTeam, false],
+			["team=media", "non-member", null, false],
+		];
+
+	it.each(
+		MATRIX,
+	)("mode %s: %s -> allowed=%s", async (mode, _who, orgAccess, allowed) => {
+		signedIn();
+		access(orgAccess);
+
+		const response = await verify(MODES[mode], {
+			...traefikHeaders(),
+			Cookie: "better-auth.session_token=valid",
+		});
+
+		if (allowed) {
+			expect(response.status).toBe(200);
+			expect(response.headers.get("X-Auth-Id")).toBe("user-123");
+		} else {
+			// A navigation in redirect mode: bounce to our forbidden page.
+			expect(response.status).toBe(302);
+			expect(response.headers.get("Location")).toBe(
+				"https://auth.example.com/forbidden?redirect=https%3A%2F%2Fapp.example.com%2Fdashboard%3Ftab%3D1",
+			);
+			expect(response.headers.get("X-Auth-Id")).toBeNull();
+			expect(response.headers.get("X-Auth-Groups")).toBeNull();
+		}
+		expect(orgAccessLookup.getOrgAccess).toHaveBeenCalledWith("user-123", HOME);
+	});
+
+	it.each(
+		Object.entries(MODES),
+	)("mode %s: signed out is unchanged (302 to login)", async (_mode, url) => {
+		vi.mocked(auth.api.getSession).mockResolvedValue(null);
+
+		const response = await verify(url, traefikHeaders());
+
+		expect(response.status).toBe(302);
+		expect(response.headers.get("Location")).toBe(
+			"https://auth.example.com/login?redirect=https%3A%2F%2Fapp.example.com%2Fdashboard%3Ftab%3D1",
+		);
+		expect(orgAccessLookup.getOrgAccess).not.toHaveBeenCalled();
+	});
+
+	it("returns a bare 403 for a non-navigation when not authorized", async () => {
+		signedIn();
+		access(null);
+
+		const response = await verify(VERIFY_REDIRECT, {
+			...traefikHeaders({ method: "POST" }),
+			Cookie: "better-auth.session_token=valid",
+		});
+
+		expect(response.status).toBe(403);
+		expect(response.headers.get("Location")).toBeNull();
+		expect(response.headers.get("X-Auth-Id")).toBeNull();
+		expect(response.headers.get("Cache-Control")).toBe("no-store");
+		expect(await response.text()).toBe("");
+	});
+
+	it("returns a bare 403 in nginx mode (no ?mode=redirect) when not authorized", async () => {
+		signedIn();
+		access(memberNotInTeam);
+
+		const response = await verify(`${VERIFY}?team=media`, traefikHeaders());
+
+		expect(response.status).toBe(403);
+		expect(response.headers.get("Location")).toBeNull();
+	});
+
+	it("denies an unknown team and logs its name", async () => {
+		signedIn();
+		access(memberInTeam);
+
+		const response = await verify(`${VERIFY}?team=photos`);
+
+		expect(response.status).toBe(403);
+		expect(consoleWarn).toHaveBeenCalledTimes(1);
+		expect(String(consoleWarn.mock.calls[0][0])).toContain('"photos"');
+		expect(String(consoleWarn.mock.calls[0][0])).toContain("does not exist");
+	});
+
+	it("denies a user who owns a different org, even one whose slug is home", async () => {
+		// Authorization is keyed on the org *id*; the lookup is asked about
+		// the pinned org only, and a different org - whatever its slug - is
+		// simply not that one.
+		signedIn("impostor");
+		vi.mocked(orgAccessLookup.getOrgAccess).mockImplementation(
+			async (_userId, orgId) =>
+				orgId === "org_fake_home" ? { role: "owner", teams: [] } : null,
+		);
+
+		const response = await verify(`${VERIFY}?role=admin`);
+
+		expect(response.status).toBe(403);
+		expect(orgAccessLookup.getOrgAccess).toHaveBeenCalledWith("impostor", HOME);
+	});
+
+	it("reads the requirement from the verify URL only, never from X-Forwarded-Uri", async () => {
+		signedIn();
+		access(memberNotInTeam);
+
+		// The client's own URL carries `?team=media`, `&role=admin`, and even
+		// the verify URL's parameter names. The verify URL itself asks for
+		// team=media, which this member is not in.
+		const attempts = [
+			"/dashboard?team=media",
+			"/dashboard?role=admin",
+			"/dashboard?x=1&team=media&role=admin",
+			"/api/verify?mode=redirect&team=media",
+		];
+		for (const uri of attempts) {
+			const response = await verify(`${VERIFY}?team=media`, {
+				...traefikHeaders({ uri }),
+				Cookie: "better-auth.session_token=valid",
+			});
+			expect(response.status).toBe(403);
+		}
+
+		// And the other way round: the verify URL asks for nothing, so a
+		// client URL asking for a team cannot *narrow* the check either.
+		access(memberNotInTeam);
+		const plain = await verify(VERIFY, {
+			...traefikHeaders({ uri: "/dashboard?team=nonexistent" }),
+		});
+		expect(plain.status).toBe(200);
+	});
+
+	it("emits X-Auth-Groups with the role and the user's teams", async () => {
+		signedIn();
+		access({
+			role: "member",
+			teams: [
+				{ name: "media", isMember: true },
+				{ name: "ops", isMember: false },
+				{ name: "photos", isMember: true },
+			],
+		});
+
+		const response = await verify(VERIFY);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("X-Auth-Groups")).toBe(
+			"role:member,team:media,team:photos",
+		);
+	});
+
+	it("sanitizes X-Auth-Groups like every other identity header", async () => {
+		signedIn();
+		access({
+			role: "member",
+			teams: [
+				{ name: "evil\r\nX-Auth-Admin: true,team:admin", isMember: true },
+			],
+		});
+
+		const response = await verify(VERIFY);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("X-Auth-Admin")).toBeNull();
+		expect(response.headers.get("X-Auth-Groups")).toBe(
+			"role:member,team:evilX-Auth-Admin: trueteam:admin",
+		);
+	});
+
+	it("never reflects a client-supplied X-Auth-Groups", async () => {
+		signedIn();
+		access(owner);
+
+		const response = await verify(VERIFY, {
+			"X-Auth-Groups": "role:owner,team:everything",
+		});
+
+		expect(response.headers.get("X-Auth-Groups")).toBe("role:owner");
+	});
+
+	describe("forbidden redirect", () => {
+		beforeEach(() => {
+			signedIn();
+			access(null);
+		});
+
+		it("carries the sanitized app URL so the page can name it and send the user back", async () => {
+			const response = await verify(
+				VERIFY_REDIRECT,
+				traefikHeaders({ host: "media.example.com", uri: "/photos" }),
+			);
+			expect(response.headers.get("Location")).toBe(
+				"https://auth.example.com/forbidden?redirect=https%3A%2F%2Fmedia.example.com%2Fphotos",
+			);
+		});
+
+		it.each([
+			"evil.com",
+			"example.com.evil.com",
+			"app.example.com, evil.com",
+			"app.example.com@evil.com",
+			"127.0.0.1",
+		])("drops a hostile X-Forwarded-Host %j rather than reflecting it", async (host) => {
+			const response = await verify(
+				VERIFY_REDIRECT,
+				traefikHeaders({ host, uri: "/steal" }),
+			);
+
+			expect(response.status).toBe(302);
+			expect(response.headers.get("Location")).toBe(
+				"https://auth.example.com/forbidden",
+			);
+		});
+
+		it("drops a plain-http return-to to a sibling host", async () => {
+			const response = await verify(
+				VERIFY_REDIRECT,
+				traefikHeaders({ proto: "http" }),
+			);
+			expect(response.headers.get("Location")).toBe(
+				"https://auth.example.com/forbidden",
+			);
+		});
+
+		it("never emits a Location that leaves the auth origin", async () => {
+			const hostile = [
+				traefikHeaders({ host: "evil.com" }),
+				traefikHeaders({ uri: "//evil.com" }),
+				traefikHeaders({ host: "example.com.evil.com" }),
+				traefikHeaders({ proto: "javascript", host: "app.example.com" }),
+			];
+			for (const headers of hostile) {
+				const response = await verify(VERIFY_REDIRECT, headers);
+				const location = new URL(response.headers.get("Location") ?? "");
+				expect(location.origin).toBe("https://auth.example.com");
+				expect(location.pathname).toBe("/forbidden");
+				const target = location.searchParams.get("redirect");
+				if (target) {
+					const resolved = new URL(target, location.origin);
+					expect(
+						resolved.hostname === "example.com" ||
+							resolved.hostname.endsWith(".example.com"),
+					).toBe(true);
+				}
+			}
+		});
+	});
+
+	it("fails closed with 503 when the membership lookup throws", async () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		signedIn();
+		vi.mocked(orgAccessLookup.getOrgAccess).mockRejectedValue(
+			new Error("connection terminated"),
+		);
+
+		const response = await verify(VERIFY_REDIRECT, traefikHeaders());
+
+		expect(response.status).toBe(503);
+		expect(response.headers.get("Location")).toBeNull();
+		expect(response.headers.get("X-Auth-Id")).toBeNull();
+		consoleError.mockRestore();
+	});
+
+	describe("FORWARD_AUTH_ORG_ID unset (legacy)", () => {
+		beforeEach(() => {
+			vi.mocked(getForwardAuthOrgId).mockReturnValue(undefined);
+			signedIn();
+		});
+
+		it("allows any signed-in user without consulting membership", async () => {
+			const response = await verify(VERIFY_REDIRECT, traefikHeaders());
+
+			expect(response.status).toBe(200);
+			expect(response.headers.get("X-Auth-Id")).toBe("user-123");
+			expect(response.headers.get("X-Auth-Groups")).toBe("");
+			expect(orgAccessLookup.getOrgAccess).not.toHaveBeenCalled();
+		});
+
+		it("still denies a verify URL that asks for a team or role it cannot check", async () => {
+			for (const url of [`${VERIFY}?team=media`, `${VERIFY}?role=admin`]) {
+				const response = await verify(url);
+				expect(response.status).toBe(403);
+			}
+			expect(orgAccessLookup.getOrgAccess).not.toHaveBeenCalled();
+			expect(consoleWarn).toHaveBeenCalled();
 		});
 	});
 });

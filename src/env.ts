@@ -117,6 +117,13 @@ export const serverEnv = createEnv({
 		// for why, and for what an attacker on the LAN can still do.
 		TRUSTED_CLIENT_IP_HEADERS: z.string().optional(),
 
+		// The organization whose membership authorizes forward-auth requests
+		// (`/api/verify`), by id - never by slug, which any org creator can
+		// choose. Unset keeps the legacy behaviour (any signed-in user passes)
+		// and logs a warning at startup. Copy the id from the org settings page.
+		// See src/lib/forward-auth-authz.ts and docs/KUBERNETES.md.
+		FORWARD_AUTH_ORG_ID: z.string().min(1).optional(),
+
 		// Feature flags
 		ENABLE_REGISTRATION: z
 			.string()

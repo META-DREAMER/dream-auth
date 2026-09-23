@@ -5,6 +5,7 @@ import {
 	PlusIcon,
 	SpinnerIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
 	DropdownMenu,
@@ -21,6 +22,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { authClient, organization } from "@/lib/auth-client";
+import { canCreateOrganizationFn } from "@/lib/org-creation.server";
 import { cn } from "@/lib/utils";
 import { CreateOrgDialog } from "./create-org-dialog";
 import { RoleBadge } from "./role-badge";
@@ -31,6 +33,15 @@ export function OrgSwitcher() {
 	const { data: organizations } = authClient.useListOrganizations();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
+
+	// The server enforces this on the create endpoint; here it only decides
+	// whether to show the entry. Re-checked whenever the org list changes,
+	// since becoming an owner is what unlocks it.
+	const { data: canCreate = false } = useQuery({
+		queryKey: ["organizations", "can-create", organizations?.length ?? 0],
+		queryFn: () => canCreateOrganizationFn(),
+		staleTime: 1000 * 60 * 5,
+	});
 
 	const handleSetActive = async (orgId: string) => {
 		setSwitchingOrgId(orgId);
@@ -95,14 +106,18 @@ export function OrgSwitcher() {
 									</DropdownMenuItem>
 								);
 							})}
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								onClick={() => setCreateDialogOpen(true)}
-								className="gap-2 p-2"
-							>
-								<PlusIcon className="size-4" />
-								<span>Create Organization</span>
-							</DropdownMenuItem>
+							{canCreate && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() => setCreateDialogOpen(true)}
+										className="gap-2 p-2"
+									>
+										<PlusIcon className="size-4" />
+										<span>Create Organization</span>
+									</DropdownMenuItem>
+								</>
+							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</SidebarMenuItem>

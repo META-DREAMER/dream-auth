@@ -6,10 +6,12 @@
 
 | Condition | Response |
 | --- | --- |
-| Valid session | `200` + `X-Auth-Id`, `X-Auth-User`, `X-Auth-Email` |
+| Valid session, authorized (see [Authorization](#authorization)) | `200` + `X-Auth-Id`, `X-Auth-User`, `X-Auth-Email`, `X-Auth-Groups` |
 | No session, expired session, deleted user | `401`, no identity headers |
 | ... same, but `?mode=redirect` and the original request was `GET`/`HEAD` | `302` to `https://auth.example.com/login?redirect=<original url>` |
-| Session lookup failed (e.g. database down) | `503`, no identity headers |
+| Valid session, **not** authorized | `403`, no identity headers |
+| ... same, but `?mode=redirect` and the original request was `GET`/`HEAD` | `302` to `https://auth.example.com/forbidden?redirect=<original url>` |
+| Session or membership lookup failed (e.g. database down) | `503`, no identity headers |
 
 The endpoint serves two proxies that disagree about who does the sign-in
 bounce, and `?mode=redirect` on the verify URL is how you tell it which one is
@@ -41,7 +43,15 @@ Copy-pasteable, and safe as written:
 annotations:
   nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc.cluster.local:3000/api/verify"
   nginx.ingress.kubernetes.io/auth-signin: "https://auth.example.com/login"
-  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Id,X-Auth-User,X-Auth-Email"
+  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Id,X-Auth-User,X-Auth-Email,X-Auth-Groups"
+```
+
+For a team- or role-gated app, add the parameter to `auth-url` (it is the
+only place these parameters are read from - see
+[Authorization](#authorization)):
+
+```yaml
+  nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?team=media"
 ```
 
 **`auth-signin` carries no query string, and that is deliberate.** When the
@@ -73,13 +83,15 @@ code change.
 
 ### Traefik v3
 
-A `Middleware` per protected app (or one shared in the auth namespace and
-referenced cross-namespace), attached to the app's `IngressRoute` or, for a
-plain `Ingress`, via the
+One `Middleware` per **access level**, shared in the auth namespace and
+referenced cross-namespace from each app's `IngressRoute` or, for a plain
+`Ingress`, via the
 `traefik.ingress.kubernetes.io/router.middlewares: auth-dream-auth@kubernetescrd`
-annotation:
+annotation. The access level is the query string on `address`, and nothing
+else (see [Authorization](#authorization)):
 
 ```yaml
+# Any member of the organization in FORWARD_AUTH_ORG_ID.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -92,10 +104,48 @@ spec:
       - X-Auth-Id
       - X-Auth-User
       - X-Auth-Email
+      - X-Auth-Groups
     # Explicit either way: Traefik >= 3.6.14 warns when it is unset, and the
     # unset behaviour is inconsistent about which X-Forwarded-* it strips.
     trustForwardHeader: false
+---
+# Members of the "media" team, plus owners and admins.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dream-auth-media
+  namespace: auth
+spec:
+  forwardAuth:
+    address: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?mode=redirect&team=media"
+    authResponseHeaders:
+      - X-Auth-Id
+      - X-Auth-User
+      - X-Auth-Email
+      - X-Auth-Groups
+    trustForwardHeader: false
+---
+# Owners and admins only.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dream-auth-admin
+  namespace: auth
+spec:
+  forwardAuth:
+    address: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?mode=redirect&role=admin"
+    authResponseHeaders:
+      - X-Auth-Id
+      - X-Auth-User
+      - X-Auth-Email
+      - X-Auth-Groups
+    trustForwardHeader: false
 ```
+
+Attach `auth-dream-auth-media@kubernetescrd` to the photo app,
+`auth-dream-auth-admin@kubernetescrd` to the dashboards, and plain
+`auth-dream-auth@kubernetescrd` to everything else. A new team means a new
+Middleware with `&team=<name>`; nothing in dream-auth changes.
 
 What Traefik does with that (`pkg/middlewares/auth/forward.go`):
 
@@ -200,6 +250,102 @@ scheme is needed, and adding one would only hide the real rule.
 - Keep the controller patched: `CVE-2026-1580` is a config injection through
   the sibling `auth-method` annotation (fixed in v1.13.7 / v1.14.3).
 
+### Authorization
+
+Authentication answers "who is this"; authorization answers "may they reach
+*this* app". `/api/verify` does both, and the second is configured in exactly
+two places: one environment variable and the query string of each proxy's
+verify URL.
+
+**`FORWARD_AUTH_ORG_ID`** names the single organization whose membership
+counts, by **id**. Copy it from the organization's settings page in the UI.
+It is never a slug: any user who can create an organization chooses its
+slug, so a slug-keyed check would let them mint their own `home`. (Org
+creation is restricted too - see `docs/ORGANIZATION.md` - but the id check
+does not depend on that.)
+
+**Unset**, the endpoint behaves exactly as it did before authorization
+existed: any signed-in user gets `200`. A warning is logged at startup. This
+is what makes the rollout safe - see [Rollout](#rollout).
+
+**The verify URL** carries the requirement for the app. Traefik copies the
+middleware's `address` onto the auth subrequest verbatim, and nginx does the
+same with `auth-url`, so these parameters are set by whoever writes the
+cluster manifests and by nobody else:
+
+| Verify URL | Who passes |
+| --- | --- |
+| `/api/verify?mode=redirect` | any member of the org (owner, admin or member) |
+| `/api/verify?mode=redirect&team=media` | owners, admins, and members of the team named `media` |
+| `/api/verify?mode=redirect&role=admin` | owners and admins |
+
+Rules:
+
+- `team=` is matched against the org's team names **case-insensitively and
+  exactly**: `team=media` accepts a team called `Media`, not `media-2`.
+- A `team=` that names **no team in the org** is a deny for members, logged
+  with the missing name (`[ForwardAuth] denied user ... team "photos" does
+  not exist`). Owners and admins still pass, so a typo in a middleware
+  cannot lock the person who can fix it out.
+- Any other `role=` value, an empty `team=`, or both parameters at once is a
+  deny for everyone. Present-but-wrong fails closed.
+- With a requirement on the verify URL but **no `FORWARD_AUTH_ORG_ID`**, the
+  request is denied: "cannot evaluate" never reads as "allowed".
+
+**What is *not* consulted:** the client's request. `X-Forwarded-Uri` is the
+URL the user asked for, and `?team=media` or `&role=admin` on it changes
+nothing - `src/routes/api/verify.test.ts` pins that, along with the rest of
+the matrix. The `X-Forwarded-*` headers are read only to build the return-to
+for the `302`s, and go through the same validator as before.
+
+**Responses.** Signed out is unchanged. Signed in but not authorized is a
+bare `403` - or, when the verify URL has `?mode=redirect` and the original
+request was a `GET`/`HEAD`, a `302` to
+`https://auth.example.com/forbidden?redirect=<original url>`. That page says
+the account does not have access, shows who is signed in, and offers to sign
+out and switch accounts, returning to the app afterwards. The `redirect`
+value is the sanitized return-to (same policy as `/login`), so a hostile
+`X-Forwarded-Host` produces `/forbidden` with no parameter, never a reflected
+host. nginx's `auth_request` treats `403` as a deny, so no `mode` is needed
+there.
+
+**`X-Auth-Groups`** is added to the `200` for the pinned org:
+`role:<role>` and one `team:<name>` per team the user is in, comma-separated,
+each entry sanitized to printable ASCII with commas stripped (e.g.
+`role:member,team:media`). Empty in legacy mode, which both proxies turn into
+"header absent". Downstream apps that want finer distinctions than the
+middleware makes can read it; like `X-Auth-User` it is derived from
+user-editable names, so authorize on `X-Auth-Id` and treat groups as a
+hint. It must be listed in `authResponseHeaders` / `auth-response-headers`
+like the others, or the client's own copy passes through.
+
+**Caching.** The membership lookup (one indexed query over `member`, `team`
+and `teamMember`; `src/lib/org-access.ts`) is cached in-process for
+**30 seconds per user and org** (`src/lib/forward-auth-authz.ts`), because
+this endpoint runs on every request to every protected app. The trade-off:
+**revoking access takes effect within 30 seconds on each replica**, not
+instantly. Removing a user from a team or the org keeps working for that
+long; signing them out or deleting the user is immediate, because the
+session check runs first and is never cached. Denials are cached too, so a
+freshly granted user may also wait up to 30 seconds.
+
+### Rollout
+
+The pieces are independent, and the order below means each step is a no-op
+until the next one:
+
+1. **Deploy the image.** Without `FORWARD_AUTH_ORG_ID` nothing changes; the
+   pod logs `FORWARD_AUTH_ORG_ID is not set` at startup.
+2. **Set `FORWARD_AUTH_ORG_ID`** (from the org settings page) on the
+   Deployment. Existing middlewares - all `?mode=redirect` with no
+   requirement - now admit members of that org only. Everyone who should
+   have access must already be a member: invite them first.
+3. **Add the `dream-auth-media` / `dream-auth-admin` middlewares** and attach
+   them to the apps that need them.
+
+Going backwards works the same way: detach the middlewares, unset the
+variable, roll back the image.
+
 ### Authorizing on identity
 
 Key downstream authorization on **`X-Auth-Id`**, not `X-Auth-Email`.
@@ -212,7 +358,8 @@ is legibility: `X-Auth-Id` means nothing in a log or an ACL without a lookup, so
 keep `X-Auth-Email` for display and audit, and key on `X-Auth-Id`.
 
 `X-Auth-User` is a display name. It is user-controlled, so it is stripped to
-printable ASCII before it is emitted - never authorize on it.
+printable ASCII before it is emitted - never authorize on it. `X-Auth-Groups`
+carries team names, which admins choose, and gets the same treatment.
 
 ## Client IP for rate limiting
 

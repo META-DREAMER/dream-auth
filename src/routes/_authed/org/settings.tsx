@@ -1,4 +1,10 @@
-import { GearIcon, SpinnerIcon, WarningIcon } from "@phosphor-icons/react";
+import {
+	CheckIcon,
+	CopyIcon,
+	GearIcon,
+	SpinnerIcon,
+	WarningIcon,
+} from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -46,6 +52,7 @@ function OrgSettingsPage() {
 	const [slug, setSlug] = useState("");
 	const [logo, setLogo] = useState("");
 	const [deleteConfirmText, setDeleteConfirmText] = useState("");
+	const [copiedId, setCopiedId] = useState(false);
 
 	const { data: fullOrg, isPending: isPendingFull } = useQuery(
 		orgFullOptions(activeOrg?.id),
@@ -131,6 +138,17 @@ function OrgSettingsPage() {
 
 	const canDelete = deleteConfirmText === activeOrg.name;
 
+	const handleCopyId = async () => {
+		try {
+			await navigator.clipboard.writeText(activeOrg.id);
+			setCopiedId(true);
+			setTimeout(() => setCopiedId(false), 2000);
+		} catch {
+			// Clipboard unavailable (insecure context, permissions): the value
+			// is still selectable in the input.
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<PageHeader
@@ -186,6 +204,39 @@ function OrgSettingsPage() {
 								<p className="text-xs text-muted-foreground">
 									URL-friendly identifier. Only lowercase letters, numbers, and
 									hyphens allowed.
+								</p>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="org-id">Organization ID</Label>
+								<div className="flex gap-2">
+									<Input
+										id="org-id"
+										value={activeOrg.id}
+										readOnly
+										className="font-mono"
+										onFocus={(e) => e.currentTarget.select()}
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										size="icon"
+										onClick={handleCopyId}
+										aria-label="Copy organization ID"
+										className="shrink-0"
+									>
+										{copiedId ? (
+											<CheckIcon className="h-4 w-4" />
+										) : (
+											<CopyIcon className="h-4 w-4" />
+										)}
+									</Button>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Permanent identifier. Set{" "}
+									<code className="font-mono">FORWARD_AUTH_ORG_ID</code> to this
+									value to make this organization the one that authorizes
+									forward-auth protected apps.
 								</p>
 							</div>
 

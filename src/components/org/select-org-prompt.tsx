@@ -10,8 +10,8 @@ export function SelectOrgPrompt() {
 				Select an organization to get started
 			</h2>
 			<p className="text-muted-foreground max-w-md">
-				Use the organization switcher in the sidebar to select an organization
-				or create a new one.
+				Use the organization switcher in the sidebar to select an organization.
+				If you have none, ask an organization owner for an invitation.
 			</p>
 		</div>
 	);

@@ -57,7 +57,7 @@ To protect *other* applications (e.g., `whoami`) using `dream-auth` as a middlew
 ```yaml
 nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc.cluster.local:3000/api/verify"
 nginx.ingress.kubernetes.io/auth-signin: "https://auth.${SECRET_DOMAIN}/login?rd=$escaped_request_uri"
-nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-User,X-Auth-Id,X-Auth-Email"
+nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-User,X-Auth-Id,X-Auth-Email,X-Auth-Groups"
 ```
 
 ## 5. Dependencies

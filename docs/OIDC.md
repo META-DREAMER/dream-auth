@@ -78,9 +78,28 @@ the first thing to check.
 ## Claims
 
 ID tokens no longer carry profile or email claims. Consumers must call
-`/oauth2/userinfo` for those. The `groups` claim (organization slugs, for RBAC
-in ArgoCD, Grafana, ...) is supplied on both the ID token and UserInfo, so
-downstream apps keep working wherever they read it from.
+`/oauth2/userinfo` for those. The `groups` claim (for RBAC in ArgoCD, Grafana,
+...) is supplied on both the ID token and UserInfo, so downstream apps keep
+working wherever they read it from. Only emitted when the `groups` scope was
+granted.
+
+For every organization the user belongs to it contains, in this order
+(`src/lib/oidc/groups-claim.ts`):
+
+| Entry | Meaning | Example |
+| --- | --- | --- |
+| `<slug>` | member of the org, any role (the original form, unchanged) | `home` |
+| `<slug>:role:<role>` | the user's org role: `owner`, `admin` or `member` | `home:role:admin` |
+| `<slug>:team:<name>` | one per team the user is in, raw team name | `home:team:media` |
+
+So a user who is an admin of `home` and in its `media` team gets
+`["home", "home:role:admin", "home:team:media"]`. Map `home` for "anyone in
+the org", `home:role:admin` for its admins, `home:team:media` for a team.
+Note that the organization plugin creates a default team named after the org
+with its creator as the only member, so `home:team:home` means the owner.
+
+Slugs are chosen by whoever creates an org, which is why org creation is
+restricted to existing owners and admins (`docs/ORGANIZATION.md`).
 
 ## Troubleshooting
 

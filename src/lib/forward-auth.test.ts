@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildForwardAuthHeaders,
 	buildForwardedReturnTo,
+	buildGroupsHeaderValue,
 	FORWARD_AUTH_HEADERS,
 	isNavigationMethod,
 	sanitizeHeaderValue,
@@ -249,5 +250,46 @@ describe("buildForwardedReturnTo", () => {
 				}),
 			),
 		).toBe("https://app.example.com/");
+	});
+});
+
+describe("buildGroupsHeaderValue", () => {
+	it("joins the entries with commas", () => {
+		expect(buildGroupsHeaderValue(["role:member", "team:media"])).toBe(
+			"role:member,team:media",
+		);
+	});
+
+	it("is empty with no groups, so the proxy sends no header", () => {
+		expect(buildGroupsHeaderValue([])).toBe("");
+	});
+
+	it("strips commas from a team name so it cannot forge an extra entry", () => {
+		expect(buildGroupsHeaderValue(["team:a,team:admin"])).toBe(
+			"team:ateam:admin",
+		);
+	});
+
+	it("sanitizes each entry like any other header value", () => {
+		expect(
+			buildGroupsHeaderValue(["team:evil\r\nX-Auth-Admin: true", "team:山田"]),
+		).toBe("team:evilX-Auth-Admin: true,team:");
+	});
+});
+
+describe("buildForwardAuthHeaders with groups", () => {
+	const user = { id: "usr_1", email: "ada@example.com", name: "Ada" };
+
+	it("emits X-Auth-Groups when groups are given", () => {
+		const headers = buildForwardAuthHeaders(user, [
+			"role:owner",
+			"team:media",
+		]) as Record<string, string>;
+		expect(headers["X-Auth-Groups"]).toBe("role:owner,team:media");
+	});
+
+	it("emits an empty X-Auth-Groups by default", () => {
+		const headers = buildForwardAuthHeaders(user) as Record<string, string>;
+		expect(headers["X-Auth-Groups"]).toBe("");
 	});
 });

@@ -45,11 +45,28 @@ const { isOwner, isAdmin, isOwnerOrAdmin, isMember, currentMember } = useOrgPerm
 
 Form: name, slug (auto-generated), logo URL. API: `organization.create({ name, slug, logo })`.
 
+**Who may create one:** users who are already owner or admin of some
+organization - or anyone, while no organization exists yet (bootstrap). Once
+the first org exists, a plain member or a user with no org gets `FORBIDDEN`
+from `POST /organization/create`. The rule is `allowUserToCreateOrganization`
+in `src/lib/auth.ts`, implemented in `src/lib/org-creation-policy.ts`; the
+switcher hides the "Create Organization" entry via `canCreateOrganizationFn`
+(`src/lib/org-creation.server.ts`), but the server is the gate.
+
+Why: slugs are free-form, and both the OIDC `groups` claim and any
+slug-keyed RBAC downstream would trust `home` from whoever created an org
+called that. Forward auth itself pins the org by id, so it is not exposed,
+but the claim is.
+
 ### Settings
 
 **Route:** `src/routes/_authed/org/settings.tsx`
 
 Owner/Admin can edit name, slug, and logo. Owner can delete (requires typing org name to confirm).
+
+The page also shows the **Organization ID** (read-only, with a copy button).
+That is the value for `FORWARD_AUTH_ORG_ID` - see
+[Forward-auth access](#forward-auth-access).
 
 ### Switcher
 
@@ -150,6 +167,41 @@ Grid layout showing name, creation date, member count, and avatar stack (up to 5
 
 Checkbox list of org members. Visual indicators: checkmark (existing), `+` (adding), `-` (removing). Batch operations via `addTeamMember`/`removeTeamMember`.
 
+### Default team
+
+The 1.7 plugin creates a team named after the organization when the
+organization is created, with the creator as its only member. It shows up
+like any other team, so `team=home` on a forward-auth middleware (or
+`home:team:home` in the OIDC claim) effectively means "the owner".
+
+## Forward-auth access
+
+Apps behind Traefik/nginx forward auth are authorized against **one**
+organization, pinned by id in `FORWARD_AUTH_ORG_ID`. The mechanics (verify
+URL parameters, responses, proxy manifests, the trust model) are in
+[KUBERNETES.md](./KUBERNETES.md#authorization); this is the admin's view.
+
+**Granting someone access:**
+
+1. **Invite them to the pinned organization** (Members page -> Invite, by
+   email or wallet). Once they accept, they are a `member` and can reach every
+   app whose middleware carries no `team=` or `role=`.
+2. **Add them to a team** (Teams page -> Manage members) for each app whose
+   middleware carries `team=<name>`. Team names are matched
+   case-insensitively and exactly (`Media` satisfies `team=media`; `media-2`
+   does not).
+3. Make them **admin** (Members page -> change role) for apps whose middleware
+   carries `role=admin`. Owners and admins also pass every `team=` check
+   without being in the team.
+
+**Revoking** is the reverse: remove from the team, or from the organization.
+`/api/verify` caches membership for up to **30 seconds per replica**, so a
+revocation is complete within that window; signing the user out (deleting
+their session) is immediate because the session check is never cached.
+
+Users from other organizations - including ones they own - are denied: the
+check is on the org id, never the slug.
+
 ## Query Caching
 
 **Location:** `src/lib/org-queries.ts`
@@ -203,6 +255,7 @@ BetterAuth manages these tables (camelCase columns):
 - **member** — `id`, `userId`, `organizationId`, `role`, `teamId`, `createdAt`
 - **invitation** — `id`, `email`, `organizationId`, `role`, `status`, `inviterId`, `expiresAt`, `walletAddress`
 - **team** — `id`, `name`, `organizationId`, `createdAt`
+- **teamMember** — `id`, `teamId`, `userId`, `createdAt` (the table team membership lives in since 1.7; `member.teamId` is legacy and unused)
 
 ## Troubleshooting
 

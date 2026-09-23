@@ -39,6 +39,7 @@ export const FORWARD_AUTH_HEADERS = [
 	"X-Auth-Id",
 	"X-Auth-User",
 	"X-Auth-Email",
+	"X-Auth-Groups",
 ] as const;
 
 /** The subject identifier downstream apps should key authorization on. */
@@ -71,17 +72,36 @@ export interface ForwardAuthUser {
 }
 
 /**
+ * Comma-separated `X-Auth-Groups` value: `role:<role>` and `team:<name>`
+ * entries for the authorizing organization (see `src/lib/forward-auth-authz.ts`).
+ *
+ * Each entry is sanitized on its own and stripped of commas, so a team named
+ * `a,team:admin` cannot forge a second entry. Empty when there is no
+ * authorizing org (legacy mode), which the proxy turns into "header absent".
+ */
+export function buildGroupsHeaderValue(groups: readonly string[]): string {
+	return groups
+		.map((group) => sanitizeHeaderValue(group).replace(/,/g, ""))
+		.filter((group) => group.length > 0)
+		.join(",");
+}
+
+/**
  * Build the forward-auth response headers for an authenticated session.
  *
  * Every listed header is always present in the returned object, so the shape of
  * the response does not leak anything about the user, and `Cache-Control` keeps
  * the decision out of any intermediary.
  */
-export function buildForwardAuthHeaders(user: ForwardAuthUser): HeadersInit {
+export function buildForwardAuthHeaders(
+	user: ForwardAuthUser,
+	groups: readonly string[] = [],
+): HeadersInit {
 	return {
 		"X-Auth-Id": sanitizeHeaderValue(user.id),
 		"X-Auth-User": sanitizeHeaderValue(user.name),
 		"X-Auth-Email": sanitizeHeaderValue(user.email),
+		"X-Auth-Groups": buildGroupsHeaderValue(groups),
 		"Cache-Control": "no-store",
 	};
 }

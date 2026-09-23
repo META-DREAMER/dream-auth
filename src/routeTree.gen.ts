@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as RegisterRouteImport } from "./routes/register";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as ForbiddenRouteImport } from "./routes/forbidden";
 import { Route as ConsentRouteImport } from "./routes/consent";
 import { Route as ComponentsRouteImport } from "./routes/components";
 import { Route as AuthedRouteImport } from "./routes/_authed";
@@ -37,6 +38,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ForbiddenRoute = ForbiddenRouteImport.update({
+  id: "/forbidden",
+  path: "/forbidden",
   getParentRoute: () => rootRouteImport,
 } as any);
 const ConsentRoute = ConsentRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/components": typeof ComponentsRoute;
   "/consent": typeof ConsentRoute;
+  "/forbidden": typeof ForbiddenRoute;
   "/login": typeof LoginRoute;
   "/register": typeof RegisterRoute;
   "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/components": typeof ComponentsRoute;
   "/consent": typeof ConsentRoute;
+  "/forbidden": typeof ForbiddenRoute;
   "/login": typeof LoginRoute;
   "/register": typeof RegisterRoute;
   "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   "/_authed": typeof AuthedRouteWithChildren;
   "/components": typeof ComponentsRoute;
   "/consent": typeof ConsentRoute;
+  "/forbidden": typeof ForbiddenRoute;
   "/login": typeof LoginRoute;
   "/register": typeof RegisterRoute;
   "/.well-known/jwks.json": typeof DotwellKnownJwksDotjsonRoute;
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | "/"
     | "/components"
     | "/consent"
+    | "/forbidden"
     | "/login"
     | "/register"
     | "/.well-known/jwks.json"
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | "/"
     | "/components"
     | "/consent"
+    | "/forbidden"
     | "/login"
     | "/register"
     | "/.well-known/jwks.json"
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | "/_authed"
     | "/components"
     | "/consent"
+    | "/forbidden"
     | "/login"
     | "/register"
     | "/.well-known/jwks.json"
@@ -254,6 +266,7 @@ export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren;
   ComponentsRoute: typeof ComponentsRoute;
   ConsentRoute: typeof ConsentRoute;
+  ForbiddenRoute: typeof ForbiddenRoute;
   LoginRoute: typeof LoginRoute;
   RegisterRoute: typeof RegisterRoute;
   DotwellKnownJwksDotjsonRoute: typeof DotwellKnownJwksDotjsonRoute;
@@ -279,6 +292,13 @@ declare module "@tanstack/react-router" {
       path: "/login";
       fullPath: "/login";
       preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/forbidden": {
+      id: "/forbidden";
+      path: "/forbidden";
+      fullPath: "/forbidden";
+      preLoaderRoute: typeof ForbiddenRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/consent": {
@@ -439,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
   ComponentsRoute: ComponentsRoute,
   ConsentRoute: ConsentRoute,
+  ForbiddenRoute: ForbiddenRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   DotwellKnownJwksDotjsonRoute: DotwellKnownJwksDotjsonRoute,
