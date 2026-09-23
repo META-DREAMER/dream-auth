@@ -859,3 +859,32 @@ describe("GET /api/verify authorization (FORWARD_AUTH_ORG_ID set)", () => {
 		});
 	});
 });
+
+describe("GET /api/verify with a multi-role member", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(getForwardAuthOrgId).mockReturnValue("org_home_01");
+		vi.mocked(auth.api.getSession).mockResolvedValue(
+			createMockSession({
+				user: { id: "user-123", email: "u@example.com", name: "U" },
+				session: { id: "session-123" },
+			}),
+		);
+		vi.mocked(orgAccessLookup.getOrgAccess).mockResolvedValue({
+			role: "admin,member",
+			teams: [{ name: "media", isMember: false }],
+		});
+	});
+
+	it("passes role=admin and team= on the admin role", async () => {
+		expect((await verify(`${VERIFY}?role=admin`)).status).toBe(200);
+		expect((await verify(`${VERIFY}?team=media`)).status).toBe(200);
+	});
+
+	it("emits one role entry per role in X-Auth-Groups", async () => {
+		const response = await verify(VERIFY);
+		expect(response.headers.get("X-Auth-Groups")).toBe(
+			"role:admin,role:member",
+		);
+	});
+});

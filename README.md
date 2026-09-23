@@ -255,6 +255,10 @@ spec:
 Both require `COOKIE_DOMAIN` to be set: every return-to is validated against
 it. Authorize on `X-Auth-Id`, never `X-Auth-Email`.
 
+The Middleware may live in any namespace (`auth` above is an example); the
+reference is `<namespace>-<name>@kubernetescrd`, so a Middleware in
+`networking` is `networking-dream-auth@kubernetescrd`.
+
 **Who gets in.** Set `FORWARD_AUTH_ORG_ID` to the id of one organization
 (shown on its settings page) and only its members pass. Per-app requirements
 go on the verify URL, in the proxy config: `&team=media` for a team,

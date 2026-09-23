@@ -58,6 +58,18 @@ slug-keyed RBAC downstream would trust `home` from whoever created an org
 called that. Forward auth itself pins the org by id, so it is not exposed,
 but the claim is.
 
+Slugs are limited to `[a-z0-9-]` on create and update
+(`beforeCreateOrganization` / `beforeUpdateOrganization`, from
+`src/lib/org-policy.ts`): a `:` in a slug could spell a `<slug>:role:<role>`
+or `<slug>:team:<name>` entry of another org in the claim. The claim builder
+also drops any org whose slug still contains `:`, as a backstop.
+
+**Existing organizations are not retroactively restricted.** Whoever owned
+an org before this rule keeps the ability to create more, and every org that
+already exists still lands in the `groups` claim. After deploying, audit
+with the query in [KUBERNETES.md](./KUBERNETES.md#rollout) and delete stray
+orgs.
+
 ### Settings
 
 **Route:** `src/routes/_authed/org/settings.tsx`

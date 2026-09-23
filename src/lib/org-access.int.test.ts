@@ -18,10 +18,8 @@ import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createDbGroupsLookup } from "./oidc/groups-claim";
 import { createDbOrgAccessLookup } from "./org-access";
-import {
-	canCreateOrganization,
-	createDbOrgCreationLookup,
-} from "./org-creation-policy";
+import { createDbOrgCreationLookup } from "./org-creation-policy";
+import { createOrganizationPolicy } from "./org-policy";
 
 const skipIfNoDb = !process.env.INTEGRATION_TEST_DB_READY;
 
@@ -33,12 +31,13 @@ interface Principal {
 
 /**
  * A Better Auth instance with the same organization configuration as
- * `src/lib/auth.ts` where it matters here: teams on, and the org-creation
- * policy wired in. Kept as a function so `testAuth` keeps the plugin's
- * inferred `api` surface.
+ * `src/lib/auth.ts` where it matters here: teams on, and the *same* policy
+ * object production spreads in (`createOrganizationPolicy`: who may create
+ * an org, and slug validation on create/update). Kept as a function so
+ * `testAuth` keeps the plugin's inferred `api` surface.
  */
 function createTestAuth(pool: Pool) {
-	const orgCreationLookup = createDbOrgCreationLookup(pool);
+	const policy = createOrganizationPolicy(pool);
 	return betterAuth({
 		database: pool,
 		baseURL: "http://localhost:3000",
@@ -47,8 +46,8 @@ function createTestAuth(pool: Pool) {
 		plugins: [
 			organization({
 				teams: { enabled: true },
-				allowUserToCreateOrganization: (user) =>
-					canCreateOrganization(user.id, orgCreationLookup),
+				allowUserToCreateOrganization: policy.allowUserToCreateOrganization,
+				organizationHooks: policy.organizationHooks,
 			}),
 		],
 	});
@@ -154,6 +153,26 @@ describe("forward-auth authorization (integration)", () => {
 		await testAuth.api.addTeamMember({
 			body: { teamId, userId: user.userId, organizationId: orgId },
 			headers: owner.headers,
+		});
+	}
+
+	/** Give `user` several roles in the home org, the way the members page does. */
+	async function setRoles(
+		f: { owner: Principal; home: { id: string } },
+		user: Principal,
+		roles: string[],
+	) {
+		const member = await pool.query(
+			`SELECT id FROM member WHERE "userId" = $1 AND "organizationId" = $2`,
+			[user.userId, f.home.id],
+		);
+		await testAuth.api.updateMemberRole({
+			body: {
+				memberId: String(member.rows[0]?.id),
+				organizationId: f.home.id,
+				role: roles,
+			},
+			headers: f.owner.headers,
 		});
 	}
 
@@ -381,6 +400,123 @@ describe("forward-auth authorization (integration)", () => {
 			});
 			expect(byAdmin?.slug).toBe("third");
 		});
+
+		it.skipIf(skipIfNoDb)(
+			"counts a multi-role member with admin among the roles as elevated",
+			async () => {
+				const f = await seed();
+				await setRoles(f, f.notInTeam, ["admin", "member"]);
+
+				const lookup = createDbOrgCreationLookup(pool);
+				expect(await lookup.hasElevatedRole(f.notInTeam.userId)).toBe(true);
+				expect(await lookup.hasElevatedRole(f.inTeam.userId)).toBe(false);
+
+				const org = await testAuth.api.createOrganization({
+					body: { name: "Mine", slug: "mine" },
+					headers: f.notInTeam.headers,
+				});
+				expect(org?.slug).toBe("mine");
+			},
+		);
+	});
+
+	describe("slug validation (org-policy hooks)", () => {
+		it.skipIf(skipIfNoDb)("rejects a slug with a colon on create", async () => {
+			const f = await seed();
+			await expect(
+				testAuth.api.createOrganization({
+					body: { name: "Forged", slug: "home:role:admin" },
+					headers: f.owner.headers,
+				}),
+			).rejects.toMatchObject({ status: "BAD_REQUEST" });
+			const rows = await pool.query(
+				`SELECT 1 FROM organization WHERE slug LIKE '%:%'`,
+			);
+			expect(rows.rows).toHaveLength(0);
+		});
+
+		it.skipIf(skipIfNoDb)(
+			"rejects a slug with a colon on update, and keeps the old one",
+			async () => {
+				const f = await seed();
+				await expect(
+					testAuth.api.updateOrganization({
+						body: {
+							organizationId: f.home.id,
+							data: { slug: "home:team:media" },
+						},
+						headers: f.owner.headers,
+					}),
+				).rejects.toMatchObject({ status: "BAD_REQUEST" });
+				const rows = await pool.query(
+					`SELECT slug FROM organization WHERE id = $1`,
+					[f.home.id],
+				);
+				expect(rows.rows[0]?.slug).toBe("home");
+			},
+		);
+
+		it.skipIf(skipIfNoDb)(
+			"accepts ordinary slugs on create and update",
+			async () => {
+				const f = await seed();
+				const created = await testAuth.api.createOrganization({
+					body: { name: "Lab 2", slug: "lab-2" },
+					headers: f.owner.headers,
+				});
+				expect(created?.slug).toBe("lab-2");
+
+				const updated = await testAuth.api.updateOrganization({
+					body: { organizationId: f.home.id, data: { slug: "home-1" } },
+					headers: f.owner.headers,
+				});
+				expect(updated?.slug).toBe("home-1");
+
+				// A name-only update leaves the slug alone and passes.
+				const renamed = await testAuth.api.updateOrganization({
+					body: { organizationId: f.home.id, data: { name: "Home!" } },
+					headers: f.owner.headers,
+				});
+				expect(renamed?.name).toBe("Home!");
+			},
+		);
+	});
+
+	describe('multi-role members (role stored as "admin,member")', () => {
+		it.skipIf(skipIfNoDb)(
+			"is stored comma-joined and read back as such",
+			async () => {
+				const f = await seed();
+				await setRoles(f, f.notInTeam, ["admin", "member"]);
+
+				const stored = await pool.query(
+					`SELECT role FROM member WHERE "userId" = $1 AND "organizationId" = $2`,
+					[f.notInTeam.userId, f.home.id],
+				);
+				expect(stored.rows[0]?.role).toBe("admin,member");
+
+				const access = await createDbOrgAccessLookup(pool).getOrgAccess(
+					f.notInTeam.userId,
+					f.home.id,
+				);
+				expect(access?.role).toBe("admin,member");
+			},
+		);
+
+		it.skipIf(skipIfNoDb)(
+			"yields one row per org with the joined role, for the groups claim",
+			async () => {
+				const f = await seed();
+				await setRoles(f, f.notInTeam, ["admin", "member"]);
+
+				const rows = await createDbGroupsLookup(pool).listMemberships(
+					f.notInTeam.userId,
+				);
+				expect(rows).toEqual([
+					{ slug: "home", role: "admin,member", teamName: null },
+				]);
+			},
+		);
 
 		it.skipIf(skipIfNoDb)(
 			"lets the first user bootstrap the first organization",

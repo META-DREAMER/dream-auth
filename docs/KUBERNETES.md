@@ -83,12 +83,17 @@ code change.
 
 ### Traefik v3
 
-One `Middleware` per **access level**, shared in the auth namespace and
-referenced cross-namespace from each app's `IngressRoute` or, for a plain
-`Ingress`, via the
+One `Middleware` per **access level**, shared and referenced cross-namespace
+from each app's `IngressRoute` or, for a plain `Ingress`, via the
 `traefik.ingress.kubernetes.io/router.middlewares: auth-dream-auth@kubernetescrd`
 annotation. The access level is the query string on `address`, and nothing
-else (see [Authorization](#authorization)):
+else (see [Authorization](#authorization)).
+
+The `auth` namespace below is an example. A deployment may keep its
+Middlewares wherever its other Traefik objects live - `networking`, say - and
+the reference is always `<namespace>-<name>@kubernetescrd`, so that becomes
+`networking-dream-auth-media@kubernetescrd`. The `address` does not change:
+it names the dream-auth Service, not the Middleware's namespace.
 
 ```yaml
 # Any member of the organization in FORWARD_AUTH_ORG_ID.
@@ -282,7 +287,11 @@ cluster manifests and by nobody else:
 Rules:
 
 - `team=` is matched against the org's team names **case-insensitively and
-  exactly**: `team=media` accepts a team called `Media`, not `media-2`.
+  exactly**: `team=media` accepts a team called `Media`, not `media-2`. Team
+  names are not unique, so if both `Media` and `media` exist, membership of
+  either passes.
+- A member may hold several roles (`admin,member`); owner or admin among
+  them counts as elevated, and `X-Auth-Groups` lists each role separately.
 - A `team=` that names **no team in the org** is a deny for members, logged
   with the missing name (`[ForwardAuth] denied user ... team "photos" does
   not exist`). Owners and admins still pass, so a typo in a middleware
@@ -342,6 +351,22 @@ until the next one:
    have access must already be a member: invite them first.
 3. **Add the `dream-auth-media` / `dream-auth-admin` middlewares** and attach
    them to the apps that need them.
+4. **Audit existing organizations.** The org-creation restriction only
+   applies from this release on: anyone who already owns an organization
+   keeps the ability to create more, and any org created earlier still
+   contributes its slug to the OIDC `groups` claim. List what exists and
+   delete the strays (owner -> Settings -> Delete Organization, or by row):
+
+   ```sql
+   SELECT o.slug, m.role, u.email
+   FROM member m
+   JOIN organization o ON o.id = m."organizationId"
+   JOIN "user" u ON u.id = m."userId"
+   ORDER BY o.slug, m.role, u.email;
+   ```
+
+   Expect exactly the pinned organization and its members. Anything else is
+   either intended or a stray.
 
 Going backwards works the same way: detach the middlewares, unset the
 variable, roll back the image.

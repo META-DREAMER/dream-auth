@@ -324,3 +324,144 @@ describe("logForwardAuthAuthzWarnings", () => {
 		expect(log).not.toHaveBeenCalled();
 	});
 });
+
+describe('multi-role members (role stored as "admin,member")', () => {
+	const adminAndMember: OrgAccess = {
+		role: "admin,member",
+		teams: [{ name: "media", isMember: false }],
+	};
+	const memberAndViewer: OrgAccess = {
+		role: "member,viewer",
+		teams: [{ name: "media", isMember: false }],
+	};
+
+	it("counts admin among several roles as elevated", () => {
+		expect(
+			authorize(adminAndMember, { kind: "role", role: "admin" }).allowed,
+		).toBe(true);
+		expect(
+			authorize(adminAndMember, { kind: "team", team: "media" }).allowed,
+		).toBe(true);
+		expect(
+			authorize(
+				{ ...adminAndMember, role: "member,owner" },
+				{
+					kind: "role",
+					role: "admin",
+				},
+			).allowed,
+		).toBe(true);
+	});
+
+	it("does not elevate a member with only non-elevated roles", () => {
+		expect(
+			authorize(memberAndViewer, { kind: "role", role: "admin" }).allowed,
+		).toBe(false);
+		expect(
+			authorize(memberAndViewer, { kind: "team", team: "media" }).allowed,
+		).toBe(false);
+		expect(authorize(memberAndViewer, { kind: "member" }).allowed).toBe(true);
+	});
+
+	it("emits one role group per role", () => {
+		expect(buildGroups(adminAndMember)).toEqual(["role:admin", "role:member"]);
+		expect(buildGroups({ role: " owner , member ", teams: [] })).toEqual([
+			"role:owner",
+			"role:member",
+		]);
+	});
+});
+
+describe("teams whose names differ only by case", () => {
+	const teams = [
+		{ name: "Media", isMember: false },
+		{ name: "media", isMember: true },
+	];
+
+	it("allows a member of any team matching the name case-insensitively", () => {
+		expect(
+			authorize({ role: "member", teams }, { kind: "team", team: "MEDIA" })
+				.allowed,
+		).toBe(true);
+		expect(
+			authorize(
+				{ role: "member", teams: [...teams].reverse() },
+				{ kind: "team", team: "media" },
+			).allowed,
+		).toBe(true);
+	});
+
+	it("denies as not-a-member (not as unknown) when in none of them", () => {
+		const decision = authorize(
+			{ role: "member", teams: teams.map((t) => ({ ...t, isMember: false })) },
+			{ kind: "team", team: "media" },
+		);
+		expect(decision).toEqual({
+			allowed: false,
+			reason: expect.stringContaining("not a member of team"),
+		});
+	});
+
+	it("still reports an unknown team when nothing matches", () => {
+		const decision = authorize(
+			{ role: "member", teams },
+			{ kind: "team", team: "photos" },
+		);
+		expect(decision).toEqual({
+			allowed: false,
+			reason: expect.stringContaining("does not exist"),
+		});
+	});
+});
+
+describe("createCachedOrgAccessLookup eviction", () => {
+	const inner: OrgAccessLookup = {
+		async getOrgAccess() {
+			return owner;
+		},
+	};
+
+	it("does not evict when an existing key is refreshed past its TTL", async () => {
+		let clock = 0;
+		const cached = createCachedOrgAccessLookup(inner, {
+			maxEntries: 2,
+			ttlMs: 10,
+			now: () => clock,
+		});
+		await cached.getOrgAccess("a", "org");
+		await cached.getOrgAccess("b", "org");
+		expect(cached.size()).toBe(2);
+
+		clock = 20;
+		await cached.getOrgAccess("a", "org");
+		expect(cached.size()).toBe(2);
+	});
+
+	it("evicts the least recently refreshed key when a new key exceeds the bound", async () => {
+		let clock = 0;
+		const calls: string[] = [];
+		const spy: OrgAccessLookup = {
+			async getOrgAccess(userId) {
+				calls.push(userId);
+				return owner;
+			},
+		};
+		const probe = createCachedOrgAccessLookup(spy, {
+			maxEntries: 2,
+			ttlMs: 10,
+			now: () => clock,
+		});
+		await probe.getOrgAccess("a", "org");
+		await probe.getOrgAccess("b", "org");
+		clock = 20; // both expired
+		await probe.getOrgAccess("a", "org"); // refresh a: order becomes b, a
+		await probe.getOrgAccess("c", "org"); // new key: evicts b, not a
+		expect(probe.size()).toBe(2);
+
+		calls.length = 0;
+		await probe.getOrgAccess("a", "org"); // cached (refreshed at 20)
+		await probe.getOrgAccess("c", "org"); // cached
+		await probe.getOrgAccess("b", "org"); // evicted, so re-queried
+		expect(calls).toEqual(["b"]);
+	});
+});

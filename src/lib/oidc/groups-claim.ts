@@ -1,4 +1,5 @@
 import type { QueryRunner } from "@/lib/org-access";
+import { parseMemberRoles } from "@/lib/org-roles";
 
 /**
  * The OIDC `groups` claim, for RBAC in downstream apps (ArgoCD, Grafana,
@@ -53,14 +54,25 @@ export function createDbGroupsLookup(db: QueryRunner): GroupsLookup {
 	};
 }
 
-/** Pure: rows in, ordered and de-duplicated group list out. */
+/**
+ * Pure: rows in, ordered and de-duplicated group list out.
+ *
+ * A stored role may be several roles comma-joined; each gets its own entry.
+ * An org whose slug contains `:` is dropped entirely: its bare slug would
+ * read as a role or team entry of some other org. Slugs are validated on
+ * create and update (`src/lib/org-slug.ts`), so this is the backstop for
+ * rows that predate that or were written around it.
+ */
 export function buildGroupsClaim(rows: GroupsMembershipRow[]): string[] {
 	const slugs = new Set<string>();
 	const roles = new Set<string>();
 	const teams = new Set<string>();
 	for (const row of rows) {
+		if (row.slug.includes(":")) continue;
 		slugs.add(row.slug);
-		roles.add(`${row.slug}:role:${row.role}`);
+		for (const role of parseMemberRoles(row.role)) {
+			roles.add(`${row.slug}:role:${role}`);
+		}
 		if (row.teamName !== null) teams.add(`${row.slug}:team:${row.teamName}`);
 	}
 	return [...slugs, ...roles, ...teams];

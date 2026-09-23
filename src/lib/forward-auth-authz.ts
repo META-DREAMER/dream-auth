@@ -24,20 +24,23 @@
  * the database lookup lives in `src/lib/org-access.ts`.
  */
 
+import { hasElevatedRole, parseMemberRoles } from "@/lib/org-roles";
+
 /** Query parameters on the verify URL, and nowhere else. */
 export const FORWARD_AUTH_TEAM_PARAM = "team";
 export const FORWARD_AUTH_ROLE_PARAM = "role";
 
-/** Roles that satisfy `role=admin` and that bypass a `team=` requirement. */
-const ELEVATED_ROLES = new Set(["owner", "admin"]);
-
+/**
+ * Owner or admin among the member's roles. `role` is the stored value and may
+ * hold several roles comma-joined (`"admin,member"`); see `org-roles.ts`.
+ */
 export function isElevatedRole(role: string): boolean {
-	return ELEVATED_ROLES.has(role);
+	return hasElevatedRole(role);
 }
 
 /** What the pinned organization knows about one user. */
 export interface OrgAccess {
-	/** The user's `member.role` in the pinned org. */
+	/** The user's `member.role` in the pinned org, as stored (may be `"a,b"`). */
 	role: string;
 	/**
 	 * Every team in the org, with whether the user belongs to it. All teams
@@ -124,30 +127,36 @@ export function authorize(
 
 		case "team": {
 			if (isElevatedRole(access.role)) return { allowed: true, groups };
+			// Team names are not unique per org, so several teams can match
+			// case-insensitively. Membership of any of them is enough; "does not
+			// exist" only when none matches.
 			const wanted = requirement.team.toLowerCase();
-			const team = access.teams.find((t) => t.name.toLowerCase() === wanted);
-			if (!team) {
+			const matches = access.teams.filter(
+				(t) => t.name.toLowerCase() === wanted,
+			);
+			if (matches.length === 0) {
 				return {
 					allowed: false,
 					reason: `team ${JSON.stringify(requirement.team)} does not exist in the authorizing org`,
 				};
 			}
-			if (team.isMember) return { allowed: true, groups };
+			if (matches.some((t) => t.isMember)) return { allowed: true, groups };
 			return {
 				allowed: false,
-				reason: `user is not a member of team ${JSON.stringify(team.name)}`,
+				reason: `user is not a member of team ${JSON.stringify(requirement.team)}`,
 			};
 		}
 	}
 }
 
 /**
- * `role:<role>` plus one `team:<name>` per team the user belongs to, in the
- * pinned org. This is the `X-Auth-Groups` payload before header sanitizing.
+ * One `role:<role>` per stored role, plus one `team:<name>` per team the user
+ * belongs to, in the pinned org. This is the `X-Auth-Groups` payload before
+ * header sanitizing.
  */
 export function buildGroups(access: OrgAccess): string[] {
 	return [
-		`role:${access.role}`,
+		...parseMemberRoles(access.role).map((r) => `role:${r}`),
 		...access.teams.filter((t) => t.isMember).map((t) => `team:${t.name}`),
 	];
 }
@@ -181,9 +190,10 @@ const ORG_ACCESS_CACHE_MAX_ENTRIES = 10_000;
  */
 export function createCachedOrgAccessLookup(
 	inner: OrgAccessLookup,
-	options: { ttlMs?: number; now?: () => number } = {},
-): OrgAccessLookup & { clear(): void } {
+	options: { ttlMs?: number; now?: () => number; maxEntries?: number } = {},
+): OrgAccessLookup & { clear(): void; size(): number } {
 	const ttlMs = options.ttlMs ?? ORG_ACCESS_CACHE_TTL_MS;
+	const maxEntries = options.maxEntries ?? ORG_ACCESS_CACHE_MAX_ENTRIES;
 	const now = options.now ?? Date.now;
 	const cache = new Map<
 		string,
@@ -199,12 +209,20 @@ export function createCachedOrgAccessLookup(
 
 			const value = await inner.getOrgAccess(userId, orgId);
 
-			if (cache.size >= ORG_ACCESS_CACHE_MAX_ENTRIES) {
+			// Only a *new* key can push the cache over its bound; a refresh
+			// replaces in place. Delete-then-set moves the refreshed key to the
+			// end, so insertion order approximates recency and the key evicted
+			// is the one refreshed least recently.
+			if (!cache.has(key) && cache.size >= maxEntries) {
 				const oldest = cache.keys().next().value;
 				if (oldest !== undefined) cache.delete(oldest);
 			}
+			cache.delete(key);
 			cache.set(key, { expiresAt: at + ttlMs, value });
 			return value;
+		},
+		size() {
+			return cache.size;
 		},
 		clear() {
 			cache.clear();

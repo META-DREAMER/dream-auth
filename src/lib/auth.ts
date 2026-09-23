@@ -26,10 +26,7 @@ import {
 import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
 import { createDbGroupsLookup, getGroupsClaim } from "@/lib/oidc/groups-claim";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
-import {
-	canCreateOrganization,
-	createDbOrgCreationLookup,
-} from "@/lib/org-creation-policy";
+import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
 	collectWalletAddresses,
 	isSignupAllowed,
@@ -83,8 +80,12 @@ function getCachedTrustedClientIds(): Set<string> {
  */
 const groupsLookup = createDbGroupsLookup(pool);
 
-/** Who may create organizations. See `src/lib/org-creation-policy.ts`. */
-const orgCreationLookup = createDbOrgCreationLookup(pool);
+/**
+ * Who may create organizations, and what a slug may look like. Shared with
+ * the integration tests so they exercise this exact wiring. See
+ * `src/lib/org-policy.ts`.
+ */
+const organizationPolicy = createOrganizationPolicy(pool);
 
 /**
  * Turn a failed send into an APIError.
@@ -374,8 +375,8 @@ export const auth = betterAuth({
 			// Only owners/admins of an existing org (or anyone, while no org
 			// exists yet) may create one. Enforced on the create endpoint; the
 			// UI hides the entry via `canCreateOrganizationFn`.
-			allowUserToCreateOrganization: (user) =>
-				canCreateOrganization(user.id, orgCreationLookup),
+			allowUserToCreateOrganization:
+				organizationPolicy.allowUserToCreateOrganization,
 			// Extend invitation schema with wallet address for SIWE-based invitations
 			schema: {
 				invitation: {
@@ -393,6 +394,9 @@ export const auth = betterAuth({
 
 			// Lifecycle hooks for invitation management
 			organizationHooks: {
+				// Slug validation on create and update (OIDC groups claim safety).
+				...organizationPolicy.organizationHooks,
+
 				/**
 				 * Surface a failed invitation email to the admin who triggered it.
 				 * better-auth swallows whatever `sendInvitationEmail` throws; this

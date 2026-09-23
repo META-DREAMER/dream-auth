@@ -1,4 +1,5 @@
 import type { QueryRunner } from "@/lib/org-access";
+import { hasElevatedRole } from "@/lib/org-roles";
 
 /**
  * Who may create an organization.
@@ -29,11 +30,13 @@ export interface OrgCreationLookup {
 export function createDbOrgCreationLookup(db: QueryRunner): OrgCreationLookup {
 	return {
 		async hasElevatedRole(userId) {
+			// `role` may hold several roles comma-joined ("admin,member"), so a
+			// SQL `IN` would miss them; fetch the user's roles and parse in JS.
 			const result = await db.query(
-				`SELECT 1 FROM member WHERE "userId" = $1 AND role IN ('owner', 'admin') LIMIT 1`,
+				`SELECT role FROM member WHERE "userId" = $1`,
 				[userId],
 			);
-			return result.rows.length > 0;
+			return result.rows.some((row) => hasElevatedRole(String(row.role)));
 		},
 		async anyOrganizationExists() {
 			const result = await db.query(`SELECT 1 FROM organization LIMIT 1`);

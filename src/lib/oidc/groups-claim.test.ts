@@ -74,3 +74,38 @@ describe("getGroupsClaim", () => {
 		expect(lookup.listMemberships).toHaveBeenCalledWith("u1");
 	});
 });
+
+describe("buildGroupsClaim with multi-role members", () => {
+	it("emits one role entry per comma-joined role", () => {
+		expect(
+			buildGroupsClaim([
+				{ slug: "home", role: "admin,member", teamName: "media" },
+			]),
+		).toEqual([
+			"home",
+			"home:role:admin",
+			"home:role:member",
+			"home:team:media",
+		]);
+	});
+});
+
+describe("buildGroupsClaim slug backstop", () => {
+	it("drops every entry for an org whose slug contains a colon", () => {
+		expect(
+			buildGroupsClaim([
+				{ slug: "home", role: "member", teamName: null },
+				{ slug: "home:role:admin", role: "owner", teamName: "x" },
+				{ slug: "evil:team:media", role: "owner", teamName: null },
+			]),
+		).toEqual(["home", "home:role:member"]);
+	});
+
+	it("never yields a bare group that looks like another org's role or team", () => {
+		const groups = buildGroupsClaim([
+			{ slug: "home:role:admin", role: "owner", teamName: null },
+		]);
+		expect(groups).not.toContain("home:role:admin");
+		expect(groups).toEqual([]);
+	});
+});
