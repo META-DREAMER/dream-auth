@@ -5,6 +5,7 @@ import {
 	PlusIcon,
 	SpinnerIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
 	DropdownMenu,
@@ -21,6 +22,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { authClient, organization } from "@/lib/auth-client";
+import { canCreateOrganizationFn } from "@/lib/org-creation.server";
 import { cn } from "@/lib/utils";
 import { CreateOrgDialog } from "./create-org-dialog";
 import { RoleBadge } from "./role-badge";
@@ -31,6 +33,25 @@ export function OrgSwitcher() {
 	const { data: organizations } = authClient.useListOrganizations();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
+
+	const { data: session } = authClient.useSession();
+
+	// The server enforces this on the create endpoint; here it only decides
+	// whether to show the entry. Keyed by user so a later sign-in on the same
+	// tab never sees another user's answer, and by the org list since joining
+	// or creating an org is what usually changes it. A role change made here
+	// invalidates it (`edit-member-role-dialog.tsx`); one made elsewhere shows
+	// up within the stale time.
+	const { data: canCreate = false } = useQuery({
+		queryKey: [
+			"organizations",
+			"can-create",
+			session?.user.id ?? null,
+			organizations?.map((org) => org.id) ?? [],
+		],
+		queryFn: () => canCreateOrganizationFn(),
+		staleTime: 1000 * 60 * 5,
+	});
 
 	const handleSetActive = async (orgId: string) => {
 		setSwitchingOrgId(orgId);
@@ -95,14 +116,18 @@ export function OrgSwitcher() {
 									</DropdownMenuItem>
 								);
 							})}
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								onClick={() => setCreateDialogOpen(true)}
-								className="gap-2 p-2"
-							>
-								<PlusIcon className="size-4" />
-								<span>Create Organization</span>
-							</DropdownMenuItem>
+							{canCreate && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() => setCreateDialogOpen(true)}
+										className="gap-2 p-2"
+									>
+										<PlusIcon className="size-4" />
+										<span>Create Organization</span>
+									</DropdownMenuItem>
+								</>
+							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</SidebarMenuItem>

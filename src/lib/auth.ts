@@ -23,7 +23,10 @@ import {
 	verificationEmail,
 	walletInvitationEmail,
 } from "@/lib/email/templates";
+import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
+import { createDbGroupsLookup, getGroupsClaim } from "@/lib/oidc/groups-claim";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
+import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
 	collectWalletAddresses,
 	isSignupAllowed,
@@ -32,6 +35,13 @@ import {
 
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
 const authUrl = new URL(serverEnv.BETTER_AUTH_URL);
+
+/**
+ * Forward auth authorizes against one organization pinned by id. Without it
+ * the endpoint is authentication-only, which is fine for the first rollout
+ * of the image and wrong to leave in place; say so once at startup.
+ */
+logForwardAuthAuthzWarnings({ orgId: serverEnv.FORWARD_AUTH_ORG_ID });
 
 /**
  * Which headers the rate limiter keys on. Getting this wrong in one direction
@@ -65,24 +75,17 @@ function getCachedTrustedClientIds(): Set<string> {
 }
 
 /**
- * Organization slugs for the `groups` claim, for RBAC in downstream apps
- * (ArgoCD, Grafana, ...). Only returned when the `groups` scope was granted.
+ * The OIDC `groups` claim: org slugs, `<slug>:role:<role>` and
+ * `<slug>:team:<name>` entries. See `src/lib/oidc/groups-claim.ts`.
  */
-async function getGroupsClaim(
-	userId: string,
-	scopes: readonly string[],
-): Promise<Record<string, unknown>> {
-	if (!scopes.includes("groups")) return {};
+const groupsLookup = createDbGroupsLookup(pool);
 
-	const memberships = await pool.query(
-		`SELECT o.slug FROM member m
-		 JOIN organization o ON m."organizationId" = o.id
-		 WHERE m."userId" = $1`,
-		[userId],
-	);
-
-	return { groups: memberships.rows.map((row: { slug: string }) => row.slug) };
-}
+/**
+ * Who may create organizations, and what a slug may look like. Shared with
+ * the integration tests so they exercise this exact wiring. See
+ * `src/lib/org-policy.ts`.
+ */
+const organizationPolicy = createOrganizationPolicy(pool);
 
 /**
  * Turn a failed send into an APIError.
@@ -282,9 +285,9 @@ export const auth = betterAuth({
 						// those from /oauth2/userinfo. `groups` is surfaced in both so
 						// downstream RBAC keeps working wherever it reads it from.
 						customIdTokenClaims: async ({ user, scopes }) =>
-							getGroupsClaim(user.id, scopes),
+							getGroupsClaim(user.id, scopes, groupsLookup),
 						customUserInfoClaims: async ({ user, scopes }) =>
-							getGroupsClaim(user.id, scopes),
+							getGroupsClaim(user.id, scopes, groupsLookup),
 					}),
 				]
 			: []),
@@ -369,6 +372,11 @@ export const auth = betterAuth({
 			teams: {
 				enabled: true,
 			},
+			// Only owners/admins of an existing org (or anyone, while no org
+			// exists yet) may create one. Enforced on the create endpoint; the
+			// UI hides the entry via `canCreateOrganizationFn`.
+			allowUserToCreateOrganization:
+				organizationPolicy.allowUserToCreateOrganization,
 			// Extend invitation schema with wallet address for SIWE-based invitations
 			schema: {
 				invitation: {
@@ -386,6 +394,9 @@ export const auth = betterAuth({
 
 			// Lifecycle hooks for invitation management
 			organizationHooks: {
+				// Slug validation on create and update (OIDC groups claim safety).
+				...organizationPolicy.organizationHooks,
+
 				/**
 				 * Surface a failed invitation email to the admin who triggered it.
 				 * better-auth swallows whatever `sendInvitationEmail` throws; this

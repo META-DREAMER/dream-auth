@@ -122,6 +122,7 @@ docker-compose up -d
 | `BETTER_AUTH_URL`      | Yes      | Public URL (e.g., `https://auth.example.com`)  |
 | `COOKIE_DOMAIN`        | No       | Share cookies across subdomains (`.example.com`) |
 | `TRUSTED_CLIENT_IP_HEADERS` | No  | Headers the client IP is read from, in order (default: `x-forwarded-for`; behind Cloudflare: `cf-connecting-ip,x-forwarded-for`) |
+| `FORWARD_AUTH_ORG_ID`  | No       | Id of the org whose members pass forward auth; unset = any signed-in user (see [docs/KUBERNETES.md](docs/KUBERNETES.md#authorization)) |
 | `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
 | `ENABLE_PASSKEYS`      | No       | Enable Passkey support (default: `true`)       |
 | `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
@@ -227,7 +228,7 @@ For ingress-nginx:
 annotations:
   nginx.ingress.kubernetes.io/auth-url: "http://dream-auth.auth.svc.cluster.local:3000/api/verify"
   nginx.ingress.kubernetes.io/auth-signin: "https://auth.example.com/login"
-  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Id,X-Auth-User,X-Auth-Email"
+  nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Id,X-Auth-User,X-Auth-Email,X-Auth-Groups"
 ```
 
 `auth-signin` deliberately has no query string: ingress-nginx appends
@@ -247,15 +248,27 @@ metadata:
 spec:
   forwardAuth:
     address: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?mode=redirect"
-    authResponseHeaders: [X-Auth-Id, X-Auth-User, X-Auth-Email]
+    authResponseHeaders: [X-Auth-Id, X-Auth-User, X-Auth-Email, X-Auth-Groups]
     trustForwardHeader: false
 ```
 
 Both require `COOKIE_DOMAIN` to be set: every return-to is validated against
 it. Authorize on `X-Auth-Id`, never `X-Auth-Email`.
 
+The Middleware may live in any namespace (`auth` above is an example); the
+reference is `<namespace>-<name>@kubernetescrd`, so a Middleware in
+`networking` is `networking-dream-auth@kubernetescrd`.
+
+**Who gets in.** Set `FORWARD_AUTH_ORG_ID` to the id of one organization
+(shown on its settings page) and only its members pass. Per-app requirements
+go on the verify URL, in the proxy config: `&team=media` for a team,
+`&role=admin` for owners and admins. A signed-in user who does not qualify
+gets a `403` (or, for a navigation, our `/forbidden` page). Without the env
+var any signed-in user passes, as before.
+
 See [docs/KUBERNETES.md](docs/KUBERNETES.md) for the two modes, the header
-trust model, `trustForwardHeader`, and the headers that are *not* protected.
+trust model, `trustForwardHeader`, authorization, and the headers that are
+*not* protected.
 
 ## API Endpoints
 
