@@ -199,7 +199,7 @@ Applications connect using:
 
 ## Forward Auth (Kubernetes Ingress)
 
-For nginx ingress:
+For ingress-nginx:
 
 ```yaml
 annotations:
@@ -210,11 +210,30 @@ annotations:
 
 `auth-signin` deliberately has no query string: ingress-nginx appends
 `?rd=<absolute url back to the app>` itself, which is the only form that works
-across subdomains. Requires `COOKIE_DOMAIN` to be set. Authorize on
-`X-Auth-Id`, never `X-Auth-Email`.
+across subdomains.
 
-See [docs/KUBERNETES.md](docs/KUBERNETES.md) for the header trust model and the
-headers that are *not* protected.
+For Traefik v3, which returns a `401` from the auth server straight to the
+browser and never adds a return-to, point the middleware at `?mode=redirect`
+and dream-auth issues the sign-in redirect itself, rebuilding the original URL
+from `X-Forwarded-Proto/Host/Uri`:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dream-auth
+spec:
+  forwardAuth:
+    address: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?mode=redirect"
+    authResponseHeaders: [X-Auth-Id, X-Auth-User, X-Auth-Email]
+    trustForwardHeader: false
+```
+
+Both require `COOKIE_DOMAIN` to be set: every return-to is validated against
+it. Authorize on `X-Auth-Id`, never `X-Auth-Email`.
+
+See [docs/KUBERNETES.md](docs/KUBERNETES.md) for the two modes, the header
+trust model, `trustForwardHeader`, and the headers that are *not* protected.
 
 ## API Endpoints
 

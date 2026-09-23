@@ -1,5 +1,7 @@
 /**
- * Header construction for the nginx forward-auth endpoint (`/api/verify`).
+ * Header handling for the forward-auth endpoint (`/api/verify`): the identity
+ * headers it emits, and the return-to URL it rebuilds from Traefik's
+ * `X-Forwarded-*` headers.
  *
  * ## Trust model
  *
@@ -82,4 +84,70 @@ export function buildForwardAuthHeaders(user: ForwardAuthUser): HeadersInit {
 		"X-Auth-Email": sanitizeHeaderValue(user.email),
 		"Cache-Control": "no-store",
 	};
+}
+
+/**
+ * Query parameter on the verify URL that selects what an unauthenticated
+ * request gets back. Absent (or any other value): `401`, which is what nginx
+ * `auth-url` needs because the controller turns it into its own redirect to
+ * `auth-signin?rd=...`. `redirect`: a `302` to our login page, which is what
+ * Traefik `forwardAuth` needs because it hands any non-2xx auth response to the
+ * client verbatim and never adds a return-to of its own.
+ */
+export const FORWARD_AUTH_MODE_PARAM = "mode";
+export const FORWARD_AUTH_MODE_REDIRECT = "redirect";
+
+/**
+ * Original request methods that are a browser navigation and may therefore be
+ * bounced through the login page. Anything else (a `POST` form submit, an
+ * `OPTIONS` preflight, a `PUT` from a client library) has no page to come back
+ * to, and a `302` would only turn its failure into a confusing one.
+ */
+const NAVIGATION_METHODS = new Set(["GET", "HEAD"]);
+
+export function isNavigationMethod(method: string | null | undefined): boolean {
+	return (
+		typeof method === "string" &&
+		NAVIGATION_METHODS.has(method.trim().toUpperCase())
+	);
+}
+
+/**
+ * `host` or `host:port`, where host is a DNS name. Deliberately narrow: it is
+ * the only place the attacker-influenceable `X-Forwarded-Host` is read, so the
+ * cheap syntactic check rejects list values (`a.example.com, evil.com`),
+ * userinfo, IP literals and anything else the URL parser might reinterpret
+ * before the redirect policy ever looks at the result.
+ */
+const FORWARDED_HOST =
+	/^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)*\.?(:\d{1,5})?$/i;
+
+/**
+ * Rebuild the URL the user originally asked for from the headers Traefik's
+ * `forwardAuth` middleware sends to the auth server (`X-Forwarded-Proto`,
+ * `-Host`, `-Uri`; see `docs/KUBERNETES.md`).
+ *
+ * This is a *raw* candidate. It must go through `sanitizeRedirect` before it
+ * is emitted, because `X-Forwarded-Host` is whatever the client sent when the
+ * entrypoint trusts forwarded headers, and even when it does not, `Host` is
+ * client-chosen on a wildcard route. Returns `null` when the headers are absent
+ * or malformed enough that there is nothing sensible to return to; the caller
+ * then falls back to the default target.
+ */
+export function buildForwardedReturnTo(headers: Headers): string | null {
+	const proto = headers.get("X-Forwarded-Proto")?.trim().toLowerCase();
+	const host = headers.get("X-Forwarded-Host")?.trim();
+	const uri = headers.get("X-Forwarded-Uri")?.trim() || "/";
+
+	if (proto !== "http" && proto !== "https") return null;
+	if (!host || !FORWARDED_HOST.test(host)) return null;
+	// A dotted-quad passes the DNS-name shape but is never the cookie domain.
+	if (/^[\d.]+(:\d+)?$/.test(host)) return null;
+
+	// A request-target is always origin-form here (`/path?query`). Anything
+	// else - `//evil.com`, `https:evil`, `\evil` - is not a path on `host` and
+	// must not be concatenated into one. Keep the origin, drop the path.
+	const path = uri.startsWith("/") && !/^[/\\]{2}/.test(uri) ? uri : "/";
+
+	return `${proto}://${host}${path}`;
 }

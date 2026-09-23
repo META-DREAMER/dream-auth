@@ -8,12 +8,32 @@
 | --- | --- |
 | Valid session | `200` + `X-Auth-Id`, `X-Auth-User`, `X-Auth-Email` |
 | No session, expired session, deleted user | `401`, no identity headers |
+| ... same, but `?mode=redirect` and the original request was `GET`/`HEAD` | `302` to `https://auth.example.com/login?redirect=<original url>` |
 | Session lookup failed (e.g. database down) | `503`, no identity headers |
 
-nginx turns the `401` into a redirect to `auth-signin`; the `503` denies the
-request outright, so an outage never reads as "authenticated".
+The endpoint serves two proxies that disagree about who does the sign-in
+bounce, and `?mode=redirect` on the verify URL is how you tell it which one is
+calling:
 
-### Annotations
+| | ingress-nginx `auth-url` | Traefik `forwardAuth` |
+| --- | --- | --- |
+| Verify URL | `/api/verify` | `/api/verify?mode=redirect` |
+| On `401` | nginx redirects to `auth-signin` **and appends `?rd=<original url>` itself** | returns the `401` to the browser as-is: no redirect, no return-to |
+| So dream-auth ... | returns a bare `401` and reads `rd` on `/login` | returns the `302` itself, rebuilding the original URL from `X-Forwarded-Proto/Host/Uri` |
+| Original method | not consulted: nginx applies `auth-signin` to every method | `X-Forwarded-Method`; anything but `GET`/`HEAD` still gets a `401` |
+
+Do not put `?mode=redirect` on an nginx `auth-url`: `auth_request` treats any
+status other than 2xx, 401 and 403 as a backend error, so the `302` would turn
+every logged-out request into a 500. The default mode is the nginx one because
+it is the one where the wrong choice is loud.
+
+Whichever proxy is in front, **`COOKIE_DOMAIN` must be set to the parent
+domain** (e.g. `.example.com`). The return-to is validated against it (see
+[Return-to validation](#return-to-validation)) and an unset cookie domain
+rejects every cross-host bounce-back, leaving the user on the auth homepage
+after sign-in.
+
+### ingress-nginx
 
 Copy-pasteable, and safe as written:
 
@@ -51,12 +71,82 @@ The login and register pages accept both `rd` and `redirect`, with `redirect`
 winning when both are present, so either annotation works and neither needs a
 code change.
 
-Whatever the parameter is called, its value is validated before anything
-navigates (`sanitizeRedirect` in `src/lib/redirect/policy.ts`): only same-origin
-paths and `https://` URLs under `COOKIE_DOMAIN` are accepted, and everything
-else falls back to `/`. Which means **`COOKIE_DOMAIN` must be set to the parent
-domain** (e.g. `.example.com`) or the bounce-back to `app.example.com` is
-rejected and the user is left on the auth homepage.
+### Traefik v3
+
+A `Middleware` per protected app (or one shared in the auth namespace and
+referenced cross-namespace), attached to the app's `IngressRoute` or, for a
+plain `Ingress`, via the
+`traefik.ingress.kubernetes.io/router.middlewares: auth-dream-auth@kubernetescrd`
+annotation:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dream-auth
+  namespace: auth
+spec:
+  forwardAuth:
+    address: "http://dream-auth.auth.svc.cluster.local:3000/api/verify?mode=redirect"
+    authResponseHeaders:
+      - X-Auth-Id
+      - X-Auth-User
+      - X-Auth-Email
+    # Explicit either way: Traefik >= 3.6.14 warns when it is unset, and the
+    # unset behaviour is inconsistent about which X-Forwarded-* it strips.
+    trustForwardHeader: false
+```
+
+What Traefik does with that (`pkg/middlewares/auth/forward.go`):
+
+- It issues its own `GET` to `address`, query string included - which is how
+  `?mode=redirect` reaches us - and copies the client's request headers onto it
+  (all of them by default, or only `authRequestHeaders` if you set that; if you
+  do, `Cookie` must be in the list or nobody is ever logged in).
+- It adds `X-Forwarded-Method`, `X-Forwarded-Proto`, `X-Forwarded-Host`,
+  `X-Forwarded-Uri` and `X-Forwarded-For` describing the *original* request.
+  `/api/verify` rebuilds the return-to from the middle three
+  (`buildForwardedReturnTo` in `src/lib/forward-auth.ts`).
+- A `2xx` lets the request through, with each `authResponseHeaders` name
+  **deleted from the client's request and replaced** by the auth response's
+  value - so a listed header is ours or absent, never the client's, same rule
+  as nginx. Any status that is not `2xx` is returned to the client verbatim.
+  There is no `authSigninURL`-style setting that would add a return-to for
+  us, which is the whole reason `?mode=redirect` exists.
+
+**`trustForwardHeader`.** With it `true`, Traefik copies the `X-Forwarded-*`
+headers it *received* onto the auth request instead of deriving them from the
+connection, so `X-Forwarded-Host` becomes whatever the previous hop said.
+That is correct when the previous hop is a proxy you control (a Cloudflare
+tunnel, a load balancer) *and* the entrypoint only accepts forwarded headers
+from that hop: set `entryPoints.<name>.forwardedHeaders.trustedIPs` to its
+addresses. The middleware-level option is deprecated since v3.6.14 in favour of
+exactly that combination (entrypoint `trustedIPs` plus `trustForwardHeader:
+true`). Without a trusted upstream, leave it `false` - and either way the
+return-to is validated, so a spoofed `X-Forwarded-Host` costs the attacker a
+redirect to `/`, not a phishing page.
+
+**Do not set `trustForwardHeader` on the assumption it is harmless.** Even with
+it `false`, `X-Forwarded-Host` is the `Host` the client sent, which on a
+wildcard `HostRegexp` router is still client-chosen. The validator, not the
+proxy, is what closes that.
+
+### Return-to validation
+
+Every return-to, whether it arrived as `?rd=` from nginx or was rebuilt from
+`X-Forwarded-*` for Traefik, goes through `sanitizeRedirect`
+(`src/lib/redirect/policy.ts`) before anything navigates: only same-origin paths
+and `https://` URLs whose host is `COOKIE_DOMAIN` or a subdomain of it are
+accepted, and everything else falls back to `/`. On the Traefik path that means
+a hostile `X-Forwarded-Host` still produces a `302` to
+`https://auth.example.com/login` - the user can sign in - but with no
+`redirect` parameter, so they land on our homepage rather than the attacker's.
+A `X-Forwarded-Uri` that is not a rooted path (`//evil.com`, `https:evil`) is
+dropped before the URL is even assembled, keeping the host and returning the
+user to the app root.
+
+The pinning tests are `src/routes/api/verify.test.ts` (`?mode=redirect`) and
+`src/lib/forward-auth.test.ts` (`buildForwardedReturnTo`).
 
 ### Why these headers cannot be spoofed
 

@@ -9,9 +9,9 @@
  * {@link sanitizeRedirect} first.
  *
  * This module is intentionally free of environment access so it can be unit
- * tested exhaustively. The policy is resolved in `./policy.server.ts` (from
- * `BETTER_AUTH_URL` / `COOKIE_DOMAIN`) and handed to the browser by
- * `./use-safe-redirect.ts`.
+ * tested exhaustively. The policy is resolved in `./policy.env.ts` (from
+ * `BETTER_AUTH_URL` / `COOKIE_DOMAIN`), used directly by the forward-auth
+ * endpoint, and handed to the browser by `./policy.server.ts` via `./index.ts`.
  */
 
 /** Where an unusable or hostile redirect target lands instead. */
