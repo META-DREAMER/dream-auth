@@ -26,6 +26,7 @@ import {
 import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
 import { createDbGroupsLookup, getGroupsClaim } from "@/lib/oidc/groups-claim";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
+import { buildJwtPluginOptions } from "@/lib/oidc/issuer";
 import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
 	collectWalletAddresses,
@@ -256,8 +257,12 @@ export const auth = betterAuth({
 
 	plugins: [
 		// JWT plugin for asymmetric token signing (required for OIDC provider)
-		// Must come before the oauthProvider plugin
-		...(serverEnv.ENABLE_OIDC_PROVIDER ? [jwt()] : []),
+		// Must come before the oauthProvider plugin. Its `jwt.issuer` is the
+		// OIDC issuer for discovery, the callback `iss` and every token's `iss`;
+		// see src/lib/oidc/issuer.ts.
+		...(serverEnv.ENABLE_OIDC_PROVIDER
+			? [jwt(buildJwtPluginOptions(serverEnv.BETTER_AUTH_URL))]
+			: []),
 
 		// OAuth/OIDC Provider for SSO with Kubernetes apps (Grafana, ArgoCD, Immich, etc.)
 		// Replaces the `oidcProvider` plugin, removed from better-auth in 1.7.0.
