@@ -3,61 +3,52 @@ import { auth } from "@/lib/auth";
 import type { ServerRouteHandler } from "@/lib/server-handler";
 
 /**
- * OIDC Discovery endpoint alias at root level.
- * Proxies requests to BetterAuth's OIDC discovery endpoint at /api/auth/.well-known/openid-configuration
+ * OIDC Discovery at the root (Option B from the PRD).
  *
- * This allows the OIDC issuer to be at the root domain (Option B from PRD)
- * rather than under /api/auth.
+ * The `issuer` is taken unchanged from @better-auth/oauth-provider, which
+ * reads it from the jwt plugin's `jwt.issuer` (src/lib/oidc/issuer.ts): the
+ * same value it puts in the callback `iss` parameter and in every token's
+ * `iss` claim. Only the endpoints are rewritten, to the root-level aliases
+ * served by src/routes/oauth2/$.ts and src/routes/[.]well-known/jwks[.]json.ts.
+ *
+ * `getOpenIdConfig` is a server-only endpoint. Over HTTP the plugin answers
+ * only at `<issuer path>/.well-known/openid-configuration`, which with a root
+ * issuer is this route, not /api/auth/.well-known/openid-configuration, so the
+ * metadata is read through `auth.api` rather than `auth.handler`.
  */
 
 export const GET: ServerRouteHandler = async ({ request }) => {
-	// Create a new request targeting the BetterAuth OIDC discovery endpoint
-	const url = new URL(request.url);
-	const internalUrl = new URL(
-		"/api/auth/.well-known/openid-configuration",
-		url.origin,
-	);
-
-	const internalRequest = new Request(internalUrl.toString(), {
-		method: "GET",
-		headers: request.headers,
-	});
-
-	const response = await auth.handler(internalRequest);
-
-	// Modify the response to reflect root-level endpoints
-	if (response.ok) {
-		const data = await response.json();
-
-		// Rewrite endpoints to use root-level paths
-		const rootUrl = url.origin;
-		const modifiedData = {
-			...data,
-			issuer: rootUrl,
-			authorization_endpoint: `${rootUrl}/oauth2/authorize`,
-			token_endpoint: `${rootUrl}/oauth2/token`,
-			userinfo_endpoint: `${rootUrl}/oauth2/userinfo`,
-			jwks_uri: `${rootUrl}/.well-known/jwks.json`,
-			end_session_endpoint: `${rootUrl}/oauth2/end-session`,
-			// Also rewrite optional endpoints if present
-			...(data.revocation_endpoint && {
-				revocation_endpoint: `${rootUrl}/oauth2/revoke`,
-			}),
-			...(data.introspection_endpoint && {
-				introspection_endpoint: `${rootUrl}/oauth2/introspect`,
-			}),
-		};
-
-		return new Response(JSON.stringify(modifiedData), {
-			status: 200,
-			headers: {
-				"Content-Type": "application/json",
-				"Cache-Control": "public, max-age=3600",
-			},
-		});
+	let data: Record<string, unknown> & { issuer: string };
+	try {
+		data = await auth.api.getOpenIdConfig({ headers: request.headers });
+	} catch (error) {
+		console.error("[OIDC] discovery metadata unavailable:", error);
+		return new Response("Not Found", { status: 404 });
 	}
 
-	return response;
+	const root = data.issuer;
+	const modifiedData = {
+		...data,
+		authorization_endpoint: `${root}/oauth2/authorize`,
+		token_endpoint: `${root}/oauth2/token`,
+		userinfo_endpoint: `${root}/oauth2/userinfo`,
+		jwks_uri: `${root}/.well-known/jwks.json`,
+		end_session_endpoint: `${root}/oauth2/end-session`,
+		...(data.revocation_endpoint !== undefined && {
+			revocation_endpoint: `${root}/oauth2/revoke`,
+		}),
+		...(data.introspection_endpoint !== undefined && {
+			introspection_endpoint: `${root}/oauth2/introspect`,
+		}),
+	};
+
+	return new Response(JSON.stringify(modifiedData), {
+		status: 200,
+		headers: {
+			"Content-Type": "application/json",
+			"Cache-Control": "public, max-age=3600",
+		},
+	});
 };
 
 export const Route = createFileRoute("/.well-known/openid-configuration")({
