@@ -1,6 +1,7 @@
 import {
 	DEFAULT_REDIRECT,
 	isInternalRedirect,
+	isOAuthContinuation,
 	type RedirectPolicy,
 	resolveRedirectTarget,
 } from "./policy";
@@ -9,6 +10,7 @@ import { getRedirectPolicyFn } from "./policy.server";
 export {
 	DEFAULT_REDIRECT,
 	isInternalRedirect,
+	isOAuthContinuation,
 	type RedirectPolicy,
 	resolveRedirectTarget,
 	sanitizeRedirect,
@@ -69,4 +71,19 @@ export function navigateToSafeRedirect(target: string): void {
 	window.location.assign(
 		isInternalRedirect(target) ? target : new URL(target).toString(),
 	);
+}
+
+/**
+ * Finish a sign-in started on `/login`.
+ *
+ * `data` is the sign-in response body. When the page was reached from the
+ * OAuth authorize endpoint it is an {@link isOAuthContinuation} body and
+ * better-auth's redirect fetch plugin is already navigating to the app's
+ * callback. Navigating to `target` as well would race it, and a caller that
+ * awaits the sign-in wins that race, landing the user on our home page instead
+ * of back in the app that asked them to sign in.
+ */
+export function navigateAfterSignIn(data: unknown, target: string): void {
+	if (isOAuthContinuation(data)) return;
+	navigateToSafeRedirect(target);
 }

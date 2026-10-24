@@ -24,10 +24,12 @@ import { Separator } from "@/components/ui/separator";
 import { oauth2 } from "@/lib/auth-client";
 
 const searchSchema = z.object({
-	// @better-auth/oauth-provider redirects here with `code` (was `consent_code`
-	// under the removed `oidcProvider` plugin).
-	code: z.string().optional(),
+	// @better-auth/oauth-provider redirects here with the signed authorization
+	// query (client_id, scope, ..., exp, ba_iat, ba_param, sig). There is no
+	// consent code any more (the removed `oidcProvider` plugin sent
+	// `consent_code`); oauthProviderClient() posts the signed query back.
 	client_id: z.string().optional(),
+	sig: z.string().optional(),
 	scope: z.string().optional(),
 	claims: z.string().optional(),
 });
@@ -76,7 +78,7 @@ export const Route = createFileRoute("/consent")({
 
 function ConsentPage() {
 	const navigate = useNavigate();
-	const { code, client_id, scope } = Route.useSearch();
+	const { client_id, sig, scope } = Route.useSearch();
 	const { session } = Route.useRouteContext();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +89,7 @@ function ConsentPage() {
 	const scopes = scope?.split(" ").filter(Boolean) || [];
 
 	// Handle missing required parameters
-	if (!code || !client_id) {
+	if (!client_id || !sig) {
 		return (
 			<div className="min-h-screen flex items-center justify-center p-4">
 				<PageBackground />

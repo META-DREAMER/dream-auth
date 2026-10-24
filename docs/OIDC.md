@@ -252,6 +252,32 @@ on both the ID token and UserInfo (`src/lib/auth.ts:287-290`) and only when the
   configured, so it is the same for every client and stable for the life of
   the user row. Deleting and re-creating a user changes it.
 
+### The signed query on `/login` and `/consent`
+
+`/oauth2/authorize` sends the browser to `/login` (or `/consent`) with the
+authorization request plus `exp`, `ba_iat`, one `ba_param` per signed name,
+and an HMAC `sig`. `oauthProviderClient()` re-reads `window.location.search` and
+attaches it as `oauth_query` to every POST from that page; the provider's
+before-hook rejects a bad one with 400 `{"error":"invalid_signature"}` (no
+`message`), and on a session cookie its after-hook swaps the sign-in response
+for `{ redirect: true, url }` back into the flow.
+
+Two things on our side keep that working (regression:
+`e2e/tests/oidc/oauth-login.spec.ts`):
+
+- The router must not rewrite that query. TanStack Router's default
+  serializer turned the repeated `ba_param` into one JSON array on load,
+  breaking every sign-in started from an app. `src/lib/search-params.ts`
+  keeps values as strings and repeated keys repeated.
+- After a sign-in, `/login` must not navigate to its own bounce-back target
+  when the response is the provider's redirect body
+  (`navigateAfterSignIn` in `src/lib/redirect`).
+
+Known gap: SIWE from an app's login redirect still fails. `/siwe/nonce` and
+`/siwe/verify` validate their bodies with `.strict()`, so the `oauth_query`
+the client plugin adds is rejected. Sign in with SIWE on `/login` directly
+first, then start from the app.
+
 ## Troubleshooting
 
 **Client not found, or FK error on token exchange:**

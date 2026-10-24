@@ -170,3 +170,16 @@ export function resolveRedirectTarget(
 export function isInternalRedirect(target: string): boolean {
 	return target.startsWith("/") && !target.startsWith("//");
 }
+
+/**
+ * True for the body @better-auth/oauth-provider puts in place of a sign-in
+ * response when `/login` was reached from the authorize endpoint:
+ * `{ redirect: true, url }`, where `url` continues the authorization flow
+ * (the client's callback with a code, or the consent page). better-auth's
+ * redirect fetch plugin navigates there by itself.
+ */
+export function isOAuthContinuation(data: unknown): boolean {
+	if (typeof data !== "object" || data === null) return false;
+	const { redirect, url } = data as { redirect?: unknown; url?: unknown };
+	return redirect === true && typeof url === "string" && url.length > 0;
+}
