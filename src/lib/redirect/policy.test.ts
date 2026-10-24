@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	DEFAULT_REDIRECT,
 	isInternalRedirect,
+	isOAuthContinuation,
 	type RedirectPolicy,
 	resolveRedirectTarget,
 	sanitizeRedirect,
@@ -443,5 +444,28 @@ describe("isInternalRedirect", () => {
 		"//evil.com",
 	])("treats %j as external", (v) => {
 		expect(isInternalRedirect(v)).toBe(false);
+	});
+});
+
+describe("isOAuthContinuation", () => {
+	it("recognises the oauth-provider redirect body", () => {
+		expect(
+			isOAuthContinuation({
+				redirect: true,
+				url: "https://photos.example.com/auth/login?code=abc&state=xyz",
+			}),
+		).toBe(true);
+	});
+
+	it.each([
+		null,
+		undefined,
+		"https://photos.example.com",
+		{ session: {}, user: {} },
+		{ redirect: false, url: "https://photos.example.com" },
+		{ redirect: true },
+		{ redirect: "true", url: "https://photos.example.com" },
+	])("treats %j as an ordinary sign-in response", (data) => {
+		expect(isOAuthContinuation(data)).toBe(false);
 	});
 });

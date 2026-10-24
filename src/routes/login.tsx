@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { signIn } from "@/lib/auth-client";
 import {
 	isInternalRedirect,
+	navigateAfterSignIn,
 	navigateToSafeRedirect,
 	resolveSafeRedirect,
 } from "@/lib/redirect";
@@ -89,8 +90,8 @@ function LoginPage() {
 							.passkey({
 								autoFill: true,
 								fetchOptions: {
-									onSuccess() {
-										navigateToSafeRedirect(redirectRef.current);
+									onSuccess(ctx) {
+										navigateAfterSignIn(ctx.data, redirectRef.current);
 									},
 								},
 							})
@@ -114,8 +115,8 @@ function LoginPage() {
 		try {
 			const result = await signIn.passkey({
 				fetchOptions: {
-					onSuccess() {
-						navigateToSafeRedirect(safeRedirect);
+					onSuccess(ctx) {
+						navigateAfterSignIn(ctx.data, safeRedirect);
 					},
 					onError(ctx) {
 						setError(ctx.error.message || "Passkey authentication failed");
@@ -147,7 +148,7 @@ function LoginPage() {
 				return;
 			}
 
-			navigateToSafeRedirect(safeRedirect);
+			navigateAfterSignIn(result.data, safeRedirect);
 		} catch {
 			setError("An unexpected error occurred");
 		} finally {
