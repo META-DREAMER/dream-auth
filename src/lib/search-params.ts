@@ -38,18 +38,12 @@ export function parseSearch(searchStr: string): RawSearch {
 	return result;
 }
 
-function stringifyValue(value: unknown): string {
-	return typeof value === "object" && value !== null
-		? JSON.stringify(value)
-		: String(value);
-}
-
 export function stringifySearch(search: Record<string, unknown>): string {
 	const params = new URLSearchParams();
 	for (const [key, value] of Object.entries(search)) {
 		if (value === undefined) continue;
 		for (const item of Array.isArray(value) ? value : [value]) {
-			params.append(key, stringifyValue(item));
+			params.append(key, String(item));
 		}
 	}
 	const searchStr = params.toString();

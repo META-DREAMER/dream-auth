@@ -464,6 +464,7 @@ describe("isOAuthContinuation", () => {
 		{ session: {}, user: {} },
 		{ redirect: false, url: "https://photos.example.com" },
 		{ redirect: true },
+		{ redirect: true, url: "" },
 		{ redirect: "true", url: "https://photos.example.com" },
 	])("treats %j as an ordinary sign-in response", (data) => {
 		expect(isOAuthContinuation(data)).toBe(false);

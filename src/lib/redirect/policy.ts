@@ -181,5 +181,5 @@ export function isInternalRedirect(target: string): boolean {
 export function isOAuthContinuation(data: unknown): boolean {
 	if (typeof data !== "object" || data === null) return false;
 	const { redirect, url } = data as { redirect?: unknown; url?: unknown };
-	return redirect === true && typeof url === "string";
+	return redirect === true && typeof url === "string" && url.length > 0;
 }

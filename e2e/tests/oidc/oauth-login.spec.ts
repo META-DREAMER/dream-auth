@@ -94,6 +94,9 @@ test.describe("Sign-in on /login reached from an OIDC client", () => {
 		await expectCallback(page, base, state);
 	});
 
+	// Keep this test: it is the only one guarding the race between /login's own
+	// bounce-back navigation and the provider's { redirect, url } response. The
+	// passkey test passes even without the navigateAfterSignIn guard.
 	test("email/password sign-in continues to the client callback", async ({
 		page,
 		baseURL,
