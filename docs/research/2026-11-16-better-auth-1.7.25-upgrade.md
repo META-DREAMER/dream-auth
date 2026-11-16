@@ -16,7 +16,16 @@ advisories, a diff of the npm tarballs, and the Context7 passkey docs.
   `zod` 4.6.5.
 - Patch: `patches/better-auth@1.7.5.patch` becomes
   `patches/better-auth@1.7.25.patch` (see below).
-- Config: none required (see "Passkey changes" below).
+- Config: one change. oauth-provider now rejects a `web` client's `http:`
+  redirect URI even on loopback ("Redirect URI must use HTTPS (HTTP allowed
+  only for loopback hosts)") unless `allowInsecureRedirectUri` accepts it
+  (added in 1.7.20). E2E and local dev use `http://localhost`, so
+  `src/lib/oidc/insecure-redirect.ts` enables that callback only when
+  `BETTER_AUTH_URL` itself is plain-HTTP loopback, and then accepts only
+  loopback redirects. Production (`https`) keeps the strict default. A
+  production client registered with an `http:` redirect URI would now fail.
+  The production client list is SOPS-encrypted and was not inspected.
+- Passkeys need no config change (see "Passkey changes" below).
 - DB migrations: none. A Postgres database migrated with the 1.7.5 schema
   (passkey, SIWE, organization, OIDC provider and JWT all enabled) shows zero
   tables to create and zero columns to add under 1.7.25's `getMigrations`. The
@@ -113,6 +122,9 @@ Checked against a real Postgres with `ENABLE_REGISTRATION=false`:
 
 - Passkey: `ORIGIN_NOT_CONFIGURED` at runtime when no origin can be resolved,
   and registration needs an authoritative session (see above).
+- oauth-provider: `http:` redirect URIs for `web` clients, loopback included,
+  are rejected unless `allowInsecureRedirectUri` accepts them (see above).
+  Native clients still get loopback, with any port.
 - oauth-provider: a rejected `post_logout_redirect_uris` entry returns
   `invalid_redirect_uri` instead of `invalid_client_metadata` (1.7.21). A
   client secret without the configured prefix gets a standard
