@@ -1,5 +1,7 @@
 # 2026-11-16 - Email invitees could not create an account
 
+PR: https://github.com/META-DREAMER/dream-auth/pull/28
+
 ## Report
 
 The owner invited someone to dream-auth; they said "it didn't work".
