@@ -1,15 +1,12 @@
-import {
-	CheckCircleIcon,
-	SpinnerIcon,
-	UserPlusIcon,
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, UserPlusIcon } from "@phosphor-icons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
+import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
+import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -21,8 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { signUp } from "@/lib/auth-client";
-import { invitationIdFromPath } from "@/lib/invite-helpers";
 import {
 	isInternalRedirect,
 	navigateToSafeRedirect,
@@ -53,61 +48,19 @@ export const Route = createFileRoute("/register")({
 	component: RegisterPage,
 });
 
+/**
+ * Sign-up without a password: name and email, then the emailed code. The
+ * code sign-in creates the account (email verified) when the server's invite
+ * gate admits the address, offers a passkey, then returns to the invite.
+ */
 function RegisterPage() {
 	const { safeRedirect } = Route.useRouteContext();
 	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
-	const [success, setSuccess] = useState(false);
+	const [walletSuccess, setWalletSuccess] = useState(false);
+	const { offerPasskey, prompt: passkeyPrompt } = usePasskeyPrompt();
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError(null);
-		setIsLoading(true);
-
-		if (password !== confirmPassword) {
-			setError("Passwords do not match");
-			setIsLoading(false);
-			return;
-		}
-
-		if (password.length < 8) {
-			setError("Password must be at least 8 characters");
-			setIsLoading(false);
-			return;
-		}
-
-		try {
-			// Registration is invite-only: the server admits a password sign-up
-			// only with the id of a pending invitation for this email.
-			const invitationId = invitationIdFromPath(safeRedirect);
-			const result = await signUp.email({
-				email,
-				password,
-				name,
-				...(invitationId && { invitationId }),
-			});
-
-			if (result.error) {
-				setError(result.error.message || "Registration failed");
-				return;
-			}
-
-			setSuccess(true);
-			setTimeout(() => {
-				navigateToSafeRedirect(safeRedirect);
-			}, 1500);
-		} catch {
-			setError("An unexpected error occurred");
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	if (success) {
+	if (walletSuccess) {
 		return (
 			<div className="min-h-screen flex items-center justify-center p-4">
 				<Card className="w-full max-w-md">
@@ -127,7 +80,15 @@ function RegisterPage() {
 		<div className="min-h-screen flex items-center justify-center p-4">
 			<PageBackground />
 
-			<Card className="w-full max-w-md relative">
+			{passkeyPrompt && (
+				<Card className="w-full max-w-md relative">
+					<CardContent>{passkeyPrompt}</CardContent>
+				</Card>
+			)}
+
+			{/* Hidden, not unmounted, while the passkey offer is up: the code
+			    sign-in is still finishing underneath it. */}
+			<Card className="w-full max-w-md relative" hidden={!!passkeyPrompt}>
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
 						<UserPlusIcon className="h-6 w-6 text-primary-foreground" />
@@ -135,34 +96,42 @@ function RegisterPage() {
 					<CardTitle className="text-2xl font-bold tracking-tight">
 						Create an account
 					</CardTitle>
-					<CardDescription>Enter your details to get started</CardDescription>
+					<CardDescription>
+						No password needed: we'll email you a code
+					</CardDescription>
 				</CardHeader>
 
-				<form onSubmit={handleSubmit}>
-					<CardContent className="space-y-4">
-						{error && <ErrorAlert message={error} />}
+				<CardContent className="space-y-4">
+					{error && <ErrorAlert message={error} />}
 
-						<ConnectSIWEButton
-							onSuccess={() => {
-								setSuccess(true);
-								setTimeout(() => {
-									navigateToSafeRedirect(safeRedirect);
-								}, 1500);
-							}}
-							onError={(err) => setError(err)}
-						/>
+					<ConnectSIWEButton
+						onSuccess={() => {
+							setWalletSuccess(true);
+							setTimeout(() => {
+								navigateToSafeRedirect(safeRedirect);
+							}, 1500);
+						}}
+						onError={(err) => setError(err)}
+					/>
 
-						<div className="relative">
-							<div className="absolute inset-0 flex items-center">
-								<Separator className="w-full" />
-							</div>
-							<div className="relative flex justify-center text-xs uppercase">
-								<span className="bg-background px-2 text-muted-foreground">
-									or register with email
-								</span>
-							</div>
+					<div className="relative">
+						<div className="absolute inset-0 flex items-center">
+							<Separator className="w-full" />
 						</div>
+						<div className="relative flex justify-center text-xs uppercase">
+							<span className="bg-background px-2 text-muted-foreground">
+								or register with email
+							</span>
+						</div>
+					</div>
 
+					<EmailCodeSignIn
+						name={name}
+						onSignedIn={async (_data, email) => {
+							await offerPasskey(email);
+							navigateToSafeRedirect(safeRedirect);
+						}}
+					>
 						<div className="space-y-2">
 							<Label htmlFor="name">Name</Label>
 							<Input
@@ -175,71 +144,21 @@ function RegisterPage() {
 								autoComplete="name"
 							/>
 						</div>
+					</EmailCodeSignIn>
+				</CardContent>
 
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="you@example.com"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								required
-								autoComplete="email"
-							/>
-						</div>
-
-						<div className="space-y-2">
-							<Label htmlFor="password">Password</Label>
-							<Input
-								id="password"
-								type="password"
-								placeholder="••••••••"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								required
-								autoComplete="new-password"
-							/>
-						</div>
-
-						<div className="space-y-2">
-							<Label htmlFor="confirmPassword">Confirm Password</Label>
-							<Input
-								id="confirmPassword"
-								type="password"
-								placeholder="••••••••"
-								value={confirmPassword}
-								onChange={(e) => setConfirmPassword(e.target.value)}
-								required
-								autoComplete="new-password"
-							/>
-						</div>
-					</CardContent>
-
-					<CardFooter className="flex flex-col gap-4">
-						<Button type="submit" disabled={isLoading} className="w-full">
-							{isLoading ? (
-								<>
-									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-									Creating account...
-								</>
-							) : (
-								"Create account"
-							)}
-						</Button>
-
-						<p className="text-center text-sm text-muted-foreground">
-							Already have an account?{" "}
-							<Link
-								to="/login"
-								search={{ redirect: safeRedirect }}
-								className="text-primary hover:text-primary/80 font-medium transition-colors"
-							>
-								Sign in
-							</Link>
-						</p>
-					</CardFooter>
-				</form>
+				<CardFooter className="flex flex-col gap-4">
+					<p className="text-center text-sm text-muted-foreground">
+						Already have an account?{" "}
+						<Link
+							to="/login"
+							search={{ redirect: safeRedirect }}
+							className="text-primary hover:text-primary/80 font-medium transition-colors"
+						>
+							Sign in
+						</Link>
+					</p>
+				</CardFooter>
 			</Card>
 		</div>
 	);

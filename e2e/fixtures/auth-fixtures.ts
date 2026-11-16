@@ -1,8 +1,9 @@
 import { test as base, type Page } from "@playwright/test";
 import type { Pool } from "pg";
+import { choosePasswordSignIn } from "../helpers/email-code";
 import {
 	cleanupTestUsers,
-	createTestUserViaAPI,
+	createTestUser,
 	type TestUser,
 } from "../helpers/test-user-factory";
 
@@ -10,7 +11,7 @@ import {
  * Authentication fixtures for E2E tests
  *
  * Provides utilities for creating test users and authenticated sessions.
- * Uses API-based user creation to properly hash passwords via BetterAuth.
+ * Inserts password users with a better-auth password hash (sign-up is off).
  */
 
 export type AuthFixtures = {
@@ -29,15 +30,6 @@ export type AuthFixtures = {
 	 * Helper to login via UI (for testing login flow itself)
 	 */
 	loginViaUI: (email: string, password: string) => Promise<void>;
-
-	/**
-	 * Helper to register via UI
-	 */
-	registerViaUI: (
-		name: string,
-		email: string,
-		password: string,
-	) => Promise<void>;
 
 	/**
 	 * Helper to logout
@@ -68,13 +60,11 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 		const userData = generateTestUserData();
 
 		// Create user via API (properly hashes password)
-		const result = await createTestUserViaAPI(baseURL, userData);
-		if (!result.success) {
-			throw new Error(`Failed to create test user: ${result.error}`);
-		}
+		await createTestUser(pool, userData);
 
 		// Login via UI
 		await page.goto("/login");
+		await choosePasswordSignIn(page);
 		await page.fill('input[type="email"]', userData.email);
 		await page.fill('input[type="password"]', userData.password);
 		await page.click('button[type="submit"]');
@@ -96,10 +86,7 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 		const userData = generateTestUserData();
 
 		// Create user via API (properly hashes password)
-		const result = await createTestUserViaAPI(baseURL, userData);
-		if (!result.success) {
-			throw new Error(`Failed to create test user: ${result.error}`);
-		}
+		await createTestUser(pool, userData);
 
 		await use(userData);
 
@@ -111,6 +98,7 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 	loginViaUI: async ({ page }, use) => {
 		const login = async (email: string, password: string) => {
 			await page.goto("/login");
+			await choosePasswordSignIn(page);
 			await page.fill('input[type="email"]', email);
 			await page.fill('input[type="password"]', password);
 			await page.click('button[type="submit"]');
@@ -121,22 +109,6 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 		};
 
 		await use(login);
-	},
-
-	// Helper to register via UI
-	registerViaUI: async ({ page }, use) => {
-		const register = async (name: string, email: string, password: string) => {
-			await page.goto("/register");
-			await page.fill('input[id="name"]', name);
-			await page.fill('input[type="email"]', email);
-			await page.fill('input[id="password"]', password);
-			await page.fill('input[id="confirmPassword"]', password);
-			await page.click('button[type="submit"]');
-			// Wait for redirect after successful registration
-			await page.waitForURL("/", { timeout: 10000 });
-		};
-
-		await use(register);
 	},
 
 	// Helper to logout

@@ -3,17 +3,73 @@ import {
 	expectAuthenticated,
 	expectOnLoginPage,
 } from "../../helpers/assertions";
+import {
+	choosePasswordSignIn,
+	readSignInCode,
+	signInWithEmailCode,
+} from "../../helpers/email-code";
 import { registerUser } from "../../helpers/navigation";
 
 /**
- * Email/Password Login E2E Tests
+ * Login E2E Tests
  *
- * Tests the core login functionality including:
- * - Successful login with valid credentials
- * - Failed login with invalid credentials
- * - Redirect preservation after login
- * - Session persistence
+ * An email code is the default on /login; a password stays available for
+ * accounts that have one.
  */
+test.describe("Email code login", () => {
+	test("the email code form is the default", async ({ page }) => {
+		await page.goto("/login");
+
+		await expect(page.getByLabel("Email")).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Email me a code" }),
+		).toBeVisible();
+		await expect(page.locator('input[type="password"]')).toHaveCount(0);
+	});
+
+	test("a code sign-in offers a passkey once, then remembers 'Not now'", async ({
+		page,
+		pool,
+	}) => {
+		const testEmail = `e2e-code-${Date.now()}@example.com`;
+		await registerUser(page, "Code User", testEmail, "TestPassword123!");
+		await page.context().clearCookies();
+
+		await page.goto("/login");
+		await signInWithEmailCode(page, pool, testEmail);
+		await expect(page.getByText("Skip the code next time")).toBeVisible();
+		await page.getByRole("button", { name: "Not now" }).click();
+		await page.waitForURL("/", { timeout: 10000 });
+		await expectAuthenticated(page);
+
+		// Same browser, signed out: no second offer.
+		await page.context().clearCookies();
+		await page.goto("/login");
+		await signInWithEmailCode(page, pool, testEmail);
+		await page.waitForURL("/", { timeout: 10000 });
+		await expectAuthenticated(page);
+	});
+
+	test("a wrong code shows an error", async ({ page, pool }) => {
+		const testEmail = `e2e-code-wrong-${Date.now()}@example.com`;
+		await registerUser(page, "Wrong Code", testEmail, "TestPassword123!");
+		await page.context().clearCookies();
+
+		await page.goto("/login");
+		await page.getByLabel("Email").fill(testEmail);
+		await page.getByRole("button", { name: "Email me a code" }).click();
+		const code = await readSignInCode(pool, testEmail);
+		const wrong = code === "000000" ? "111111" : "000000";
+		await page.locator("input[data-input-otp]").fill(wrong);
+		await page.getByRole("button", { name: "Continue" }).click();
+
+		await expect(page.locator("text=/invalid|code/i").first()).toBeVisible({
+			timeout: 5000,
+		});
+		await expect(page).toHaveURL(/\/login/);
+	});
+});
+
 test.describe("Email/Password Login", () => {
 	test("successful login redirects to home page", async ({ page }) => {
 		const testEmail = `e2e-login-${Date.now()}@example.com`;
@@ -31,6 +87,7 @@ test.describe("Email/Password Login", () => {
 
 		// Now login
 		await page.goto("/login");
+		await choosePasswordSignIn(page);
 		await page.fill('input[type="email"]', testEmail);
 		await page.fill('input[type="password"]', testPassword);
 		await page.click('button[type="submit"]');
@@ -42,6 +99,7 @@ test.describe("Email/Password Login", () => {
 
 	test("shows error with invalid credentials", async ({ page }) => {
 		await page.goto("/login");
+		await choosePasswordSignIn(page);
 
 		await page.fill('input[type="email"]', "nonexistent@example.com");
 		await page.fill('input[type="password"]', "WrongPassword123!");
@@ -72,6 +130,7 @@ test.describe("Email/Password Login", () => {
 		await page.waitForURL(/\/login\?redirect/, { timeout: 10000 });
 
 		// Login
+		await choosePasswordSignIn(page);
 		await page.fill('input[type="email"]', testEmail);
 		await page.fill('input[type="password"]', testPassword);
 		await page.click('button[type="submit"]');
@@ -82,6 +141,7 @@ test.describe("Email/Password Login", () => {
 
 	test("shows loading state during submission", async ({ page }) => {
 		await page.goto("/login");
+		await choosePasswordSignIn(page);
 
 		await page.fill('input[type="email"]', "test@example.com");
 		await page.fill('input[type="password"]', "password123");

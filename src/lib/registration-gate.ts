@@ -63,35 +63,22 @@ export function collectWalletAddresses(input: {
 	return [...addresses];
 }
 
-/**
- * The invitation id a password sign-up carries. `/register` sends it as
- * `invitationId` when it was reached from an invite link.
- */
-export function invitationIdFromBody(body: unknown): string | null {
-	const id = (body as { invitationId?: unknown } | undefined)?.invitationId;
-	return typeof id === "string" && id.length > 0 ? id : null;
-}
-
 /** How the gate looks up pending invitations. Swapped out in tests. */
 export interface PendingInvitationLookup {
-	/**
-	 * Is there a pending, non-expired invitation for this email address?
-	 * With `invitationId`, only that invitation counts.
-	 */
-	hasInvitationForEmail(email: string, invitationId?: string): Promise<boolean>;
+	/** Is there a pending, non-expired invitation for this email address? */
+	hasInvitationForEmail(email: string): Promise<boolean>;
 	/** Is there a pending, non-expired invitation for this wallet address? */
 	hasInvitationForWallet(walletAddress: WalletAddress): Promise<boolean>;
 }
 
 /** The live lookup, against the `invitation` table. */
 export const dbInvitationLookup: PendingInvitationLookup = {
-	async hasInvitationForEmail(email, invitationId) {
+	async hasInvitationForEmail(email) {
 		const result = await pool.query(
 			`SELECT 1 FROM invitation
 			 WHERE lower(email) = $1 AND status = 'pending' AND "expiresAt" > NOW()
-			   AND ($2::text IS NULL OR id = $2)
 			 LIMIT 1`,
-			[email.toLowerCase(), invitationId ?? null],
+			[email.toLowerCase()],
 		);
 		return result.rows.length > 0;
 	},
@@ -113,32 +100,19 @@ export const dbInvitationLookup: PendingInvitationLookup = {
  * Returns `true` when public registration is on, or when a pending invitation
  * matches either the email or one of the wallet addresses.
  *
- * A password sign-up proves nothing about the email it names, so for it the
- * caller sets `requireInvitationId` and passes the id from the emailed invite
- * link: holding that link is the proof the email reached its owner. Without
- * it, anyone who knew an invited address could claim the invitation first.
- * Wallet addresses are then ignored: an email shaped like a wallet
- * placeholder proves no wallet.
+ * Password sign-up is off (`emailAndPassword.disableSignUp`), so an email
+ * user is only ever created by an email-code sign-in, and the code has
+ * already proven the mailbox by the time this runs.
  */
 export async function isSignupAllowed(input: {
 	enableRegistration: boolean;
 	email?: string | null;
 	walletAddresses?: WalletAddress[];
-	requireInvitationId?: boolean;
-	invitationId?: string | null;
 	lookup?: PendingInvitationLookup;
 }): Promise<boolean> {
 	if (input.enableRegistration) return true;
 
 	const lookup = input.lookup ?? dbInvitationLookup;
-
-	if (input.requireInvitationId) {
-		return Boolean(
-			input.email &&
-				input.invitationId &&
-				(await lookup.hasInvitationForEmail(input.email, input.invitationId)),
-		);
-	}
 
 	if (input.email && (await lookup.hasInvitationForEmail(input.email))) {
 		return true;
@@ -151,6 +125,30 @@ export async function isSignupAllowed(input: {
 	}
 
 	return false;
+}
+
+/**
+ * Should a sign-in code be emailed to this address?
+ *
+ * Email-code sign-in creates the account on first use, and the endpoint that
+ * sends the code answers `{ success: true }` for any address. The
+ * `validateUserInfo` gate still refuses the account for an uninvited address,
+ * but only after a code has been mailed to it. So a code goes only to an
+ * existing user or to an address with a pending invitation (or to anyone
+ * while public registration is on). Everyone else gets the same response and
+ * no mail; the caller must keep the outcome out of the response and its
+ * timing.
+ */
+export async function shouldSendSignInCode(input: {
+	enableRegistration: boolean;
+	email: string;
+	userExists: (email: string) => Promise<boolean>;
+	lookup?: PendingInvitationLookup;
+}): Promise<boolean> {
+	if (input.enableRegistration) return true;
+	if (await input.userExists(input.email)) return true;
+	const lookup = input.lookup ?? dbInvitationLookup;
+	return lookup.hasInvitationForEmail(input.email);
 }
 
 /** Rejection surfaced by `validateUserInfo` when the gate closes. */

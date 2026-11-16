@@ -3,6 +3,8 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
+import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
+import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -65,6 +67,10 @@ function LoginPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 	const [passkeySupported, setPasskeySupported] = useState(false);
+	// Email code is the default; a password stays available for accounts
+	// that have one.
+	const [passwordMode, setPasswordMode] = useState(false);
+	const { offerPasskey, prompt: passkeyPrompt } = usePasskeyPrompt();
 
 	// Use ref to capture the validated redirect target for the autofill callback
 	// without re-running the effect.
@@ -160,7 +166,15 @@ function LoginPage() {
 		<div className="min-h-screen flex items-center justify-center p-4">
 			<PageBackground />
 
-			<Card className="w-full max-w-md relative">
+			{passkeyPrompt && (
+				<Card className="w-full max-w-md relative">
+					<CardContent>{passkeyPrompt}</CardContent>
+				</Card>
+			)}
+
+			{/* Hidden, not unmounted, while the passkey offer is up: the code
+			    sign-in is still finishing underneath it. */}
+			<Card className="w-full max-w-md relative" hidden={!!passkeyPrompt}>
 				<CardHeader className="space-y-1 text-center">
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
 						<KeyIcon className="h-6 w-6 text-primary-foreground" />
@@ -212,44 +226,68 @@ function LoginPage() {
 						</div>
 					</div>
 
-					<form onSubmit={handleSubmit} className="space-y-4">
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="you@example.com"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								required
-								autoComplete="username webauthn"
-							/>
-						</div>
+					{passwordMode ? (
+						<form onSubmit={handleSubmit} className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="email">Email</Label>
+								<Input
+									id="email"
+									type="email"
+									placeholder="you@example.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									required
+									autoComplete="username webauthn"
+								/>
+							</div>
 
-						<div className="space-y-2">
-							<Label htmlFor="password">Password</Label>
-							<Input
-								id="password"
-								type="password"
-								placeholder="••••••••"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								required
-								autoComplete="current-password webauthn"
-							/>
-						</div>
+							<div className="space-y-2">
+								<Label htmlFor="password">Password</Label>
+								<Input
+									id="password"
+									type="password"
+									placeholder="••••••••"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									required
+									autoComplete="current-password webauthn"
+								/>
+							</div>
 
-						<Button type="submit" disabled={isLoading} className="w-full">
-							{isLoading ? (
-								<>
-									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-									Signing in...
-								</>
-							) : (
-								"Sign in"
-							)}
-						</Button>
-					</form>
+							<Button type="submit" disabled={isLoading} className="w-full">
+								{isLoading ? (
+									<>
+										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+										Signing in...
+									</>
+								) : (
+									"Sign in"
+								)}
+							</Button>
+						</form>
+					) : (
+						<EmailCodeSignIn
+							emailAutoComplete="username webauthn"
+							onSignedIn={async (data, signedInEmail) => {
+								await offerPasskey(signedInEmail);
+								navigateAfterSignIn(data, safeRedirect);
+							}}
+						/>
+					)}
+
+					<Button
+						type="button"
+						variant="link"
+						className="w-full"
+						onClick={() => {
+							setError(null);
+							setPasswordMode(!passwordMode);
+						}}
+					>
+						{passwordMode
+							? "Email me a code instead"
+							: "Sign in with a password instead"}
+					</Button>
 				</CardContent>
 
 				<CardFooter className="flex flex-col">

@@ -75,6 +75,10 @@ async function globalSetup(_config: FullConfig) {
 	// Store container reference for teardown
 	(globalThis as Record<string, unknown>).__E2E_CONTAINER__ = container;
 
+	// Workers inherit env set here (globalThis is not shared with them), so
+	// this is how the `pool` fixture finds the database.
+	process.env.DATABASE_URL = connectionString;
+
 	// Always spawn the web server with DATABASE_URL passed directly
 	const port = process.env.E2E_PORT || "3000";
 	console.log("[E2E Setup] Starting web server on port", port);

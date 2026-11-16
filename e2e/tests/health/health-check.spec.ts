@@ -29,7 +29,6 @@ test.describe("Health Check", () => {
 
 		// Should have login form elements
 		await expect(page.locator('input[type="email"]')).toBeVisible();
-		await expect(page.locator('input[type="password"]')).toBeVisible();
 		await expect(page.locator('button[type="submit"]')).toBeVisible();
 	});
 
@@ -37,7 +36,7 @@ test.describe("Health Check", () => {
 		await page.goto("/register");
 
 		// Should have registration form elements
+		await expect(page.locator('input[id="name"]')).toBeVisible();
 		await expect(page.locator('input[type="email"]')).toBeVisible();
-		await expect(page.locator('input[id="password"]')).toBeVisible();
 	});
 });
