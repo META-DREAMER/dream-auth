@@ -118,6 +118,16 @@ inviteByEmail(email, role, organizationId)
 
 Standard flow — user signs up or links existing account.
 
+With `ENABLE_REGISTRATION=false` an invitee without an account follows the
+link to `/invite/<id>`, then "Create one" to `/register?redirect=/invite/<id>`.
+The register page sends `invitationId` with the password sign-up, and the
+`validateUserInfo` gate (`src/lib/registration-gate.ts`) admits it only when
+that id names a pending invitation for the same email. Holding the emailed
+link is the proof of owning the address; the email alone would let anyone who
+knew it claim the invitation. Do not set `emailAndPassword.disableSignUp`:
+it rejects every password sign-up before the gate runs, which made email
+invitations unusable until 2026-11-16.
+
 ### Wallet Invitations
 
 ```ts

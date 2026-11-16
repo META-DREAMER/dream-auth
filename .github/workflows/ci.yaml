@@ -122,7 +122,9 @@ jobs:
 
   e2e:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    # ubuntu-latest is now 26.04, which this Playwright cannot install
+    # Chromium on. Pin until Playwright supports it.
+    runs-on: ubuntu-24.04
     needs: [build-app, test-integration]
     timeout-minutes: 30
 
