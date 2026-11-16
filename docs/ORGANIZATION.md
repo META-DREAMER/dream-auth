@@ -183,16 +183,16 @@ wallet invitation. Anything else fails with `registration_disabled`.
 **Who gets a code.** The send endpoint answers `{ success: true }` for every
 address. The `sendVerificationOTP` callback mails a sign-in code only when
 `shouldSendSignInCode` says the address belongs to an existing user or has a
-pending email invitation (or public registration is on). The check and the
-send run detached from the request, so neither the response nor its timing
-says which addresses exist.
+pending email invitation (or public registration is on). Every email send
+(codes of every type, password reset, verification, invitations) runs
+detached from its request through `advanced.backgroundTasks` in
+`src/lib/auth.ts`, so no endpoint's response or timing says which addresses
+exist. A failed send is logged and never surfaces as an unhandled rejection;
+invitation failures still reach the admin through `afterCreateInvitation`.
 
-**Password sign-up.** `/register` no longer offers a password. The
-`/sign-up/email` endpoint stays enabled and, with registration off, still
-requires the `invitationId` of a pending invitation for that email in the body
-(holding the emailed link proves the address). Do not set
-`emailAndPassword.disableSignUp`: it rejects every password sign-up before the
-gate runs, and it would also block `ENABLE_REGISTRATION=true` deployments.
+**Password sign-up is off** (`emailAndPassword.disableSignUp: true`).
+Accounts are created by email code or SIWE; password sign-in stays for the
+accounts that already have one.
 
 **Sign-in.** `/login` defaults to the email code, with "Sign in with Passkey"
 and SIWE above it and "Sign in with a password instead" for accounts that have
@@ -203,12 +203,14 @@ is never changed between the steps. The offer is awaited inside the sign-in's
 `onSuccess`, which better-fetch runs before better-auth's redirect plugin
 follows the provider's `{ redirect, url }` continuation back to the app.
 
-**Caveat for existing password users.** A code sign-in to an account whose
-email is not yet verified runs better-auth's `revokeUnprovenAccountAccess`:
-it deletes the account's password and linked SIWE wallets and its other
-sessions before marking the email verified (passkeys are kept). Accounts made
-by password sign-up have `emailVerified: false`, so their first code sign-in
-turns them into passwordless accounts.
+**Unverified accounts and email codes.** A code sign-in to an account whose
+email is not verified runs better-auth's `revokeUnprovenAccountAccess`: it
+deletes the account's password, its linked SIWE wallets and its other
+sessions, then marks the email verified (passkeys are kept). The code proves
+the mailbox; whatever was attached before that proof is not trusted. Password
+sign-up is off so that no new unverified email accounts appear. As of
+2026-11-16 the only unverified account on the live instance is wallet-only,
+which never signs in by email code.
 
 ## Teams
 

@@ -108,7 +108,7 @@ import { registerUser } from "../../helpers/navigation";
 
 test("authenticated user can access settings", async ({ page }) => {
   // Register a user (creates session cookie)
-  await registerUser(page, "Test User", "test@example.com", "Password123!");
+  await registerUser(page, "Test User", "test@example.com", "Password123!"); // inserts a password user and signs in
 
   // Navigate to protected route
   await page.goto("/settings");

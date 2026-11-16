@@ -5,6 +5,7 @@ import {
 	choosePasswordSignIn,
 	signInWithEmailCode,
 } from "../../helpers/email-code";
+import { registerUser } from "../../helpers/navigation";
 import {
 	addVirtualAuthenticator,
 	registerPasskeyViaSettings,
@@ -38,13 +39,10 @@ function authorizeUrl(baseURL: string, clientId: string) {
 	return { url: `/oauth2/authorize?${query}`, state };
 }
 
-async function signUp(page: Page, baseURL: string, label: string) {
+/** A signed-in password user. */
+async function signUp(page: Page, _baseURL: string, label: string) {
 	const email = `e2e-oauth-${label}-${Date.now()}@example.com`;
-	const response = await page.request.post("/api/auth/sign-up/email", {
-		data: { name: "E2E OAuth User", email, password: PASSWORD },
-		headers: { origin: baseURL },
-	});
-	expect(response.ok()).toBe(true);
+	await registerUser(page, "E2E OAuth User", email, PASSWORD);
 	return email;
 }
 

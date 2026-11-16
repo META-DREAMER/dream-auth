@@ -3,7 +3,7 @@ import type { Pool } from "pg";
 import { choosePasswordSignIn } from "../helpers/email-code";
 import {
 	cleanupTestUsers,
-	createTestUserViaAPI,
+	createTestUser,
 	type TestUser,
 } from "../helpers/test-user-factory";
 
@@ -11,7 +11,7 @@ import {
  * Authentication fixtures for E2E tests
  *
  * Provides utilities for creating test users and authenticated sessions.
- * Uses API-based user creation to properly hash passwords via BetterAuth.
+ * Inserts password users with a better-auth password hash (sign-up is off).
  */
 
 export type AuthFixtures = {
@@ -60,10 +60,7 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 		const userData = generateTestUserData();
 
 		// Create user via API (properly hashes password)
-		const result = await createTestUserViaAPI(baseURL, userData);
-		if (!result.success) {
-			throw new Error(`Failed to create test user: ${result.error}`);
-		}
+		await createTestUser(pool, userData);
 
 		// Login via UI
 		await page.goto("/login");
@@ -89,10 +86,7 @@ export const authFixtures = base.extend<AuthFixtures & { pool: Pool }>({
 		const userData = generateTestUserData();
 
 		// Create user via API (properly hashes password)
-		const result = await createTestUserViaAPI(baseURL, userData);
-		if (!result.success) {
-			throw new Error(`Failed to create test user: ${result.error}`);
-		}
+		await createTestUser(pool, userData);
 
 		await use(userData);
 

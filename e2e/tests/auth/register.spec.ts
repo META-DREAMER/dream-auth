@@ -127,6 +127,18 @@ test.describe("Passwordless registration", () => {
 		await expect(page.locator('input[type="password"]')).toHaveCount(0);
 	});
 
+	test("password sign-up is off", async ({ page, baseURL }) => {
+		const response = await page.request.post("/api/auth/sign-up/email", {
+			data: {
+				name: "No Password",
+				email: `e2e-nopassword-${Date.now()}@example.com`,
+				password: "TestPassword123!",
+			},
+			headers: { origin: baseURL as string },
+		});
+		expect(response.status()).toBe(400);
+	});
+
 	test("can navigate to login page", async ({ page }) => {
 		await page.goto("/register");
 

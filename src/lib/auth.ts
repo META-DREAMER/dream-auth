@@ -30,7 +30,6 @@ import { buildJwtPluginOptions } from "@/lib/oidc/issuer";
 import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
 	collectWalletAddresses,
-	invitationIdFromBody,
 	isSignupAllowed,
 	REGISTRATION_DISABLED_ERROR,
 	shouldSendSignInCode,
@@ -93,15 +92,12 @@ const organizationPolicy = createOrganizationPolicy(pool);
 /**
  * Turn a failed send into an APIError.
  *
- * Known caveat on better-auth 1.7.5: the three email callbacks are invoked
- * through `ctx.context.runInBackgroundOrAwait()`, which awaits the promise
- * inside a try/catch and only logs whatever it caught
- * (`dist/context/create-context.mjs`). A throw from here therefore does *not*
- * reach the HTTP client. Throwing is still correct — it is the documented
- * contract, it produces the log line, and it becomes visible again if
- * better-auth stops swallowing — but for invitations we also bridge the
- * failure into `afterCreateInvitation`, which is awaited normally and does
- * propagate. See `recordInvitationSendFailure` below.
+ * better-auth runs every email callback through
+ * `ctx.context.runInBackgroundOrAwait()`, and `advanced.backgroundTasks`
+ * below makes that detach it from the request, so a throw from here never
+ * reaches the HTTP client: better-auth logs it ("Failed to run background
+ * task"). For invitations the send is bridged into `afterCreateInvitation`,
+ * which is awaited normally and does propagate. See `parkInvitationSend`.
  */
 function emailFailure(result: {
 	code: string;
@@ -120,28 +116,34 @@ function emailFailure(result: {
  * Invitation rows are inserted *before* `sendInvitationEmail` runs and are not
  * rolled back when it fails, so a failed send leaves a `pending` row nobody
  * was told about. The row self-heals (7-day expiry) and can be re-sent from
- * the members page, but the admin has to know it happened — and the callback's
- * own throw is swallowed (see `emailFailure`).
+ * the members page, but the admin has to know it happened — and the callback
+ * runs detached from the request (see `emailFailure`).
  *
- * So the failure is parked here and rethrown from `afterCreateInvitation`,
- * which better-auth awaits directly. Bounded so a failure on the resend path
- * (which never reaches `afterCreateInvitation`) cannot grow without limit.
+ * So the send itself is parked here and awaited from `afterCreateInvitation`,
+ * which better-auth awaits directly; a failure is rethrown there. Bounded so
+ * sends on the resend path (which never reaches `afterCreateInvitation`)
+ * cannot grow without limit.
  */
-const MAX_PARKED_SEND_FAILURES = 50;
-const parkedInvitationSendFailures = new Map<string, APIError>();
+const MAX_PARKED_SENDS = 50;
+const parkedInvitationSends = new Map<string, Promise<APIError | null>>();
 
-function recordInvitationSendFailure(invitationId: string, error: APIError) {
-	if (parkedInvitationSendFailures.size >= MAX_PARKED_SEND_FAILURES) {
-		const oldest = parkedInvitationSendFailures.keys().next().value;
-		if (oldest) parkedInvitationSendFailures.delete(oldest);
+function parkInvitationSend(
+	invitationId: string,
+	send: Promise<APIError | null>,
+) {
+	if (parkedInvitationSends.size >= MAX_PARKED_SENDS) {
+		const oldest = parkedInvitationSends.keys().next().value;
+		if (oldest) parkedInvitationSends.delete(oldest);
 	}
-	parkedInvitationSendFailures.set(invitationId, error);
+	parkedInvitationSends.set(invitationId, send);
 }
 
-function takeInvitationSendFailure(invitationId: string): APIError | undefined {
-	const error = parkedInvitationSendFailures.get(invitationId);
-	if (error) parkedInvitationSendFailures.delete(invitationId);
-	return error;
+async function takeInvitationSendFailure(
+	invitationId: string,
+): Promise<APIError | null> {
+	const send = parkedInvitationSends.get(invitationId);
+	parkedInvitationSends.delete(invitationId);
+	return send ?? null;
 }
 
 export const auth = betterAuth({
@@ -175,10 +177,12 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
-		// Sign-up stays enabled even when ENABLE_REGISTRATION is false: the
-		// `validateUserInfo` gate below admits only invited users. Setting
-		// `disableSignUp` here rejected every password sign-up before that gate
-		// ran, so an email invitee had no way to create an account.
+		// Password sign-in only. Accounts are created by email-code sign-in
+		// (or SIWE), which proves the mailbox. A password sign-up would leave
+		// an `emailVerified: false` user, and better-auth's email-code sign-in
+		// deletes such a user's password, wallet links and sessions the first
+		// time they use a code (`revokeUnprovenAccountAccess`).
+		disableSignUp: true,
 	},
 
 	user: {
@@ -192,10 +196,6 @@ export const auth = betterAuth({
 		 *
 		 * Only `create-user` is gated. `link-account` must stay open so an
 		 * existing user can still link a wallet or a passkey.
-		 *
-		 * A password sign-up must also carry the id of the invitation (from the
-		 * emailed link), since nothing else proves it owns the email; see
-		 * `isSignupAllowed`.
 		 */
 		validateUserInfo: async ({ user, source }, ctx) => {
 			if (serverEnv.ENABLE_REGISTRATION) return;
@@ -209,8 +209,6 @@ export const auth = betterAuth({
 					email,
 					requestBody: ctx?.body,
 				}),
-				requireInvitationId: source.method === "email-password",
-				invitationId: invitationIdFromBody(ctx?.body),
 			});
 
 			if (!allowed) return REGISTRATION_DISABLED_ERROR;
@@ -262,6 +260,19 @@ export const auth = betterAuth({
 	advanced: {
 		...buildCookieAdvancedOptions(serverEnv.COOKIE_DOMAIN),
 		...buildClientIpAdvancedOptions(trustedClientIpHeaders),
+		/**
+		 * Detach every `runInBackgroundOrAwait` task (all email sends) from
+		 * the request. Without a handler better-auth awaits them, so an
+		 * endpoint that mails only real users (OTP, password reset) answered
+		 * measurably slower for them than for unknown addresses. A long-lived
+		 * Node server keeps running the promise after the response; the catch
+		 * keeps a failure a log line, never an unhandled rejection.
+		 */
+		backgroundTasks: {
+			handler: (task: Promise<unknown>) => {
+				task.catch((error) => console.error("Background task failed:", error));
+			},
+		},
 	},
 
 	plugins: [
@@ -378,26 +389,19 @@ export const auth = betterAuth({
 		emailOTP({
 			overrideDefaultEmailVerification: true,
 			async sendVerificationOTP({ email, otp, type }, ctx) {
-				if (type === "sign-in") {
-					// Not awaited, so the response time does not reveal whether this
-					// address gets a code (see `shouldSendSignInCode`). sendEmail logs
-					// its own failures, and a throw here would be swallowed anyway
-					// (see `emailFailure`).
-					void (async () => {
-						const send = await shouldSendSignInCode({
-							enableRegistration: serverEnv.ENABLE_REGISTRATION,
-							email,
-							userExists: async (address) =>
-								Boolean(
-									await ctx?.context.internalAdapter.findUserByEmail(address),
-								),
-						});
-						if (send) {
-							await sendEmail({ to: email, ...otpEmail({ otp, type }) });
-						}
-					})().catch((error) =>
-						console.error("Sign-in code delivery failed:", error),
-					);
+				// Runs detached from the request (`advanced.backgroundTasks`), so
+				// neither this check nor the send shows in the response time.
+				if (
+					type === "sign-in" &&
+					!(await shouldSendSignInCode({
+						enableRegistration: serverEnv.ENABLE_REGISTRATION,
+						email,
+						userExists: async (address) =>
+							Boolean(
+								await ctx?.context.internalAdapter.findUserByEmail(address),
+							),
+					}))
+				) {
 					return;
 				}
 
@@ -444,7 +448,7 @@ export const auth = betterAuth({
 				 * and the members page can re-send it.
 				 */
 				afterCreateInvitation: async ({ invitation }) => {
-					const failure = takeInvitationSendFailure(invitation.id);
+					const failure = await takeInvitationSendFailure(invitation.id);
 					if (failure) throw failure;
 				},
 
@@ -511,12 +515,13 @@ export const auth = betterAuth({
 					? walletInvitationEmail({ ...fields, walletAddress })
 					: orgInvitationEmail(fields);
 
-				const result = await sendEmail({ to: data.email, ...template });
-				if (!result.ok) {
-					const error = emailFailure(result);
-					recordInvitationSendFailure(data.id, error);
-					throw error;
-				}
+				// Parked before the first await, so `afterCreateInvitation` finds it.
+				const send = sendEmail({ to: data.email, ...template }).then(
+					(result) => (result.ok ? null : emailFailure(result)),
+				);
+				parkInvitationSend(data.id, send);
+				const error = await send;
+				if (error) throw error;
 			},
 
 			// Invitation expires in 7 days

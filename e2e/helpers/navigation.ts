@@ -1,5 +1,7 @@
 import type { Page } from "@playwright/test";
+import { getPool } from "../fixtures/database-fixtures";
 import { choosePasswordSignIn } from "./email-code";
+import { createTestUser } from "./test-user-factory";
 
 /**
  * Navigation helpers for E2E tests
@@ -68,9 +70,9 @@ export async function signOutAndNavigate(page: Page): Promise<void> {
  * Create a password user, sign this page's browser context in as them, and
  * open `/`.
  *
- * `/register` no longer offers a password, so this goes through the API.
- * Password accounts still exist (created before email codes became the
- * default) and must keep signing in with their password.
+ * Password sign-up is off, so the user is inserted directly. Password
+ * accounts still exist (created before email codes became the default) and
+ * must keep signing in with their password.
  *
  * @param page - Playwright page
  * @param name - User's name
@@ -83,12 +85,13 @@ export async function registerUser(
 	email: string,
 	password: string,
 ): Promise<void> {
-	const response = await page.request.post("/api/auth/sign-up/email", {
-		data: { name, email, password },
+	await createTestUser(getPool(), { name, email, password });
+	const response = await page.request.post("/api/auth/sign-in/email", {
+		data: { email, password },
 		headers: { origin: ORIGIN },
 	});
 	if (!response.ok()) {
-		throw new Error(`Sign-up failed: HTTP ${response.status()}`);
+		throw new Error(`Sign-in failed: HTTP ${response.status()}`);
 	}
 	await page.goto("/");
 }
