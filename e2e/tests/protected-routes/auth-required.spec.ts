@@ -1,5 +1,6 @@
 import { expect, test } from "../../fixtures";
 import { expectAuthenticated } from "../../helpers/assertions";
+import { choosePasswordSignIn } from "../../helpers/email-code";
 import { registerUser } from "../../helpers/navigation";
 
 /**
@@ -69,6 +70,7 @@ test.describe("Protected Routes - Auth Required", () => {
 		await page.waitForURL(/\/login\?redirect=/, { timeout: 10000 });
 
 		// Login
+		await choosePasswordSignIn(page);
 		await page.fill('input[type="email"]', testEmail);
 		await page.fill('input[type="password"]', testPassword);
 		await page.click('button[type="submit"]');

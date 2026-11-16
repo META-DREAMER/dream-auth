@@ -153,6 +153,30 @@ export async function isSignupAllowed(input: {
 	return false;
 }
 
+/**
+ * Should a sign-in code be emailed to this address?
+ *
+ * Email-code sign-in creates the account on first use, and the endpoint that
+ * sends the code answers `{ success: true }` for any address. The
+ * `validateUserInfo` gate still refuses the account for an uninvited address,
+ * but only after a code has been mailed to it. So a code goes only to an
+ * existing user or to an address with a pending invitation (or to anyone
+ * while public registration is on). Everyone else gets the same response and
+ * no mail; the caller must keep the outcome out of the response and its
+ * timing.
+ */
+export async function shouldSendSignInCode(input: {
+	enableRegistration: boolean;
+	email: string;
+	userExists: (email: string) => Promise<boolean>;
+	lookup?: PendingInvitationLookup;
+}): Promise<boolean> {
+	if (input.enableRegistration) return true;
+	if (await input.userExists(input.email)) return true;
+	const lookup = input.lookup ?? dbInvitationLookup;
+	return lookup.hasInvitationForEmail(input.email);
+}
+
 /** Rejection surfaced by `validateUserInfo` when the gate closes. */
 export const REGISTRATION_DISABLED_ERROR = {
 	error: "registration_disabled",

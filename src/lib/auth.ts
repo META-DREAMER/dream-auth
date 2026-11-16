@@ -33,6 +33,7 @@ import {
 	invitationIdFromBody,
 	isSignupAllowed,
 	REGISTRATION_DISABLED_ERROR,
+	shouldSendSignInCode,
 } from "@/lib/registration-gate";
 
 // Extract hostname from BETTER_AUTH_URL for WebAuthn rpID
@@ -371,10 +372,35 @@ export const auth = betterAuth({
 					}),
 				]
 			: []),
-		// Email OTP for linking emails to accounts
+		// Email codes: the default sign-in (and, for an invitee, sign-up), plus
+		// email verification. A code sign-in for an unknown address creates the
+		// user with a verified email, through the `validateUserInfo` gate above.
 		emailOTP({
 			overrideDefaultEmailVerification: true,
-			async sendVerificationOTP({ email, otp, type }, _ctx) {
+			async sendVerificationOTP({ email, otp, type }, ctx) {
+				if (type === "sign-in") {
+					// Not awaited, so the response time does not reveal whether this
+					// address gets a code (see `shouldSendSignInCode`). sendEmail logs
+					// its own failures, and a throw here would be swallowed anyway
+					// (see `emailFailure`).
+					void (async () => {
+						const send = await shouldSendSignInCode({
+							enableRegistration: serverEnv.ENABLE_REGISTRATION,
+							email,
+							userExists: async (address) =>
+								Boolean(
+									await ctx?.context.internalAdapter.findUserByEmail(address),
+								),
+						});
+						if (send) {
+							await sendEmail({ to: email, ...otpEmail({ otp, type }) });
+						}
+					})().catch((error) =>
+						console.error("Sign-in code delivery failed:", error),
+					);
+					return;
+				}
+
 				const template = otpEmail({ otp, type: type as OtpType });
 				const result = await sendEmail({ to: email, ...template });
 				if (!result.ok) throw emailFailure(result);

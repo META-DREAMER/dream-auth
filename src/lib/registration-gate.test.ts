@@ -7,6 +7,7 @@ import {
 	invitationIdFromBody,
 	isSignupAllowed,
 	type PendingInvitationLookup,
+	shouldSendSignInCode,
 } from "./registration-gate";
 
 const WALLET = "0x1234567890abcdef1234567890abcdef12345678";
@@ -261,6 +262,81 @@ describe("isSignupAllowed", () => {
 				}),
 			).resolves.toBe(false);
 		});
+	});
+});
+
+describe("shouldSendSignInCode", () => {
+	const noUsers = async () => false;
+
+	it("sends to anyone while public registration is on", async () => {
+		const userExists = vi.fn(noUsers);
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: true,
+				email: "stranger@example.com",
+				userExists,
+				lookup: lookup({}),
+			}),
+		).resolves.toBe(true);
+		expect(userExists).not.toHaveBeenCalled();
+	});
+
+	it("sends to an existing user", async () => {
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: false,
+				email: "member@example.com",
+				userExists: async (email) => email === "member@example.com",
+				lookup: lookup({}),
+			}),
+		).resolves.toBe(true);
+	});
+
+	it("sends to an address with a pending invitation", async () => {
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: false,
+				email: "Invited@Example.com",
+				userExists: noUsers,
+				lookup: lookup({ emails: ["invited@example.com"] }),
+			}),
+		).resolves.toBe(true);
+	});
+
+	it("does not need the invitation id: the code itself proves the mailbox", async () => {
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: false,
+				email: "invited@example.com",
+				userExists: noUsers,
+				lookup: lookup({
+					emails: ["invited@example.com"],
+					ids: { "invited@example.com": "inv-1" },
+				}),
+			}),
+		).resolves.toBe(true);
+	});
+
+	it("does not send to a stranger", async () => {
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: false,
+				email: "stranger@example.com",
+				userExists: noUsers,
+				lookup: lookup({ emails: ["invited@example.com"] }),
+			}),
+		).resolves.toBe(false);
+	});
+
+	it("ignores wallet invitations: a wallet invitee signs in with the wallet", async () => {
+		await expect(
+			shouldSendSignInCode({
+				enableRegistration: false,
+				email: `${WALLET}@example.com`,
+				userExists: noUsers,
+				lookup: lookup({ wallets: [WALLET] }),
+			}),
+		).resolves.toBe(false);
 	});
 });
 

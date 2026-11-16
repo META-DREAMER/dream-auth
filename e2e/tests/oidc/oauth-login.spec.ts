@@ -2,6 +2,10 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { expect, test } from "../../fixtures";
 import {
+	choosePasswordSignIn,
+	signInWithEmailCode,
+} from "../../helpers/email-code";
+import {
 	addVirtualAuthenticator,
 	registerPasskeyViaSettings,
 } from "../../helpers/webauthn";
@@ -58,7 +62,7 @@ test.describe("Sign-in on /login reached from an OIDC client", () => {
 		const { url } = authorizeUrl(baseURL as string, "trusted-client");
 		await page.goto(url);
 		await page.waitForURL(/\/login\?/);
-		await page.getByRole("button", { name: "Sign in", exact: true }).waitFor();
+		await page.getByRole("button", { name: "Email me a code" }).waitFor();
 
 		const params = new URL(page.url()).searchParams;
 		expect(params.getAll("ba_param").length).toBeGreaterThan(1);
@@ -108,9 +112,35 @@ test.describe("Sign-in on /login reached from an OIDC client", () => {
 		const { url, state } = authorizeUrl(base, "trusted-client");
 		await page.goto(url);
 		await page.waitForURL(/\/login\?/);
+		await choosePasswordSignIn(page);
 		await page.getByLabel("Email").fill(email);
 		await page.getByLabel("Password").fill(PASSWORD);
 		await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+		await expectCallback(page, base, state);
+	});
+
+	// The code step must keep the signed query in the URL (both requests echo
+	// it back), and the passkey offer must run before the provider's
+	// continuation sends the browser to the app.
+	test("email code sign-in, with the passkey offer, continues to the client callback", async ({
+		page,
+		baseURL,
+		pool,
+	}) => {
+		const base = baseURL as string;
+		const email = await signUp(page, base, "code");
+		await page.context().clearCookies();
+
+		const { url, state } = authorizeUrl(base, "trusted-client");
+		await page.goto(url);
+		await page.waitForURL(/\/login\?/);
+		const loginUrl = page.url();
+
+		await signInWithEmailCode(page, pool, email);
+		await expect(page.getByText("Skip the code next time")).toBeVisible();
+		expect(page.url()).toBe(loginUrl);
+		await page.getByRole("button", { name: "Not now" }).click();
 
 		await expectCallback(page, base, state);
 	});
@@ -126,6 +156,7 @@ test.describe("Sign-in on /login reached from an OIDC client", () => {
 		const { url, state } = authorizeUrl(base, "test-client");
 		await page.goto(url);
 		await page.waitForURL(/\/login\?/);
+		await choosePasswordSignIn(page);
 		await page.getByLabel("Email").fill(email);
 		await page.getByLabel("Password").fill(PASSWORD);
 		await page.getByRole("button", { name: "Sign in", exact: true }).click();
