@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { signUp } from "@/lib/auth-client";
+import { invitationIdFromPath } from "@/lib/invite-helpers";
 import {
 	isInternalRedirect,
 	navigateToSafeRedirect,
@@ -80,7 +81,15 @@ function RegisterPage() {
 		}
 
 		try {
-			const result = await signUp.email({ email, password, name });
+			// Registration is invite-only: the server admits a password sign-up
+			// only with the id of a pending invitation for this email.
+			const invitationId = invitationIdFromPath(safeRedirect);
+			const result = await signUp.email({
+				email,
+				password,
+				name,
+				...(invitationId && { invitationId }),
+			});
 
 			if (result.error) {
 				setError(result.error.message || "Registration failed");

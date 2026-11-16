@@ -111,3 +111,12 @@ export function getInvitationWalletAddress(invitation: {
 }): string | null {
 	return invitation.walletAddress || null;
 }
+
+/**
+ * The invitation id in an `/invite/<id>` path, or null. `/register` reads it
+ * from its redirect target, since the invite page sends invitees there.
+ */
+export function invitationIdFromPath(path: string): string | null {
+	const match = /^\/invite\/([A-Za-z0-9_-]+)$/.exec(path);
+	return match ? match[1] : null;
+}

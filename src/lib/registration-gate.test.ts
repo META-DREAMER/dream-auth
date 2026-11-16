@@ -4,6 +4,7 @@ vi.mock("@/lib/db", () => ({ pool: { query: vi.fn() } }));
 
 import {
 	collectWalletAddresses,
+	invitationIdFromBody,
 	isSignupAllowed,
 	type PendingInvitationLookup,
 } from "./registration-gate";
@@ -14,11 +15,16 @@ const OTHER_WALLET = "0xfedcba9876543210fedcba9876543210fedcba98";
 function lookup(options: {
 	emails?: string[];
 	wallets?: string[];
+	/** Invitation id per invited email; an email without one matches any id. */
+	ids?: Record<string, string>;
 }): PendingInvitationLookup {
 	const emails = new Set((options.emails ?? []).map((e) => e.toLowerCase()));
 	const wallets = new Set((options.wallets ?? []).map((w) => w.toLowerCase()));
 	return {
-		hasInvitationForEmail: async (email) => emails.has(email.toLowerCase()),
+		hasInvitationForEmail: async (email, invitationId) =>
+			emails.has(email.toLowerCase()) &&
+			(invitationId === undefined ||
+				options.ids?.[email.toLowerCase()] === invitationId),
 		hasInvitationForWallet: async (wallet) => wallets.has(wallet.toLowerCase()),
 	};
 }
@@ -187,5 +193,86 @@ describe("isSignupAllowed", () => {
 			}),
 		).resolves.toBe(true);
 		expect(hasInvitationForWallet).not.toHaveBeenCalled();
+	});
+
+	describe("password sign-up (requireInvitationId)", () => {
+		const invited = lookup({
+			emails: ["invited@example.com"],
+			ids: { "invited@example.com": "inv-1" },
+		});
+
+		it("allows the invited email with its invitation id", async () => {
+			await expect(
+				isSignupAllowed({
+					enableRegistration: false,
+					email: "Invited@Example.com",
+					requireInvitationId: true,
+					invitationId: "inv-1",
+					lookup: invited,
+				}),
+			).resolves.toBe(true);
+		});
+
+		it("blocks the invited email without an invitation id", async () => {
+			await expect(
+				isSignupAllowed({
+					enableRegistration: false,
+					email: "invited@example.com",
+					requireInvitationId: true,
+					invitationId: null,
+					lookup: invited,
+				}),
+			).resolves.toBe(false);
+		});
+
+		it("blocks the invited email with another invitation's id", async () => {
+			await expect(
+				isSignupAllowed({
+					enableRegistration: false,
+					email: "invited@example.com",
+					requireInvitationId: true,
+					invitationId: "inv-2",
+					lookup: invited,
+				}),
+			).resolves.toBe(false);
+		});
+
+		it("ignores a wallet invitation for a password sign-up", async () => {
+			await expect(
+				isSignupAllowed({
+					enableRegistration: false,
+					email: `${WALLET}@example.com`,
+					walletAddresses: [WALLET],
+					requireInvitationId: true,
+					invitationId: null,
+					lookup: lookup({ wallets: [WALLET] }),
+				}),
+			).resolves.toBe(false);
+		});
+
+		it("blocks a valid id presented with a different email", async () => {
+			await expect(
+				isSignupAllowed({
+					enableRegistration: false,
+					email: "attacker@example.com",
+					requireInvitationId: true,
+					invitationId: "inv-1",
+					lookup: invited,
+				}),
+			).resolves.toBe(false);
+		});
+	});
+});
+
+describe("invitationIdFromBody", () => {
+	it("reads a non-empty string id", () => {
+		expect(invitationIdFromBody({ invitationId: "abc" })).toBe("abc");
+	});
+
+	it("ignores a missing, empty or non-string id", () => {
+		expect(invitationIdFromBody(undefined)).toBeNull();
+		expect(invitationIdFromBody({})).toBeNull();
+		expect(invitationIdFromBody({ invitationId: "" })).toBeNull();
+		expect(invitationIdFromBody({ invitationId: 42 })).toBeNull();
 	});
 });

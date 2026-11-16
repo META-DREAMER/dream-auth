@@ -30,6 +30,7 @@ import { buildJwtPluginOptions } from "@/lib/oidc/issuer";
 import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
 	collectWalletAddresses,
+	invitationIdFromBody,
 	isSignupAllowed,
 	REGISTRATION_DISABLED_ERROR,
 } from "@/lib/registration-gate";
@@ -173,9 +174,10 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
-		// Disable public email/password signup when ENABLE_REGISTRATION is false
-		// Users can still sign up via organization invitations
-		disableSignUp: !serverEnv.ENABLE_REGISTRATION,
+		// Sign-up stays enabled even when ENABLE_REGISTRATION is false: the
+		// `validateUserInfo` gate below admits only invited users. Setting
+		// `disableSignUp` here rejected every password sign-up before that gate
+		// ran, so an email invitee had no way to create an account.
 	},
 
 	user: {
@@ -189,6 +191,10 @@ export const auth = betterAuth({
 		 *
 		 * Only `create-user` is gated. `link-account` must stay open so an
 		 * existing user can still link a wallet or a passkey.
+		 *
+		 * A password sign-up must also carry the id of the invitation (from the
+		 * emailed link), since nothing else proves it owns the email; see
+		 * `isSignupAllowed`.
 		 */
 		validateUserInfo: async ({ user, source }, ctx) => {
 			if (serverEnv.ENABLE_REGISTRATION) return;
@@ -202,6 +208,8 @@ export const auth = betterAuth({
 					email,
 					requestBody: ctx?.body,
 				}),
+				requireInvitationId: source.method === "email-password",
+				invitationId: invitationIdFromBody(ctx?.body),
 			});
 
 			if (!allowed) return REGISTRATION_DISABLED_ERROR;
