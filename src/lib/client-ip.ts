@@ -62,7 +62,7 @@
  *
  * ## Fail-safe
  *
- * better-auth 1.7.5 exposes no per-request hook for an unresolvable IP: the
+ * better-auth 1.7.25 exposes no per-request hook for an unresolvable IP: the
  * choice is the shared `no-trusted-ip` bucket or `disableIpTracking`, which
  * turns rate limiting off entirely. The shared bucket is the fail-closed
  * option, so it stays. With `x-forwarded-for` as the last resort it is only

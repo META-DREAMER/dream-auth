@@ -457,7 +457,7 @@ with a `headers` middleware behind an `ipAllowList`.
 
 ### Unresolvable IPs
 
-better-auth 1.7.5 offers no per-request choice here: an unresolvable IP goes
+better-auth 1.7.25 offers no per-request choice here: an unresolvable IP goes
 to the shared `no-trusted-ip` bucket, or `disableIpTracking` switches rate
 limiting off for everyone. The shared bucket fails closed, so it stays. With
 `x-forwarded-for` as the last resort, only traffic that never crossed the

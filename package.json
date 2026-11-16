@@ -30,18 +30,18 @@
 		"overrides": {
 			"@noble/hashes": "1.8.0",
 			"kysely": "^0.28.14",
-			"@better-auth/utils": "0.5.0",
+			"@better-auth/utils": "0.5.1",
 			"@peculiar/asn1-schema": "^2.9.5",
 			"zod@4": "^4.6.5"
 		},
 		"patchedDependencies": {
-			"better-auth@1.7.5": "patches/better-auth@1.7.5.patch"
+			"better-auth@1.7.25": "patches/better-auth@1.7.25.patch"
 		}
 	},
 	"dependencies": {
 		"@base-org/account": "~2.4.2",
-		"@better-auth/oauth-provider": "1.7.5",
-		"@better-auth/passkey": "1.7.5",
+		"@better-auth/oauth-provider": "1.7.25",
+		"@better-auth/passkey": "1.7.25",
 		"@coinbase/wallet-sdk": "^4.3.7",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@fontsource-variable/manrope": "^5.2.8",
@@ -62,7 +62,7 @@
 		"@tanstack/react-start": "^1.154.5",
 		"@tanstack/router-plugin": "^1.154.5",
 		"@walletconnect/ethereum-provider": "^2.23.0",
-		"better-auth": "1.7.5",
+		"better-auth": "1.7.25",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"input-otp": "^1.4.2",

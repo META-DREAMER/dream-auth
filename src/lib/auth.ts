@@ -92,7 +92,7 @@ const organizationPolicy = createOrganizationPolicy(pool);
 /**
  * Turn a failed send into an APIError.
  *
- * Known caveat on better-auth 1.7.5: the three email callbacks are invoked
+ * Known caveat on better-auth 1.7.5 through 1.7.25: the three email callbacks are invoked
  * through `ctx.context.runInBackgroundOrAwait()`, which awaits the promise
  * inside a try/catch and only logs whatever it caught
  * (`dist/context/create-context.mjs`). A throw from here therefore does *not*
