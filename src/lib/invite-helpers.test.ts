@@ -25,7 +25,6 @@ import { organization } from "@/lib/auth-client";
 import {
 	getInvitationWalletAddress,
 	getWalletEmail,
-	invitationIdFromPath,
 	inviteByEmail,
 	inviteByWallet,
 	isWalletInvitation,
@@ -212,20 +211,5 @@ describe("inviteByEmail", () => {
 		await inviteByEmail("test@example.com", "owner", "org-3");
 
 		expect(organization.inviteMember).toHaveBeenCalledTimes(3);
-	});
-});
-
-describe("invitationIdFromPath", () => {
-	it("extracts the id from an invite path", () => {
-		expect(invitationIdFromPath("/invite/Af5wssv9eZFLVIDG_x-1")).toBe(
-			"Af5wssv9eZFLVIDG_x-1",
-		);
-	});
-
-	it("returns null for any other path", () => {
-		expect(invitationIdFromPath("/settings")).toBeNull();
-		expect(invitationIdFromPath("/invite/")).toBeNull();
-		expect(invitationIdFromPath("/invite/abc/extra")).toBeNull();
-		expect(invitationIdFromPath("https://evil.test/invite/abc")).toBeNull();
 	});
 });

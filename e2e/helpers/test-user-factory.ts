@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { hashPassword } from "better-auth/crypto";
 import type { Pool, PoolClient } from "pg";
 
 /**
@@ -12,12 +13,14 @@ export type TestUser = {
 };
 
 /**
- * Create a test user in the database
+ * Create a password user directly in the database.
  *
- * This directly inserts into BetterAuth's tables to create a user
- * that can be used for E2E testing.
+ * Password sign-up is off (`emailAndPassword.disableSignUp`), but password
+ * accounts made before that still sign in with their password, so tests
+ * insert them the way better-auth stores them: a verified `user` row plus a
+ * `credential` account holding a better-auth password hash.
  *
- * @param client - Database client (within transaction)
+ * @param client - Database client
  * @param overrides - Optional overrides for user properties
  * @returns Created test user with credentials
  */
@@ -25,70 +28,25 @@ export async function createTestUser(
 	client: PoolClient | Pool,
 	overrides: Partial<TestUser> = {},
 ): Promise<TestUser> {
-	const uniqueId = randomUUID();
-	const timestamp = Date.now();
-
 	const user: TestUser = {
-		id: overrides.id ?? uniqueId,
-		email: overrides.email ?? `e2e-test-${timestamp}@example.com`,
+		id: overrides.id || randomUUID(),
+		email: overrides.email ?? `e2e-test-${Date.now()}@example.com`,
 		password: overrides.password ?? "TestPassword123!",
 		name: overrides.name ?? "E2E Test User",
 	};
 
-	// Insert into user table (BetterAuth schema)
 	await client.query(
 		`INSERT INTO "user" ("id", "email", "name", "emailVerified", "createdAt", "updatedAt")
      VALUES ($1, $2, $3, true, NOW(), NOW())`,
-		[user.id, user.email, user.name],
+		[user.id, user.email.toLowerCase(), user.name],
+	);
+	await client.query(
+		`INSERT INTO "account" ("id", "accountId", "providerId", "userId", "password", "createdAt", "updatedAt")
+     VALUES ($1, $2, 'credential', $2, $3, NOW(), NOW())`,
+		[randomUUID(), user.id, await hashPassword(user.password)],
 	);
 
-	// BetterAuth stores passwords in the account table
-	// For email/password auth, we need to create an account entry
-	// The password is hashed by BetterAuth, but for E2E tests we'll
-	// use the signup API instead to properly hash the password
-
 	return user;
-}
-
-/**
- * Create a test user via the BetterAuth API
- *
- * This is the preferred method for E2E tests as it properly
- * hashes the password and sets up all required tables.
- *
- * @param baseUrl - The base URL of the application
- * @param user - User data to create
- * @returns Response from the signup API
- */
-export async function createTestUserViaAPI(
-	baseUrl: string,
-	user: { email: string; password: string; name: string },
-): Promise<{ success: boolean; error?: string }> {
-	try {
-		const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				email: user.email,
-				password: user.password,
-				name: user.name,
-			}),
-		});
-
-		if (!response.ok) {
-			const error = await response.text();
-			return { success: false, error };
-		}
-
-		return { success: true };
-	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Unknown error",
-		};
-	}
 }
 
 /**

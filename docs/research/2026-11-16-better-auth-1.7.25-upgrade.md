@@ -41,9 +41,13 @@ No other patches, vendored code or `better-auth` overrides exist. The
 remaining `pnpm.overrides` (`@noble/hashes`, `kysely`, `@peculiar/asn1-schema`,
 `zod@4`) are unrelated to this upgrade and stay as they are.
 
-Checked against a real Postgres with `ENABLE_REGISTRATION=false`:
+Checked against a real Postgres with `ENABLE_REGISTRATION=false`, on main
+after #30 (passwordless email-code sign-in) was merged in:
 
-- An email sign-up without an invitation is rejected, and no user is created.
+- A password sign-up is rejected by `emailAndPassword.disableSignUp` ("Email
+  and password sign up is not enabled"), and no user is created.
+- An email-code sign-in for an uninvited address is rejected by the
+  `validateUserInfo` gate (`registration_disabled`), and no user is created.
 - A SIWE sign-in from an unknown wallet is rejected with a 403
   `registration_disabled`, and no user is created.
 - A signed-in user's SIWE verify links the wallet to that user and creates the
@@ -117,6 +121,22 @@ Checked against a real Postgres with `ENABLE_REGISTRATION=false`:
   failure mode, which was one reason for the overrides.
 - 1.7.15: hook-set headers and cookies on non-returning `hooks.before` are no
   longer dropped.
+
+## What #30 relies on, rechecked on 1.7.25
+
+#30 (email-code sign-in with a passkey offer) was written against 1.7.5. In
+1.7.25 the following are unchanged:
+
+- The `advanced.backgroundTasks.handler` option.
+- `runInBackgroundOrAwait`.
+- The organization plugin sends the invitation email first and then awaits
+  `afterCreateInvitation`.
+- email-otp still creates new users through `internalAdapter.createUser`,
+  which runs `validateUserInfo`.
+
+On the passkey offer: registration now also requires an authoritative session
+(see above). A session that was just created passes, and E2E covers the offer
+after a code sign-in.
 
 ## Breaking or behaviour changes
 

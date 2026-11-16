@@ -10,7 +10,7 @@ import { Pool } from "pg";
 
 let globalPool: Pool | null = null;
 
-function getPool(): Pool {
+export function getPool(): Pool {
 	if (!globalPool) {
 		// Try process.env first, then fall back to globalThis (set by global-setup.ts)
 		const connectionString =
