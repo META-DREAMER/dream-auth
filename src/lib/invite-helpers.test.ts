@@ -23,7 +23,6 @@ vi.stubGlobal("window", { location: mockLocation });
 
 import { organization } from "@/lib/auth-client";
 import {
-	getInvitationWalletAddress,
 	getWalletEmail,
 	inviteByEmail,
 	inviteByWallet,
@@ -75,34 +74,6 @@ describe("isWalletInvitation", () => {
 				walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
 			}),
 		).toBe(true);
-	});
-});
-
-describe("getInvitationWalletAddress", () => {
-	it("returns wallet address when present", () => {
-		const result = getInvitationWalletAddress({ walletAddress: "0xABC" });
-		expect(result).toBe("0xABC");
-	});
-
-	it("returns null when walletAddress is null", () => {
-		const result = getInvitationWalletAddress({ walletAddress: null });
-		expect(result).toBeNull();
-	});
-
-	it("returns null when walletAddress is undefined", () => {
-		const result = getInvitationWalletAddress({});
-		expect(result).toBeNull();
-	});
-
-	it("returns null when walletAddress is empty string", () => {
-		const result = getInvitationWalletAddress({ walletAddress: "" });
-		expect(result).toBeNull();
-	});
-
-	it("returns full address", () => {
-		const address = "0x1234567890abcdef1234567890abcdef12345678";
-		const result = getInvitationWalletAddress({ walletAddress: address });
-		expect(result).toBe(address);
 	});
 });
 

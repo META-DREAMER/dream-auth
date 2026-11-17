@@ -1,3 +1,4 @@
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -31,6 +32,10 @@ export function EmailOTPInput({
 					maxLength={6}
 					value={value}
 					onChange={onChange}
+					autoComplete="one-time-code"
+					inputMode="numeric"
+					pattern={REGEXP_ONLY_DIGITS}
+					aria-label="6-digit code"
 					className="gap-2"
 				>
 					<InputOTPGroup>
@@ -48,17 +53,17 @@ export function EmailOTPInput({
 			</div>
 			{onResend && (
 				<p className="text-xs text-muted-foreground text-center">
-					Didn't receive a code?{" "}
+					Didn't receive a code? Check your spam folder, or{" "}
 					{canResend ? (
 						<button
 							type="button"
 							onClick={onResend}
 							className="text-primary hover:text-primary/80"
 						>
-							Try again
+							send a new one
 						</button>
 					) : (
-						<span>Resend in {secondsUntilResend}s</span>
+						<span>send a new one in {secondsUntilResend}s</span>
 					)}
 				</p>
 			)}

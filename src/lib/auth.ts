@@ -24,6 +24,7 @@ import {
 	walletInvitationEmail,
 } from "@/lib/email/templates";
 import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
+import { invitationAcceptRefusal } from "@/lib/invitation-accept-policy";
 import { createDbGroupsLookup, getGroupsClaim } from "@/lib/oidc/groups-claim";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
 import { buildAllowInsecureRedirectUri } from "@/lib/oidc/insecure-redirect";
@@ -458,34 +459,23 @@ export const auth = betterAuth({
 					if (failure) throw failure;
 				},
 
-				// Verify wallet ownership before accepting wallet-based invitations
+				// Email invitations need a verified email, wallet invitations the
+				// invited wallet: see `src/lib/invitation-accept-policy.ts`.
 				beforeAcceptInvitation: async ({ invitation, user }) => {
-					// Skip verification for email-only invitations
-					const walletAddress = (
-						invitation as typeof invitation & { walletAddress?: string }
-					).walletAddress;
-					if (!walletAddress) return;
-
-					// Verify user has SIWE account linked with the invited wallet
-					const accounts = await pool.query(
-						`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
-						[user.id],
-					);
-
-					// SIWE accountId format is "walletAddress:chainId"
-					const hasMatchingWallet = accounts.rows.some(
-						(row: { accountId: string }) =>
-							row.accountId
-								.toLowerCase()
-								.startsWith(walletAddress.toLowerCase()),
-					);
-
-					if (!hasMatchingWallet) {
-						throw new APIError("FORBIDDEN", {
-							message:
-								"You must sign in with the invited wallet address to accept this invitation.",
-						});
-					}
+					const refusal = await invitationAcceptRefusal({
+						invitationWalletAddress: (
+							invitation as typeof invitation & { walletAddress?: string }
+						).walletAddress,
+						userEmailVerified: user.emailVerified,
+						siweAccountIds: async () =>
+							(
+								await pool.query<{ accountId: string }>(
+									`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
+									[user.id],
+								)
+							).rows.map((row) => row.accountId),
+					});
+					if (refusal) throw new APIError("FORBIDDEN", { message: refusal });
 				},
 			},
 

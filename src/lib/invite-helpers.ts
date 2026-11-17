@@ -99,15 +99,3 @@ export function isWalletInvitation(invitation: {
 }): boolean {
 	return !!invitation.walletAddress;
 }
-
-/**
- * Get the wallet address from an invitation, if it's a wallet invitation.
- *
- * @param invitation - Invitation object from getInvitation
- * @returns Wallet address or null
- */
-export function getInvitationWalletAddress(invitation: {
-	walletAddress?: string | null;
-}): string | null {
-	return invitation.walletAddress || null;
-}

@@ -32,15 +32,29 @@ export async function signInWithEmailCode(
 	email: string,
 ) {
 	await page.getByLabel("Email").fill(email);
+	await requestAndEnterCode(page, pool, email, "Email me a code");
+}
+
+/**
+ * Click the button that sends the code (`sendLabel`), then enter the code
+ * issued for `email`. On an invite page the email is prefilled, so this is
+ * the whole of the code step.
+ */
+export async function requestAndEnterCode(
+	page: Page,
+	pool: Pool,
+	email: string,
+	sendLabel: string,
+) {
 	const sent = page.waitForResponse((r) =>
 		r.url().endsWith("/api/auth/email-otp/send-verification-otp"),
 	);
-	await page.getByRole("button", { name: "Email me a code" }).click();
+	await page.getByRole("button", { name: sendLabel, exact: true }).click();
 	await sent;
 	const code = await readSignInCode(pool, email);
 	// input-otp renders one real input behind the six slots.
 	await page.locator("input[data-input-otp]").fill(code);
-	await page.getByRole("button", { name: "Continue" }).click();
+	await page.getByRole("button", { name: "Continue", exact: true }).click();
 }
 
 /** Switch `/login` from the default email code to the password form. */
