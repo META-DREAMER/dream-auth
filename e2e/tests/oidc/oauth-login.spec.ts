@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { Page } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 import { expect, test } from "../../fixtures";
 import {
 	choosePasswordSignIn,
@@ -36,7 +36,7 @@ function authorizeUrl(baseURL: string, clientId: string) {
 		code_challenge: createHash("sha256").update(verifier).digest("base64url"),
 		code_challenge_method: "S256",
 	});
-	return { url: `/oauth2/authorize?${query}`, state };
+	return { url: `/oauth2/authorize?${query}`, state, verifier };
 }
 
 /** A signed-in password user. */
@@ -53,6 +53,7 @@ async function expectCallback(page: Page, baseURL: string, state: string) {
 	expect(callback.searchParams.get("error")).toBeNull();
 	expect(callback.searchParams.get("code")).toBeTruthy();
 	expect(callback.searchParams.get("state")).toBe(state);
+	return callback.searchParams.get("code") as string;
 }
 
 test.describe("Sign-in on /login reached from an OIDC client", () => {
@@ -163,5 +164,87 @@ test.describe("Sign-in on /login reached from an OIDC client", () => {
 		await page.getByRole("button", { name: "Authorize" }).click();
 
 		await expectCallback(page, base, state);
+	});
+});
+
+// The callback alone proves nothing for the app: it still has to redeem the
+// code. Regression (better-auth 1.7.25): every redemption failed with
+// invalid_grant "invalid code", so Immich and Grafana could not sign in.
+test.describe("Redeeming the code at the token endpoint", () => {
+	async function redeem(
+		request: APIRequestContext,
+		base: string,
+		code: string,
+		verifier: string,
+	) {
+		const res = await request.post("/oauth2/token", {
+			form: {
+				grant_type: "authorization_code",
+				code,
+				redirect_uri: `${base}/callback`,
+				client_id: "post-client",
+				client_secret: "post-secret",
+				code_verifier: verifier,
+			},
+		});
+		return { status: res.status(), body: await res.json() };
+	}
+
+	async function expectTokens(
+		request: APIRequestContext,
+		base: string,
+		code: string,
+		verifier: string,
+	) {
+		const first = await redeem(request, base, code, verifier);
+		expect(first.status, JSON.stringify(first.body)).toBe(200);
+		expect(first.body.access_token).toBeTruthy();
+		expect(first.body.id_token).toBeTruthy();
+
+		// A code is single-use.
+		const replay = await redeem(request, base, code, verifier);
+		expect(replay.status).toBe(400);
+		expect(replay.body.error).toBe("invalid_grant");
+	}
+
+	test("password sign-in, client_secret_post + PKCE, as Immich does", async ({
+		page,
+		baseURL,
+		request,
+	}) => {
+		const base = baseURL as string;
+		const email = await signUp(page, base, "exchange-password");
+		await page.context().clearCookies();
+
+		const { url, state, verifier } = authorizeUrl(base, "post-client");
+		await page.goto(url);
+		await page.waitForURL(/\/login\?/);
+		await choosePasswordSignIn(page);
+		await page.getByLabel("Email").fill(email);
+		await page.getByLabel("Password").fill(PASSWORD);
+		await page.getByRole("button", { name: "Sign in", exact: true }).click();
+		const code = await expectCallback(page, base, state);
+
+		await expectTokens(request, base, code, verifier);
+	});
+
+	test("email code sign-in with the passkey offer, client_secret_post + PKCE", async ({
+		page,
+		baseURL,
+		request,
+		pool,
+	}) => {
+		const base = baseURL as string;
+		const email = await signUp(page, base, "exchange-code");
+		await page.context().clearCookies();
+
+		const { url, state, verifier } = authorizeUrl(base, "post-client");
+		await page.goto(url);
+		await page.waitForURL(/\/login\?/);
+		await signInWithEmailCode(page, pool, email);
+		await page.getByRole("button", { name: "Not now" }).click();
+		const code = await expectCallback(page, base, state);
+
+		await expectTokens(request, base, code, verifier);
 	});
 });

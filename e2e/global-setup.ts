@@ -105,6 +105,18 @@ async function globalSetup(_config: FullConfig) {
 			redirectURLs: [`http://localhost:${port}/callback`],
 			skipConsent: true,
 		},
+		// Shaped like the live Immich client: secret in the form body
+		// (client_secret_post), PKCE required, no consent.
+		{
+			clientId: "post-client",
+			clientSecret: "post-secret",
+			name: "Post Client",
+			applicationType: "web",
+			tokenEndpointAuthMethod: "client_secret_post",
+			redirectURLs: [`http://localhost:${port}/callback`],
+			skipConsent: true,
+			requirePKCE: true,
+		},
 	]);
 
 	// Common environment variables for build and server
