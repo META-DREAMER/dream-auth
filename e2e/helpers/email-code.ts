@@ -8,7 +8,12 @@ import type { Pool } from "pg";
  * the server, but the row is written before it answers.
  */
 export async function readSignInCode(pool: Pool, email: string) {
-	const identifier = `sign-in-otp-${email.toLowerCase()}`;
+	return readEmailCode(pool, "sign-in", email);
+}
+
+/** Same, for any code type (`sign-in`, `email-verification`, ...). */
+export async function readEmailCode(pool: Pool, type: string, email: string) {
+	const identifier = `${type}-otp-${email.toLowerCase()}`;
 	const deadline = Date.now() + 10_000;
 	while (Date.now() < deadline) {
 		const { rows } = await pool.query<{ value: string }>(
@@ -19,7 +24,7 @@ export async function readSignInCode(pool: Pool, email: string) {
 		if (rows[0]) return rows[0].value.split(":")[0];
 		await new Promise((r) => setTimeout(r, 200));
 	}
-	throw new Error(`No sign-in code was issued for ${email}`);
+	throw new Error(`No ${type} code was issued for ${email}`);
 }
 
 /**

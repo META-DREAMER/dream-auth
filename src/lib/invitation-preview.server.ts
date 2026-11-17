@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeaders } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
 import { pool } from "@/lib/db";
+import {
+	type InvitationViewerState,
+	invitationViewerState,
+} from "@/lib/invitation-accept-policy";
 import {
 	type InvitationPreview,
 	type InvitationPreviewRow,
@@ -27,4 +33,39 @@ export const getInvitationPreviewFn = createServerFn({ method: "GET" })
 			[data.invitationId],
 		);
 		return toInvitationPreview(result.rows[0]);
+	});
+
+/**
+ * How the invite page should treat the signed-in visitor (see
+ * {@link InvitationViewerState}), or `null` when nobody is signed in or the
+ * invitation is no longer pending. Reveals nothing about the invitation the
+ * preview doesn't, only how it relates to the caller's own account.
+ */
+export const getInvitationViewerStateFn = createServerFn({ method: "GET" })
+	.inputValidator(z.object({ invitationId: z.string().min(1).max(128) }))
+	.handler(async ({ data }): Promise<InvitationViewerState | null> => {
+		const session = await auth.api.getSession({
+			headers: getRequestHeaders(),
+		});
+		if (!session) return null;
+
+		const invitation = await pool.query<{
+			email: string;
+			walletAddress: string | null;
+		}>(
+			`SELECT email, "walletAddress" FROM invitation
+			  WHERE id = $1 AND status = 'pending' AND "expiresAt" > NOW()`,
+			[data.invitationId],
+		);
+		if (!invitation.rows[0]) return null;
+
+		const accounts = await pool.query<{ accountId: string }>(
+			`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
+			[session.user.id],
+		);
+		return invitationViewerState({
+			invitation: invitation.rows[0],
+			user: session.user,
+			siweAccountIds: accounts.rows.map((row) => row.accountId),
+		});
 	});

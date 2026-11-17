@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import type { Pool } from "pg";
 import { expect, test } from "../../fixtures";
 import { expectAuthenticated } from "../../helpers/assertions";
-import { requestAndEnterCode } from "../../helpers/email-code";
+import { readEmailCode, requestAndEnterCode } from "../../helpers/email-code";
 import { seedInvitation } from "../../helpers/invitations";
 import {
 	cleanupTestUsers,
@@ -15,6 +15,8 @@ import { addVirtualAuthenticator } from "../../helpers/webauthn";
  * read-only), "Continue" emails a code, the code signs in and joins, then a
  * passkey is offered and a done screen follows.
  */
+
+const WALLET = `0x${"1234567890abcdef".repeat(2)}12345678`;
 
 async function membership(pool: Pool, email: string) {
 	const { rows } = await pool.query(
@@ -235,6 +237,88 @@ test.describe("Invite link", () => {
 		expect(await membership(pool, user.email)).toMatchObject({
 			memberships: 0,
 		});
+		await cleanupTestUsers(pool, user.email);
+	});
+
+	test("signed in as the invitee, unverified: verify the email, then joined", async ({
+		page,
+		pool,
+	}) => {
+		const user = await createTestUser(pool, {
+			email: `e2e-test-verify-${Date.now()}@example.com`,
+		});
+		await pool.query(
+			`UPDATE "user" SET "emailVerified" = false WHERE email = $1`,
+			[user.email],
+		);
+		const { invitationId, orgName } = await seedInvitation(pool, user.email);
+		await page.goto("/login");
+		await signInWithPassword(page, user.email, user.password);
+
+		await page.goto(`/invite/${invitationId}`);
+		await expect(page.getByRole("button", { name: /^Join / })).toHaveCount(0);
+		await page.getByRole("button", { name: "Verify your email" }).click();
+		const code = await readEmailCode(pool, "email-verification", user.email);
+		await page.locator("input[data-input-otp]").fill(code);
+		await page.getByRole("button", { name: "Verify and join" }).click();
+
+		await expect(page.getByText(`You've joined ${orgName}`)).toBeVisible();
+		expect(await membership(pool, user.email)).toMatchObject({
+			emailVerified: true,
+			memberships: 1,
+		});
+		// Verifying took nothing away: the password still signs in.
+		const { rows } = await pool.query(
+			`SELECT count(*)::int AS n FROM account a JOIN "user" u ON u.id = a."userId"
+			  WHERE u.email = $1 AND a."providerId" = 'credential'`,
+			[user.email],
+		);
+		expect(rows[0].n).toBe(1);
+		await cleanupTestUsers(pool, user.email);
+	});
+
+	test("wallet invitation, signed in without that wallet: offers to switch", async ({
+		authenticatedPage: page,
+		pool,
+	}) => {
+		const { invitationId } = await seedInvitation(pool, `${WALLET}@localhost`, {
+			walletAddress: WALLET,
+		});
+
+		await page.goto(`/invite/${invitationId}`);
+		await expect(
+			page.getByText("This invitation is for the wallet 0x1234...5678"),
+		).toBeVisible();
+		await expect(page.getByRole("button", { name: /^Join / })).toHaveCount(0);
+		await expect(
+			page.getByRole("button", { name: "Switch account" }),
+		).toBeVisible();
+	});
+
+	test("wallet invitation, the wallet's account has another email: says what to do", async ({
+		page,
+		pool,
+	}) => {
+		const user = await createTestUser(pool, {
+			email: `e2e-test-wallet-${Date.now()}@example.com`,
+		});
+		await pool.query(
+			`INSERT INTO account (id, "accountId", "providerId", "userId", "createdAt", "updatedAt")
+			 SELECT gen_random_uuid(), $1, 'siwe', id, NOW(), NOW() FROM "user" WHERE email = $2`,
+			[`${WALLET}:1`, user.email],
+		);
+		const { invitationId } = await seedInvitation(pool, `${WALLET}@localhost`, {
+			walletAddress: WALLET,
+		});
+		await page.goto("/login");
+		await signInWithPassword(page, user.email, user.password);
+
+		await page.goto(`/invite/${invitationId}`);
+		await expect(
+			page.getByText("can't accept an invitation sent to the wallet"),
+		).toBeVisible();
+		await expect(page.getByText(`to invite ${user.email}`)).toBeVisible();
+		await expect(page.getByRole("button", { name: /^Join / })).toHaveCount(0);
 		await cleanupTestUsers(pool, user.email);
 	});
 });

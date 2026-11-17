@@ -139,8 +139,33 @@ journey; the page offers no generic sign-in options.
 | Signed out, email invitation | One card: Name, the invited email (read-only), "Continue" |
 | Signed out, wallet invitation | "Connect Wallet" (SIWE), then joins automatically |
 | Signed in as the invitee | One button: "Join <org>" |
-| Signed in as someone else | "This invitation is for ..." and "Switch account" (signs out, same link) |
+| Signed in as the invitee, email unverified | "Verify your email" (a code, the settings flow), then joins |
+| Signed in as someone else (or without the invited wallet) | "This invitation is for ..." and "Switch account" (signs out, same link) |
+| Signed in with the invited wallet, but the account's email isn't the invitation's | A message: ask the admin to invite that account's email |
 | Expired / accepted / rejected / canceled / unknown id | A message, nothing else |
+
+Which signed-in card shows is decided on the server
+(`getInvitationViewerStateFn`, rules in `invitationViewerState` in
+`src/lib/invitation-accept-policy.ts`) by the same rules the accept endpoint
+applies, so the page never offers a Join that is bound to fail.
+
+**Wallet invitations and better-auth's recipient check.** Accepting needs the
+session's email to equal the invitation's, and a wallet invitation's email is
+`{wallet}@{auth host}` while a SIWE-created account's is
+`{wallet}@siwe.placeholder.invalid` (no `emailDomainName` is set), and an
+account the wallet was linked to has its own email. So today no wallet account
+can accept a wallet invitation; the page says so instead of failing on Join.
+Inviting the person by email works. Making wallet invitations acceptable
+(e.g. an `emailDomainName` matching `getWalletEmail`, or a wallet-keyed accept)
+is a separate change.
+
+**Signing in with a code on the invite page and unverified accounts.**
+better-auth's email-code sign-in treats an existing account whose email is
+unverified as unproven: the first code sign-in deletes its password, wallet
+links and sessions (`revokeUnprovenAccountAccess`) before signing in. That is
+the signed-out path here. A signed-in unverified invitee gets the verify step
+instead (`emailOtp.verifyEmail`, which removes nothing). As of this change no
+password-only unverified users exist on the live deployment.
 
 "Continue" emails a sign-in code; the same card turns into the code input.
 The code signs in (creating the account, named, email verified), the page

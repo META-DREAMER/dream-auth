@@ -11,6 +11,7 @@ import { type ReactNode, useRef, useState } from "react";
 import { z } from "zod";
 import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
+import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
@@ -25,9 +26,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEmailVerification } from "@/hooks/use-email-verification";
 import { organization, signOut, useSession } from "@/lib/auth-client";
 import type { InvitationPreview } from "@/lib/invitation-preview";
-import { getInvitationPreviewFn } from "@/lib/invitation-preview.server";
+import {
+	getInvitationPreviewFn,
+	getInvitationViewerStateFn,
+} from "@/lib/invitation-preview.server";
 import { navigateToSafeRedirect, resolveSafeRedirect } from "@/lib/redirect";
 
 /** Same two parameters as `/login`: where to go once the invitee has joined. */
@@ -47,6 +52,23 @@ export const Route = createFileRoute("/invite/$id")({
 });
 
 type PendingInvitation = Extract<InvitationPreview, { state: "pending" }>;
+
+/** The signed-in visitor, as the page shows them. */
+interface SignedIn {
+	email: string;
+	/** A wallet user's placeholder email (`*.invalid`) is not worth showing. */
+	hasRealEmail: boolean;
+	label: string;
+}
+
+function toSignedIn(user: { email: string; name: string }): SignedIn {
+	const hasRealEmail = !user.email.endsWith(".invalid");
+	return {
+		email: user.email,
+		hasRealEmail,
+		label: hasRealEmail ? user.email : user.name || "your wallet account",
+	};
+}
 
 /**
  * The invite link's page, and the whole of the invitee's journey: one card
@@ -84,7 +106,7 @@ function InvitePage() {
 		<InviteFlow
 			invitationId={invitationId}
 			invitation={invitation}
-			signedInEmail={session?.user.email ?? null}
+			signedIn={session ? toSignedIn(session.user) : null}
 		/>
 	);
 }
@@ -92,11 +114,11 @@ function InvitePage() {
 function InviteFlow({
 	invitationId,
 	invitation,
-	signedInEmail,
+	signedIn,
 }: {
 	invitationId: string;
 	invitation: PendingInvitation;
-	signedInEmail: string | null;
+	signedIn: SignedIn | null;
 }) {
 	const { safeRedirect, hasRedirect } = Route.useRouteContext();
 	const [name, setName] = useState("");
@@ -107,7 +129,13 @@ function InviteFlow({
 	// Whether to show the sign-in form, fixed when the page opens: the sign-in
 	// creates a session partway through, and the form must stay up until the
 	// join has finished. A failed join drops to the signed-in Join card.
-	const [signInFlow, setSignInFlow] = useState(signedInEmail === null);
+	const [signInFlow, setSignInFlow] = useState(signedIn === null);
+	const viewer = useQuery({
+		queryKey: ["invitation-viewer", invitationId, signedIn?.email],
+		queryFn: () => getInvitationViewerStateFn({ data: { invitationId } }),
+		enabled: signedIn !== null && !signInFlow,
+		retry: false,
+	});
 
 	const inviter =
 		invitation.inviterName ?? `an admin of ${invitation.organizationName}`;
@@ -187,59 +215,98 @@ function InviteFlow({
 		</CardHeader>
 	);
 
-	if (!signInFlow && signedInEmail !== null) {
-		const isInvitee =
-			invitation.email === null ||
-			invitation.email.toLowerCase() === signedInEmail.toLowerCase();
+	if (!signInFlow && signedIn !== null) {
+		const switchAccount = (
+			<Button
+				onClick={async () => {
+					await signOut().catch(() => null);
+					// Back to this same invite link, signed out.
+					window.location.reload();
+				}}
+				className="w-full"
+			>
+				Switch account
+			</Button>
+		);
+		const invitedLabel =
+			invitation.email ?? `the wallet ${invitation.walletAddressPreview}`;
+
+		if (viewer.isPending) return <LoadingCard />;
+		// Gone since the page opened (accepted elsewhere, cancelled, expired).
+		if (viewer.data === null) return <UnavailableCard state="used" />;
+
+		// A failed lookup falls back to Join: the accept endpoint decides.
+		const viewerState = viewer.data ?? "invitee";
+		// A join error only means something where joining is offered.
+		const offersJoin =
+			viewerState === "invitee" || viewerState === "unverified";
+		let body: ReactNode;
+		switch (viewerState) {
+			case "invitee":
+				body = (
+					<>
+						<p className="text-sm text-muted-foreground text-center">
+							Signed in as <Strong>{signedIn.label}</Strong>
+						</p>
+						<Button onClick={joinNow} disabled={isJoining} className="w-full">
+							{isJoining ? (
+								<>
+									<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+									Joining...
+								</>
+							) : (
+								`Join ${invitation.organizationName}`
+							)}
+						</Button>
+					</>
+				);
+				break;
+			case "unverified":
+				body = (
+					<VerifyThenJoin
+						email={signedIn.email}
+						onVerified={async () => {
+							// Verified now: refresh the state, then join.
+							await viewer.refetch();
+							await joinNow();
+						}}
+					/>
+				);
+				break;
+			case "other-account":
+				body = (
+					<>
+						<p className="text-sm text-muted-foreground text-center">
+							This invitation is for <Strong>{invitedLabel}</Strong>, but you're
+							signed in as <Strong>{signedIn.label}</Strong>.
+						</p>
+						{switchAccount}
+					</>
+				);
+				break;
+			case "wallet-account-mismatch":
+				body = (
+					<p className="text-sm text-muted-foreground text-center">
+						Your wallet is linked to the account{" "}
+						<Strong>{signedIn.label}</Strong>, which can't accept an invitation
+						sent to the wallet. Ask {inviter} to invite{" "}
+						{signedIn.hasRealEmail ? (
+							<Strong>{signedIn.email}</Strong>
+						) : (
+							"your email address"
+						)}{" "}
+						instead.
+					</p>
+				);
+				break;
+		}
+
 		return (
 			<CenteredCard>
 				{header}
 				<CardContent className="space-y-4">
-					{error && <ErrorAlert message={error} />}
-					{isInvitee ? (
-						<>
-							<p className="text-sm text-muted-foreground text-center">
-								Signed in as{" "}
-								<span className="font-medium text-foreground">
-									{signedInEmail}
-								</span>
-							</p>
-							<Button onClick={joinNow} disabled={isJoining} className="w-full">
-								{isJoining ? (
-									<>
-										<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-										Joining...
-									</>
-								) : (
-									`Join ${invitation.organizationName}`
-								)}
-							</Button>
-						</>
-					) : (
-						<>
-							<p className="text-sm text-muted-foreground text-center">
-								This invitation is for{" "}
-								<span className="font-medium text-foreground">
-									{invitation.email}
-								</span>
-								, but you're signed in as{" "}
-								<span className="font-medium text-foreground">
-									{signedInEmail}
-								</span>
-								.
-							</p>
-							<Button
-								onClick={async () => {
-									await signOut().catch(() => null);
-									// Back to this same invite link, signed out.
-									window.location.reload();
-								}}
-								className="w-full"
-							>
-								Switch account
-							</Button>
-						</>
-					)}
+					{error && offersJoin && <ErrorAlert message={error} />}
+					{body}
 				</CardContent>
 			</CenteredCard>
 		);
@@ -400,4 +467,70 @@ function IconBadge({
 
 function capitalize(text: string): string {
 	return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function Strong({ children }: { children: ReactNode }) {
+	return <span className="font-medium text-foreground">{children}</span>;
+}
+
+/**
+ * The signed-in invitee's email is not verified yet, and an email invitation
+ * needs it verified. Prove it with a code (the settings flow: it changes
+ * nothing else on the account), then join.
+ */
+function VerifyThenJoin({
+	email,
+	onVerified,
+}: {
+	email: string;
+	onVerified: () => void;
+}) {
+	const verification = useEmailVerification({ email, onSuccess: onVerified });
+
+	if (!verification.hasSentOtp) {
+		return (
+			<div className="space-y-4">
+				{verification.error && <ErrorAlert message={verification.error} />}
+				<p className="text-sm text-muted-foreground text-center">
+					Verify <Strong>{email}</Strong> to join. We'll email you a code.
+				</p>
+				<Button
+					onClick={() => verification.sendOtp()}
+					disabled={verification.isLoading}
+					className="w-full"
+				>
+					Verify your email
+				</Button>
+			</div>
+		);
+	}
+
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				verification.verifyOtp();
+			}}
+			className="space-y-4"
+		>
+			{verification.error && <ErrorAlert message={verification.error} />}
+			<p className="text-sm text-muted-foreground text-center">
+				We sent a 6-digit code to <Strong>{email}</Strong>.
+			</p>
+			<EmailOTPInput
+				value={verification.otp}
+				onChange={verification.setOtp}
+				onResend={() => verification.sendOtp()}
+				canResend={verification.canResend && !verification.isLoading}
+				secondsUntilResend={verification.secondsUntilResend}
+			/>
+			<Button
+				type="submit"
+				disabled={verification.isLoading || verification.otp.length !== 6}
+				className="w-full"
+			>
+				Verify and join
+			</Button>
+		</form>
+	);
 }

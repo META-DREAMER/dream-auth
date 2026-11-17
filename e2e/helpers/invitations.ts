@@ -13,6 +13,8 @@ export async function seedInvitation(
 		status?: "pending" | "accepted" | "rejected" | "canceled";
 		expired?: boolean;
 		inviterName?: string;
+		/** Makes it a wallet invitation (the email is then the derived one). */
+		walletAddress?: string;
 	} = {},
 ) {
 	const suffix = randomUUID().slice(0, 8);
@@ -36,9 +38,9 @@ export async function seedInvitation(
 	);
 	const invitation = await pool.query<{ id: string }>(
 		`INSERT INTO invitation
-		 (id, email, "organizationId", role, status, "inviterId", "expiresAt")
+		 (id, email, "organizationId", role, status, "inviterId", "expiresAt", "walletAddress")
 		 VALUES (gen_random_uuid(), $1, $2, 'member', $3, $4,
-		         NOW() + CASE WHEN $5 THEN interval '-1 day' ELSE interval '1 day' END)
+		         NOW() + CASE WHEN $5 THEN interval '-1 day' ELSE interval '1 day' END, $6)
 		 RETURNING id`,
 		[
 			email,
@@ -46,6 +48,7 @@ export async function seedInvitation(
 			options.status ?? "pending",
 			inviterId,
 			options.expired ?? false,
+			options.walletAddress ?? null,
 		],
 	);
 	return {
