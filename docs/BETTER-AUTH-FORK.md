@@ -18,7 +18,7 @@ installed package as a **pnpm patch**:
 ```json
 "pnpm": {
   "patchedDependencies": {
-    "better-auth@1.7.5": "patches/better-auth@1.7.5.patch"
+    "better-auth@1.7.25": "patches/better-auth@1.7.25.patch"
   }
 }
 ```
@@ -82,6 +82,16 @@ beyond the SIWE plugin and should be re-scoped, not that the patch should grow.
    ```
 
 5. Delete the old patch file. One version, one patch.
+
+### 1.7.25 port (2026-11-16)
+
+The 1.7.5 patch was ported to 1.7.25 by applying it to the pristine 1.7.25
+`dist/plugins/siwe/` files: the body hunks applied as-is, and only the import
+lines were redone for 1.7.25's reordered imports and inline `import()` types.
+The fork itself was not rebased; do that before the next port so the two stay
+in step. Upstream 1.7.19 made SIWE user creation transactional; the linking
+branch the patch adds still writes `walletAddress` then `account` outside a
+transaction, which matches the fork.
 
 ## Upgrading
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseSearch, stringifySearch } from "./search-params";
 
 /**
- * The shape @better-auth/oauth-provider 1.7.5 redirects to `/login` with:
+ * The shape @better-auth/oauth-provider 1.7.25 redirects to `/login` with:
  * repeated `ba_param` names, numeric-looking `exp`/`ba_iat`, and a base64
  * `sig` that contains `+`, `/` and `=`.
  */

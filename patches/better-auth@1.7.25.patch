@@ -1,20 +1,11 @@
 diff --git a/dist/plugins/siwe/index.d.mts b/dist/plugins/siwe/index.d.mts
-index 229137d8c24f1751a50176d253e07f78b67a857a..ebf40f1f492714bc5cece3cff924ad25a0ac14a7 100644
 --- a/dist/plugins/siwe/index.d.mts
 +++ b/dist/plugins/siwe/index.d.mts
-@@ -1,6 +1,7 @@
- import { InferOptionSchema } from "../../types/plugins.mjs";
- import { WalletAddressSchema, schema } from "./schema.mjs";
- import { ENSLookupArgs, ENSLookupResult, SIWEVerifyMessageArgs } from "./types.mjs";
-+import * as _$_better_auth_core0 from "@better-auth/core";
- import * as _$better_call0 from "better-call";
- import * as z from "zod";
- 
-@@ -25,6 +26,21 @@ declare const siwe: (options: SIWEPluginOptions) => {
+@@ -23,6 +23,21 @@
    id: "siwe";
    version: string;
    schema: WalletAddressSchema;
-+  init(ctx: _$_better_auth_core0.AuthContext): {
++  init(ctx: import("@better-auth/core").AuthContext): {
 +    options: {
 +      databaseHooks: {
 +        account: {
@@ -30,21 +21,18 @@ index 229137d8c24f1751a50176d253e07f78b67a857a..ebf40f1f492714bc5cece3cff924ad25
 +    };
 +  };
    endpoints: {
-     getSiweNonce: _$better_call0.StrictEndpoint<"/siwe/nonce" | "/siwe/get-nonce", {
+     getSiweNonce: import("better-call").StrictEndpoint<"/siwe/nonce" | "/siwe/get-nonce", {
        method: "POST";
 diff --git a/dist/plugins/siwe/index.mjs b/dist/plugins/siwe/index.mjs
-index 25e614e7b5da035daa91f052353abf117bb0f5e9..1f5be7eb0424c308606cfc2218556a79acd050fb 100644
 --- a/dist/plugins/siwe/index.mjs
 +++ b/dist/plugins/siwe/index.mjs
-@@ -1,6 +1,7 @@
- import { isAPIError } from "../../utils/is-api-error.mjs";
- import { mergeSchema } from "../../db/schema.mjs";
- import { setSessionCookie } from "../../cookies/index.mjs";
-+import { getSessionFromCtx } from "../../api/routes/session.mjs";
+@@ -1,4 +1,5 @@
  import { APIError } from "../../api/index.mjs";
- import { PACKAGE_VERSION } from "../../version.mjs";
++import { getSessionFromCtx } from "../../api/routes/session.mjs";
+ import { setSessionCookie } from "../../cookies/index.mjs";
+ import { mergeSchema } from "../../db/schema.mjs";
  import { toChecksumAddress } from "../../utils/hashing.mjs";
-@@ -16,6 +17,16 @@ const SIWE_NONCE_MAX_LENGTH = 250;
+@@ -17,6 +18,16 @@
  const SIWE_NONCE_ALPHANUMERIC_REGEX = /^[a-zA-Z0-9]+$/;
  const isValidSiweNonce = (nonce) => typeof nonce === "string" && nonce.length >= 8 && nonce.length <= SIWE_NONCE_MAX_LENGTH && SIWE_NONCE_ALPHANUMERIC_REGEX.test(nonce);
  const getSiweNonceBodySchema = z.object({}).strict().optional();
@@ -61,7 +49,7 @@ index 25e614e7b5da035daa91f052353abf117bb0f5e9..1f5be7eb0424c308606cfc2218556a79
  const siwe = (options) => {
  	const createSiweNonceEndpoint = (path) => createAuthEndpoint(path, {
  		method: "POST",
-@@ -38,6 +49,30 @@ const siwe = (options) => {
+@@ -39,6 +50,30 @@
  		id: "siwe",
  		version: PACKAGE_VERSION,
  		schema: mergeSchema(schema, options?.schema),
@@ -92,7 +80,7 @@ index 25e614e7b5da035daa91f052353abf117bb0f5e9..1f5be7eb0424c308606cfc2218556a79
  		endpoints: {
  			getSiweNonce: createSiweNonceEndpoint("/siwe/nonce"),
  			getNonce: createSiweNonceEndpoint("/siwe/get-nonce"),
-@@ -121,6 +156,71 @@ const siwe = (options) => {
+@@ -122,6 +157,71 @@
  						message: "Unauthorized: Invalid SIWE signature",
  						status: 401
  					});

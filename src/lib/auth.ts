@@ -26,6 +26,7 @@ import {
 import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
 import { createDbGroupsLookup, getGroupsClaim } from "@/lib/oidc/groups-claim";
 import { hashClientSecret } from "@/lib/oidc/hash-client-secret";
+import { buildAllowInsecureRedirectUri } from "@/lib/oidc/insecure-redirect";
 import { buildJwtPluginOptions } from "@/lib/oidc/issuer";
 import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
@@ -306,6 +307,11 @@ export const auth = betterAuth({
 						// PKCE and consent-skipping are per-client columns now, written by
 						// the seeder from OIDC_REQUIRE_PKCE and `skipConsent`.
 						cachedTrustedClients: getCachedTrustedClientIds(),
+						// Loopback `http:` redirects for web clients, only when this
+						// server itself runs on http loopback (dev, E2E). Off in prod.
+						allowInsecureRedirectUri: buildAllowInsecureRedirectUri(
+							serverEnv.BETTER_AUTH_URL,
+						),
 						// ID tokens no longer carry profile/email claims; consumers read
 						// those from /oauth2/userinfo. `groups` is surfaced in both so
 						// downstream RBAC keeps working wherever it reads it from.
