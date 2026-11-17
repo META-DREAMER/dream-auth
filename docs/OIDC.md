@@ -226,7 +226,7 @@ scope, resolved as `user.emailVerified ?? false`
 standard claim to `undefined` (`introspect-*.mjs:1260`, applied at `:1408`), so
 `email`, `email_verified`, `name` are absent there. `requireEmailVerification`
 is `false` (`src/lib/auth.ts:174`), so users who never clicked a verification
-link (passkey/SIWE/invite sign-ups) have `emailVerified = false`. Mealie 3.21+
+link (passkey/invite sign-ups) have `emailVerified = false`. Mealie 3.21+
 will refuse those users until either their `emailVerified` is set or dream-auth
 asserts it. Owner decision: mark trusted users verified in the DB, or add an
 opt-in claim override.
@@ -272,11 +272,6 @@ Two things on our side keep that working (regression:
 - After a sign-in, `/login` must not navigate to its own bounce-back target
   when the response is the provider's redirect body
   (`navigateAfterSignIn` in `src/lib/redirect`).
-
-Known gap: SIWE from an app's login redirect still fails. `/siwe/nonce` and
-`/siwe/verify` validate their bodies with `.strict()`, so the `oauth_query`
-the client plugin adds is rejected. Sign in with SIWE on `/login` directly
-first, then start from the app.
 
 ## Troubleshooting
 

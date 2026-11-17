@@ -1,11 +1,9 @@
-import { CheckCircleIcon, UserPlusIcon } from "@phosphor-icons/react";
+import { UserPlusIcon } from "@phosphor-icons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
 import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
-import { ErrorAlert } from "@/components/shared/error-alert";
 import { PageBackground } from "@/components/shared/page-background";
 import {
 	Card,
@@ -17,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
 	isInternalRedirect,
 	navigateToSafeRedirect,
@@ -56,25 +53,7 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
 	const { safeRedirect } = Route.useRouteContext();
 	const [name, setName] = useState("");
-	const [error, setError] = useState<string | null>(null);
-	const [walletSuccess, setWalletSuccess] = useState(false);
 	const { offerPasskey, prompt: passkeyPrompt } = usePasskeyPrompt();
-
-	if (walletSuccess) {
-		return (
-			<div className="min-h-screen flex items-center justify-center p-4">
-				<Card className="w-full max-w-md">
-					<CardContent className="pt-6 text-center">
-						<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/20">
-							<CheckCircleIcon className="h-6 w-6 text-success" />
-						</div>
-						<h2 className="text-xl font-semibold mb-2">Account created!</h2>
-						<p className="text-muted-foreground">Redirecting you now...</p>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
 
 	return (
 		<div className="min-h-screen flex items-center justify-center p-4">
@@ -102,29 +81,6 @@ function RegisterPage() {
 				</CardHeader>
 
 				<CardContent className="space-y-4">
-					{error && <ErrorAlert message={error} />}
-
-					<ConnectSIWEButton
-						onSuccess={() => {
-							setWalletSuccess(true);
-							setTimeout(() => {
-								navigateToSafeRedirect(safeRedirect);
-							}, 1500);
-						}}
-						onError={(err) => setError(err)}
-					/>
-
-					<div className="relative">
-						<div className="absolute inset-0 flex items-center">
-							<Separator className="w-full" />
-						</div>
-						<div className="relative flex justify-center text-xs uppercase">
-							<span className="bg-background px-2 text-muted-foreground">
-								or register with email
-							</span>
-						</div>
-					</div>
-
 					<EmailCodeSignIn
 						name={name}
 						onSignedIn={async (_data, email) => {

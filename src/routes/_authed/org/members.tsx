@@ -7,7 +7,6 @@ import {
 	SpinnerIcon,
 	UserMinusIcon,
 	UsersIcon,
-	WalletIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +27,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -63,15 +61,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrgPermissions } from "@/hooks/use-org-permissions";
 import { authClient, organization, useSession } from "@/lib/auth-client";
-import { formatAddress, formatDate } from "@/lib/format";
-import {
-	inviteByEmail,
-	inviteByWallet,
-	isWalletInvitation,
-} from "@/lib/invite-helpers";
+import { formatDate } from "@/lib/format";
+import { inviteByEmail } from "@/lib/invite-helpers";
 import { orgInvitationsOptions, orgMembersOptions } from "@/lib/org-queries";
 
 export const Route = createFileRoute("/_authed/org/members")({
@@ -100,7 +93,6 @@ type Invitation = {
 	expiresAt: Date;
 	organizationId: string;
 	inviterId: string;
-	walletAddress?: string | null;
 };
 
 /**
@@ -138,9 +130,7 @@ function MembersPage() {
 	const [cancelInvitation, setCancelInvitation] = useState<Invitation | null>(
 		null,
 	);
-	const [inviteType, setInviteType] = useState<"email" | "wallet">("email");
 	const [inviteEmail, setInviteEmail] = useState("");
-	const [inviteWallet, setInviteWallet] = useState("");
 	const [inviteRole, setInviteRole] = useState<"member" | "admin">("member");
 	const [resendingId, setResendingId] = useState<string | null>(null);
 
@@ -196,20 +186,14 @@ function MembersPage() {
 	// Invitation mutations
 	const inviteMutation = useMutation({
 		mutationFn: async ({
-			type,
-			value,
+			email,
 			role,
 		}: {
-			type: "email" | "wallet";
-			value: string;
+			email: string;
 			role: "member" | "admin";
 		}) => {
 			if (!activeOrg) throw new Error("No active organization");
-			return throwOnInviteError(
-				type === "email"
-					? await inviteByEmail(value, role, activeOrg.id)
-					: await inviteByWallet(value, role, activeOrg.id),
-			);
+			return throwOnInviteError(await inviteByEmail(email, role, activeOrg.id));
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -217,7 +201,6 @@ function MembersPage() {
 			});
 			setInviteDialogOpen(false);
 			setInviteEmail("");
-			setInviteWallet("");
 			setInviteRole("member");
 		},
 	});
@@ -242,19 +225,12 @@ function MembersPage() {
 			// previous shape cancelled first and then created, so a failed send
 			// destroyed a working invitation and left nothing behind.
 			return throwOnInviteError(
-				isWalletInvitation(invitation) && invitation.walletAddress
-					? await inviteByWallet(
-							invitation.walletAddress,
-							invitation.role as "member" | "admin",
-							invitation.organizationId,
-							{ resend: true },
-						)
-					: await inviteByEmail(
-							invitation.email,
-							invitation.role as "member" | "admin",
-							invitation.organizationId,
-							{ resend: true },
-						),
+				await inviteByEmail(
+					invitation.email,
+					invitation.role as "member" | "admin",
+					invitation.organizationId,
+					{ resend: true },
+				),
 			);
 		},
 		onSuccess: () => {
@@ -306,13 +282,9 @@ function MembersPage() {
 	};
 
 	const handleInvite = () => {
-		const value = inviteType === "email" ? inviteEmail : inviteWallet;
-		if (!value.trim()) return;
-		inviteMutation.mutate({
-			type: inviteType,
-			value: value.trim(),
-			role: inviteRole,
-		});
+		const email = inviteEmail.trim();
+		if (!email) return;
+		inviteMutation.mutate({ email, role: inviteRole });
 	};
 
 	const handleCancelInvitation = () => {
@@ -370,7 +342,6 @@ function MembersPage() {
 								<TableHeader>
 									<TableRow className="hover:bg-transparent">
 										<TableHead>Invitee</TableHead>
-										<TableHead>Type</TableHead>
 										<TableHead>Role</TableHead>
 										<TableHead>Expires</TableHead>
 										{isOwnerOrAdmin && (
@@ -380,46 +351,14 @@ function MembersPage() {
 								</TableHeader>
 								<TableBody>
 									{pendingInvitations.map((invitation) => {
-										const isWallet = isWalletInvitation(invitation);
 										const expired = isExpired(invitation.expiresAt);
 
 										return (
 											<TableRow key={invitation.id}>
 												<TableCell>
-													<div className="flex flex-col">
-														<span className="font-medium">
-															{isWallet
-																? formatAddress(invitation.walletAddress)
-																: invitation.email}
-														</span>
-														{isWallet && (
-															<span className="text-xs text-muted-foreground">
-																{invitation.email}
-															</span>
-														)}
-													</div>
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant="outline"
-														className={
-															isWallet
-																? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-																: "bg-blue-500/20 text-blue-400 border-blue-500/30"
-														}
-													>
-														{isWallet ? (
-															<>
-																<WalletIcon className="mr-1 h-3 w-3" />
-																Wallet
-															</>
-														) : (
-															<>
-																<EnvelopeIcon className="mr-1 h-3 w-3" />
-																Email
-															</>
-														)}
-													</Badge>
+													<span className="font-medium">
+														{invitation.email}
+													</span>
 												</TableCell>
 												<TableCell>
 													<RoleBadge role={invitation.role} />
@@ -675,50 +614,16 @@ function MembersPage() {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
-						<Tabs
-							value={inviteType}
-							onValueChange={(v) => setInviteType(v as "email" | "wallet")}
-						>
-							<TabsList className="grid w-full grid-cols-2">
-								<TabsTrigger value="email">
-									<EnvelopeIcon className="mr-2 h-4 w-4" />
-									Email
-								</TabsTrigger>
-								<TabsTrigger value="wallet">
-									<WalletIcon className="mr-2 h-4 w-4" />
-									Wallet
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
-
-						{inviteType === "email" ? (
-							<div className="space-y-2">
-								<Label htmlFor="email">Email Address</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="colleague@example.com"
-									value={inviteEmail}
-									onChange={(e) => setInviteEmail(e.target.value)}
-								/>
-							</div>
-						) : (
-							<div className="space-y-2">
-								<Label htmlFor="wallet">Wallet Address</Label>
-								<Input
-									id="wallet"
-									type="text"
-									placeholder="0x..."
-									value={inviteWallet}
-									onChange={(e) => setInviteWallet(e.target.value)}
-									className="font-mono"
-								/>
-								<p className="text-xs text-muted-foreground">
-									The user must sign in with SIWE using this wallet address to
-									accept the invitation.
-								</p>
-							</div>
-						)}
+						<div className="space-y-2">
+							<Label htmlFor="email">Email Address</Label>
+							<Input
+								id="email"
+								type="email"
+								placeholder="colleague@example.com"
+								value={inviteEmail}
+								onChange={(e) => setInviteEmail(e.target.value)}
+							/>
+						</div>
 
 						<div className="space-y-2">
 							<Label htmlFor="role">Role</Label>
@@ -740,12 +645,7 @@ function MembersPage() {
 						</Button>
 						<Button
 							onClick={handleInvite}
-							disabled={
-								inviteMutation.isPending ||
-								(inviteType === "email"
-									? !inviteEmail.trim()
-									: !inviteWallet.trim())
-							}
+							disabled={inviteMutation.isPending || !inviteEmail.trim()}
 						>
 							{inviteMutation.isPending && (
 								<SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
@@ -767,9 +667,7 @@ function MembersPage() {
 						<AlertDialogDescription>
 							Are you sure you want to cancel the invitation for{" "}
 							<span className="font-medium text-foreground">
-								{isWalletInvitation(cancelInvitation ?? {})
-									? cancelInvitation?.walletAddress
-									: cancelInvitation?.email}
+								{cancelInvitation?.email}
 							</span>
 							? This action cannot be undone.
 						</AlertDialogDescription>

@@ -22,7 +22,7 @@ pnpm test:all                # Unit + Integration + E2E
 
 ## Test Structure
 
-- **Unit tests:** Co-located with source files (e.g., `use-siwe-auth.test.tsx` next to `use-siwe-auth.ts`)
+- **Unit tests:** Co-located with source files (e.g., `use-sign-out.test.tsx` next to `use-sign-out.ts`)
 - **Integration tests:** `.int.test.ts` suffix, require PostgreSQL via Testcontainers
 - **E2E tests:** `e2e/tests/` directory - see [E2E-TESTING.md](./E2E-TESTING.md)
 - **Mock factories:** `test/mocks/` directory with path alias `@test/mocks/*`
@@ -41,22 +41,19 @@ pnpm test:all                # Unit + Integration + E2E
 Mock factories live in `test/mocks/` and produce fully-typed objects:
 
 ```typescript
-// test/mocks/wagmi.ts
-import type { UseConnectionReturnType } from "wagmi";
-
-// Use Extract to get specific union member from discriminated union
-type ConnectedAccountState = Extract<UseConnectionReturnType, { status: "connected" }>;
-
-export function createConnectedAccount(
-  overrides: { address?: `0x${string}`; chainId?: number } = {}
-): ConnectedAccountState {
+// test/mocks/org-query.ts
+export function createMockOrgInvitation(overrides: {
+  email: string;
+  role?: "owner" | "admin" | "member";
+  status?: "pending" | "accepted" | "rejected" | "canceled";
+}) {
   return {
-    address: overrides.address ?? "0x1234...",
-    addresses: [overrides.address ?? "0x1234..."],
-    chainId: overrides.chainId ?? 1,
-    // ... all required properties with correct types
-    status: "connected",
-    isConnected: true,
+    id: `invite-${Date.now()}`,
+    organizationId: "org-1",
+    email: overrides.email,
+    role: overrides.role ?? "member",
+    status: overrides.status ?? "pending",
+    // ... every required property with the right type
   };
 }
 ```
@@ -91,16 +88,12 @@ beforeEach(() => {
 
 ## Extract<> for Discriminated Unions
 
-Wagmi and other libraries use discriminated unions where the type depends on a `status` field:
+Hook return types are often discriminated unions keyed on a field such as
+`status` or `isPending`. Take the variant you need with `Extract<>` instead of
+casting:
 
 ```typescript
-import type { UseConnectionReturnType, UseSignMessageReturnType } from "wagmi";
-
-// Get the "connected" variant of the union
-type ConnectedState = Extract<UseConnectionReturnType, { status: "connected" }>;
-
-// Get the "idle" variant for mutation hooks
-type IdleSignMessageState = Extract<UseSignMessageReturnType, { status: "idle" }>;
+type Ready = Extract<ReturnType<typeof useSomething>, { status: "success" }>;
 ```
 
 ## Route Handler Testing
@@ -137,10 +130,6 @@ it("returns 200 with valid session", async () => {
 
 | Factory | Location | Purpose |
 |---------|----------|---------|
-| `createConnectedAccount()` | `@test/mocks/wagmi` | Wagmi useAccount in connected state |
-| `createDisconnectedAccount()` | `@test/mocks/wagmi` | Wagmi useAccount in disconnected state |
-| `createSignMessage()` | `@test/mocks/wagmi` | Wagmi useSignMessage hook |
-| `createDisconnect()` | `@test/mocks/wagmi` | Wagmi useDisconnect hook |
 | `createMockSession()` | `@test/mocks/auth-client` | BetterAuth session with user |
 | `createUseSessionReturn()` | `@test/mocks/auth-client` | useSession() return value |
 | `createMockOrganization()` | `@test/mocks/auth-client` | Organization with members/invitations |
@@ -166,10 +155,10 @@ import { renderHook } from "@testing-library/react";
 1. **Type casting mock return values:**
    ```typescript
    // BAD: Hides missing required properties
-   vi.mocked(useAccount).mockReturnValue({ address: "0x..." } as ReturnType<typeof useAccount>);
+   vi.mocked(useSession).mockReturnValue({ data: { user } } as ReturnType<typeof useSession>);
 
    // GOOD: Use typed factory that includes all required properties
-   vi.mocked(useAccount).mockReturnValue(createConnectedAccount());
+   vi.mocked(useSession).mockReturnValue(createUseSessionReturn(createMockSession()));
    ```
 
 2. **Ignoring type errors with directives:**
@@ -185,12 +174,12 @@ import { renderHook } from "@testing-library/react";
 3. **Mocking entire modules when only one export is needed:**
    ```typescript
    // BAD: Brittle, requires updating mock when module changes
-   vi.mock("wagmi", () => ({ useAccount: vi.fn(), useDisconnect: vi.fn(), ... }));
+   vi.mock("@tanstack/react-router", () => ({ useNavigate: vi.fn(), Link: vi.fn(), ... }));
 
    // GOOD: Only mock what you need, let rest pass through (when possible)
-   vi.mock("wagmi", async (importOriginal) => ({
+   vi.mock("@tanstack/react-router", async (importOriginal) => ({
      ...(await importOriginal()),
-     useAccount: vi.fn(),
+     useNavigate: vi.fn(),
    }));
    ```
 

@@ -91,7 +91,6 @@ export function createMockOrgInvitation(overrides: {
 	status?: "pending" | "accepted" | "rejected" | "canceled";
 	expiresAt?: Date;
 	inviterId?: string;
-	walletAddress?: string;
 }) {
 	return {
 		id: overrides.id ?? `invite-${Date.now()}`,
@@ -101,6 +100,5 @@ export function createMockOrgInvitation(overrides: {
 		status: overrides.status ?? "pending",
 		expiresAt: overrides.expiresAt ?? new Date(Date.now() + 7 * 86400000),
 		inviterId: overrides.inviterId ?? "user-1",
-		walletAddress: overrides.walletAddress,
 	};
 }

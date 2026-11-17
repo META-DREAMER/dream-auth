@@ -5,7 +5,6 @@ import {
 } from "@phosphor-icons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { useDisconnect } from "wagmi";
 import { z } from "zod";
 import { PageBackground } from "@/components/shared/page-background";
 import { Button } from "@/components/ui/button";
@@ -72,7 +71,6 @@ function appHostOf(safeRedirect: string): string | null {
 
 function ForbiddenPage() {
 	const { session, safeRedirect } = Route.useRouteContext();
-	const { disconnect } = useDisconnect();
 	const [isSigningOut, setIsSigningOut] = useState(false);
 
 	const appHost = appHostOf(safeRedirect);
@@ -83,7 +81,6 @@ function ForbiddenPage() {
 	const handleSwitchAccount = async () => {
 		setIsSigningOut(true);
 		try {
-			disconnect();
 			await signOut();
 		} finally {
 			// A full document load: the login page must start from a clean

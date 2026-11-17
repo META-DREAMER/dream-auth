@@ -1,5 +1,3 @@
-import { formatAddress } from "@/lib/format";
-
 /**
  * What the invite page may know about an invitation before anyone signs in.
  *
@@ -11,12 +9,10 @@ import { formatAddress } from "@/lib/format";
 export type InvitationPreview =
 	| {
 			state: "pending";
-			/** Where the sign-in code goes. Absent on a wallet invitation. */
-			email: string | null;
+			/** Where the sign-in code goes. */
+			email: string;
 			organizationName: string;
 			inviterName: string | null;
-			/** Masked ("0x1234...abcd"), only on a wallet invitation. */
-			walletAddressPreview: string | null;
 	  }
 	| { state: "expired" | "used" | "not-found" };
 
@@ -25,7 +21,6 @@ export interface InvitationPreviewRow {
 	email: string;
 	status: string;
 	expiresAt: Date | string;
-	walletAddress: string | null;
 	organizationName: string;
 	inviterName: string | null;
 }
@@ -42,13 +37,8 @@ export function toInvitationPreview(
 
 	return {
 		state: "pending",
-		// A wallet invitation's address is derived from the wallet itself, and
-		// no code is ever sent to it; keep both out of the response.
-		email: row.walletAddress ? null : row.email,
+		email: row.email,
 		organizationName: row.organizationName,
 		inviterName: row.inviterName?.trim() || null,
-		walletAddressPreview: row.walletAddress
-			? formatAddress(row.walletAddress)
-			: null,
 	};
 }

@@ -2,7 +2,6 @@ import { FingerprintIcon, KeyIcon, SpinnerIcon } from "@phosphor-icons/react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
 import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
 import { ErrorAlert } from "@/components/shared/error-alert";
@@ -23,7 +22,6 @@ import { signIn } from "@/lib/auth-client";
 import {
 	isInternalRedirect,
 	navigateAfterSignIn,
-	navigateToSafeRedirect,
 	resolveSafeRedirect,
 } from "@/lib/redirect";
 
@@ -210,21 +208,18 @@ function LoginPage() {
 						</Button>
 					)}
 
-					<ConnectSIWEButton
-						onSuccess={() => navigateToSafeRedirect(safeRedirect)}
-						onError={(err) => setError(err)}
-					/>
-
-					<div className="relative">
-						<div className="absolute inset-0 flex items-center">
-							<Separator className="w-full" />
+					{passkeySupported && (
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<Separator className="w-full" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="px-2 text-muted-foreground">
+									or continue with email
+								</span>
+							</div>
 						</div>
-						<div className="relative flex justify-center text-xs uppercase">
-							<span className="px-2 text-muted-foreground">
-								or continue with email
-							</span>
-						</div>
-					</div>
+					)}
 
 					{passwordMode ? (
 						<form onSubmit={handleSubmit} className="space-y-4">

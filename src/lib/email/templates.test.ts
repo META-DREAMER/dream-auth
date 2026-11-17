@@ -5,7 +5,6 @@ import {
 	orgInvitationEmail,
 	otpEmail,
 	verificationEmail,
-	walletInvitationEmail,
 } from "@/lib/email/templates";
 
 const INVITE_FIELDS = {
@@ -102,28 +101,5 @@ describe("orgInvitationEmail", () => {
 			inviterEmail: '"><img src=x onerror=alert(1)>',
 		});
 		expect(template.html).not.toContain("<img");
-	});
-});
-
-describe("walletInvitationEmail", () => {
-	const wallet = "0xabcdef0123456789abcdef0123456789abcdef01";
-
-	it("carries the invite link and the wallet address in both bodies", () => {
-		const template = walletInvitationEmail({
-			...INVITE_FIELDS,
-			walletAddress: wallet,
-		});
-		for (const body of [template.html, template.text]) {
-			expect(body).toContain(INVITE_FIELDS.inviteLink);
-			expect(body).toContain(wallet);
-		}
-	});
-
-	it("states the wallet constraint in the text body", () => {
-		const template = walletInvitationEmail({
-			...INVITE_FIELDS,
-			walletAddress: wallet,
-		});
-		expect(template.text).toContain("sign in with this wallet");
 	});
 });
