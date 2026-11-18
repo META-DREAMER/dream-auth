@@ -3,7 +3,6 @@ export {
 	orgInvitationEmail,
 	otpEmail,
 	verificationEmail,
-	walletInvitationEmail,
 } from "@/lib/email/templates";
 export type {
 	EmailTemplate,

@@ -1,11 +1,10 @@
 # Dream Auth
 
-A lightweight, self-hosted identity provider for home Kubernetes clusters. Supports modern authentication methods including passkeys (WebAuthn), Sign-In With Ethereum (SIWE), and traditional email/password — all while acting as an OIDC provider for your applications.
+A lightweight, self-hosted identity provider for home Kubernetes clusters. Supports modern authentication methods including emailed sign-in codes, passkeys (WebAuthn), and password sign-in for existing accounts — all while acting as an OIDC provider for your applications.
 
 ## Features
 
 - **Passkeys** — Passwordless authentication via WebAuthn/FIDO2
-- **SIWE** — Sign-In With Ethereum wallet authentication
 - **OIDC Provider** — SSO for apps like Grafana, Immich, Weave GitOps
 - **Forward Auth** — Kubernetes ingress integration for nginx/Traefik
 - **Lightweight** — ~200MB RAM, fast cold starts
@@ -125,7 +124,6 @@ docker-compose up -d
 | `FORWARD_AUTH_ORG_ID`  | No       | Id of the org whose members pass forward auth; unset = any signed-in user (see [docs/KUBERNETES.md](docs/KUBERNETES.md#authorization)) |
 | `ENABLE_REGISTRATION`  | No       | Allow public registration (default: `false`)   |
 | `ENABLE_PASSKEYS`      | No       | Enable Passkey support (default: `true`)       |
-| `ENABLE_SIWE`          | No       | Enable Ethereum wallet login (default: `true`) |
 | `ENABLE_OIDC_PROVIDER` | No       | Enable OIDC provider (default: `false`)        |
 | `OIDC_CLIENTS`         | No       | JSON array of OIDC client configs              |
 | `OIDC_CLIENTS_FILE`    | No       | Path to OIDC clients JSON file (for GitOps)    |

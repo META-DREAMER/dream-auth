@@ -64,7 +64,6 @@ export default defineConfig({
 				"**/index.ts",
 				"src/lib/auth-client.ts", // Client-side BetterAuth wrapper
 				"src/lib/auth.ts", // BetterAuth server config (requires full integration)
-				"src/lib/wagmi.ts", // External wagmi config
 				"src/lib/org-queries.ts", // TanStack Query definitions (thin wrappers)
 				"src/lib/session.server.ts", // Server session helpers (requires SSR context)
 				"src/lib/toast-variants.ts", // UI toast config (visual, not behavioral)

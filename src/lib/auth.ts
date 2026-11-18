@@ -2,11 +2,8 @@ import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
-import { emailOTP, jwt, organization, siwe } from "better-auth/plugins";
+import { emailOTP, jwt, organization } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { createPublicClient, http, verifyMessage } from "viem";
-import { mainnet } from "viem/chains";
-import { generateSiweNonce } from "viem/siwe";
 import { serverEnv, serverEnvWithOidc } from "@/env";
 import { buildCookieAdvancedOptions } from "@/lib/auth-cookies";
 import {
@@ -21,7 +18,6 @@ import {
 	orgInvitationEmail,
 	otpEmail,
 	verificationEmail,
-	walletInvitationEmail,
 } from "@/lib/email/templates";
 import { logForwardAuthAuthzWarnings } from "@/lib/forward-auth-authz";
 import { invitationAcceptRefusal } from "@/lib/invitation-accept-policy";
@@ -31,7 +27,6 @@ import { buildAllowInsecureRedirectUri } from "@/lib/oidc/insecure-redirect";
 import { buildJwtPluginOptions } from "@/lib/oidc/issuer";
 import { createOrganizationPolicy } from "@/lib/org-policy";
 import {
-	collectWalletAddresses,
 	isSignupAllowed,
 	REGISTRATION_DISABLED_ERROR,
 	shouldSendSignInCode,
@@ -179,11 +174,11 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: false,
-		// Password sign-in only. Accounts are created by email-code sign-in
-		// (or SIWE), which proves the mailbox. A password sign-up would leave
-		// an `emailVerified: false` user, and better-auth's email-code sign-in
-		// deletes such a user's password, wallet links and sessions the first
-		// time they use a code (`revokeUnprovenAccountAccess`).
+		// Password sign-in only. Accounts are created by email-code sign-in,
+		// which proves the mailbox. A password sign-up would leave an
+		// `emailVerified: false` user, and better-auth's email-code sign-in
+		// deletes such a user's password, linked accounts and sessions the
+		// first time they use a code (`revokeUnprovenAccountAccess`).
 		disableSignUp: true,
 	},
 
@@ -191,15 +186,10 @@ export const auth = betterAuth({
 		/**
 		 * Registration gate for ENABLE_REGISTRATION=false.
 		 *
-		 * `validateUserInfo` (1.7.0) runs on every provisioning path, including
-		 * SIWE - unlike the `databaseHooks.user.create.before` hook it replaces,
-		 * which only saw the placeholder email SIWE mints and so made wallet
-		 * invitations unreachable for users without an existing account.
-		 *
-		 * Only `create-user` is gated. `link-account` must stay open so an
-		 * existing user can still link a wallet or a passkey.
+		 * `validateUserInfo` (1.7.0) runs on every provisioning path. Only
+		 * `create-user` is gated; `link-account` stays open for existing users.
 		 */
-		validateUserInfo: async ({ user, source }, ctx) => {
+		validateUserInfo: async ({ user, source }) => {
 			if (serverEnv.ENABLE_REGISTRATION) return;
 			if (source.action !== "create-user") return;
 
@@ -207,10 +197,6 @@ export const auth = betterAuth({
 			const allowed = await isSignupAllowed({
 				enableRegistration: false,
 				email,
-				walletAddresses: collectWalletAddresses({
-					email,
-					requestBody: ctx?.body,
-				}),
 			});
 
 			if (!allowed) return REGISTRATION_DISABLED_ERROR;
@@ -232,12 +218,10 @@ export const auth = betterAuth({
 		},
 	},
 
-	// Enable account linking so users can link wallets to existing accounts
 	account: {
 		accountLinking: {
 			enabled: true,
-			trustedProviders: ["siwe", "email-password", "email-otp"],
-			allowDifferentEmails: true,
+			trustedProviders: ["email-password", "email-otp"],
 		},
 	},
 
@@ -334,62 +318,6 @@ export const auth = betterAuth({
 					}),
 				]
 			: []),
-		// SIWE (Sign-In With Ethereum) authentication
-		...(serverEnv.ENABLE_SIWE
-			? [
-					siwe({
-						domain: authUrl.hostname,
-						getNonce: async () => {
-							// Generate a cryptographically secure random nonce
-							// Better-auth handles nonce storage and validation internally
-							return generateSiweNonce();
-						},
-						verifyMessage: async ({ message, signature, address }) => {
-							try {
-								// Verify the signature using viem
-								// Better-auth validates the nonce internally
-								const isValid = await verifyMessage({
-									address: address as `0x${string}`,
-									message,
-									signature: signature as `0x${string}`,
-								});
-
-								return isValid;
-							} catch (error) {
-								console.error("SIWE verification failed:", error);
-								return false;
-							}
-						},
-						ensLookup: async ({ walletAddress }) => {
-							try {
-								// Optional: lookup ENS name and avatar using viem
-								// You can use viem's ENS utilities here
-								const client = createPublicClient({
-									chain: mainnet,
-									transport: http(),
-								});
-								const ensName = await client.getEnsName({
-									address: walletAddress as `0x${string}`,
-								});
-								const ensAvatar = ensName
-									? await client.getEnsAvatar({
-											name: ensName,
-										})
-									: null;
-								return {
-									name: ensName || walletAddress,
-									avatar: ensAvatar || "",
-								};
-							} catch {
-								return {
-									name: walletAddress,
-									avatar: "",
-								};
-							}
-						},
-					}),
-				]
-			: []),
 		// Email codes: the default sign-in (and, for an invitee, sign-up), plus
 		// email verification. A code sign-in for an unknown address creates the
 		// user with a verified email, through the `validateUserInfo` gate above.
@@ -427,21 +355,6 @@ export const auth = betterAuth({
 			// UI hides the entry via `canCreateOrganizationFn`.
 			allowUserToCreateOrganization:
 				organizationPolicy.allowUserToCreateOrganization,
-			// Extend invitation schema with wallet address for SIWE-based invitations
-			schema: {
-				invitation: {
-					additionalFields: {
-						// Optional wallet address for wallet-based invitations
-						// When set, user must sign in with SIWE using this wallet to accept
-						walletAddress: {
-							type: "string",
-							required: false,
-							input: true,
-						},
-					},
-				},
-			},
-
 			// Lifecycle hooks for invitation management
 			organizationHooks: {
 				// Slug validation on create and update (OIDC groups claim safety).
@@ -459,21 +372,11 @@ export const auth = betterAuth({
 					if (failure) throw failure;
 				},
 
-				// Email invitations need a verified email, wallet invitations the
-				// invited wallet: see `src/lib/invitation-accept-policy.ts`.
-				beforeAcceptInvitation: async ({ invitation, user }) => {
-					const refusal = await invitationAcceptRefusal({
-						invitationWalletAddress: (
-							invitation as typeof invitation & { walletAddress?: string }
-						).walletAddress,
+				// Accepting needs a verified email: see
+				// `src/lib/invitation-accept-policy.ts`.
+				beforeAcceptInvitation: async ({ user }) => {
+					const refusal = invitationAcceptRefusal({
 						userEmailVerified: user.emailVerified,
-						siweAccountIds: async () =>
-							(
-								await pool.query<{ accountId: string }>(
-									`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
-									[user.id],
-								)
-							).rows.map((row) => row.accountId),
 					});
 					if (refusal) throw new APIError("FORBIDDEN", { message: refusal });
 				},
@@ -482,12 +385,8 @@ export const auth = betterAuth({
 			// Send invitation notifications
 			async sendInvitationEmail(data, _ctx) {
 				const inviteLink = `${serverEnv.BETTER_AUTH_URL}/invite/${data.id}`;
-				const walletAddress = (data as typeof data & { walletAddress?: string })
-					.walletAddress;
 
-				// A wallet invitation still travels by email: the wallet is a
-				// constraint on who may accept, not a delivery channel. If one ever
-				// arrives with no address there is nowhere to send it.
+				// An invitation with no address has nowhere to go.
 				if (!data.email) {
 					console.error(
 						JSON.stringify({
@@ -500,16 +399,12 @@ export const auth = betterAuth({
 					return;
 				}
 
-				const fields = {
+				const template = orgInvitationEmail({
 					orgName: data.organization.name,
 					inviterEmail: data.inviter.user.email,
 					role: data.role,
 					inviteLink,
-				};
-
-				const template = walletAddress
-					? walletInvitationEmail({ ...fields, walletAddress })
-					: orgInvitationEmail(fields);
+				});
 
 				// Parked before the first await, so `afterCreateInvitation` finds it.
 				const send = sendEmail({ to: data.email, ...template }).then(

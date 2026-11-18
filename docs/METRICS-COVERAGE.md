@@ -28,7 +28,6 @@ No metrics, tracing, or observability libraries are installed. The only operatio
 | Auth handler latency | `src/routes/api/auth/$.ts` | None | `auth_request_duration_seconds{method, path}` | Histogram |
 | User creation (signup) | `src/lib/auth.ts:102` | None | `auth_user_signups_total{provider}` | Counter |
 | User creation blocked | `src/lib/auth.ts:119` | None | `auth_signup_blocked_total{reason}` | Counter |
-| SIWE signature verification | `src/lib/auth.ts:220` | `console.error` on failure | `auth_siwe_verification_total{result}` | Counter |
 | Email OTP sent | `src/lib/auth.ts:267` | `console.log` | `auth_email_otp_sent_total{type}` | Counter |
 | Email verification sent | `src/lib/auth.ts:74` | `console.log` | `auth_email_verification_sent_total` | Counter |
 | Invitation sent | `src/lib/auth.ts:327-351` | `console.log` | `auth_invitations_sent_total{type}` | Counter |
@@ -73,7 +72,6 @@ No metrics, tracing, or observability libraries are installed. The only operatio
 |-----------|-----------|------------------------|-------------------|------|
 | Invitation lookup (signup gate) | `src/lib/auth.ts:108` | None | `db_query_duration_seconds{query="invitation_lookup"}` | Histogram |
 | Groups claims fetch | `src/lib/auth.ts:179` | None | `db_query_duration_seconds{query="groups_claims"}` | Histogram |
-| Account verification (SIWE) | `src/lib/auth.ts:303` | None | `db_query_duration_seconds{query="wallet_verification"}` | Histogram |
 | Invitation preview (pre-auth) | `src/routes/invite.$id.tsx:80` | None | `db_query_duration_seconds{query="invitation_preview"}` | Histogram |
 | Advisory lock acquire | `server/plugins/better-auth-auto-migrate.ts:39` | None | `db_query_duration_seconds{query="advisory_lock"}` | Histogram |
 | Advisory lock release | `server/plugins/better-auth-auto-migrate.ts:182` | None | `db_query_duration_seconds{query="advisory_unlock"}` | Histogram |
@@ -92,7 +90,6 @@ These `console.log` / `console.error` calls exist but are unstructured debug out
 | File | Line(s) | Content |
 |------|---------|---------|
 | `src/lib/auth.ts` | 74-75 | Email verification URL |
-| `src/lib/auth.ts` | 228 | SIWE verification failure |
 | `src/lib/auth.ts` | 267 | Email OTP details (includes OTP in plaintext) |
 | `src/lib/auth.ts` | 332-350 | Invitation details |
 | `src/lib/oidc/sync-oidc-clients.ts` | 178, 198-199, 250, 256 | Seeding progress/errors |

@@ -1,6 +1,6 @@
 # Organization & Teams
 
-BetterAuth organization plugin with teams, role-based permissions, and email/wallet invitation system.
+BetterAuth organization plugin with teams, role-based permissions, and an email invitation system.
 
 ## Plugin Configuration
 
@@ -10,13 +10,6 @@ BetterAuth organization plugin with teams, role-based permissions, and email/wal
 organization({
   teams: { enabled: true },
   invitationExpiresIn: 60 * 60 * 24 * 7, // 7 days
-  schema: {
-    invitation: {
-      additionalFields: {
-        walletAddress: { type: "string", required: false, input: true },
-      },
-    },
-  },
   // hooks and email sending configured below
 })
 ```
@@ -108,7 +101,7 @@ Select between Admin and Member. Owner role cannot be reassigned via UI.
 
 ## Invitation System
 
-Two invitation types: **email** and **wallet** (SIWE).
+Invitations go by email.
 
 ### Email Invitations
 
@@ -119,16 +112,6 @@ inviteByEmail(email, role, organizationId)
 An invitee without an account signs up with an email code; no password is
 involved. See [Invitation-Only Registration](#invitation-only-registration).
 
-### Wallet Invitations
-
-```ts
-inviteByWallet(walletAddress, role, organizationId)
-```
-
-Generates deterministic email `{walletAddress}@{auth-domain}`. Stores `walletAddress` on invitation record. See [WEB3.md](./WEB3.md) for wallet verification details.
-
-**Helpers:** `src/lib/invite-helpers.ts` — `getWalletEmail()`, `isWalletInvitation()`, `getInvitationWalletAddress()`
-
 ### Invitation Page
 
 **Route:** `src/routes/invite.$id.tsx`. The invite link is the invitee's whole
@@ -136,12 +119,10 @@ journey; the page offers no generic sign-in options.
 
 | Visitor | Page |
 |---------|------|
-| Signed out, email invitation | One card: Name, the invited email (read-only), "Continue" |
-| Signed out, wallet invitation | "Connect Wallet" (SIWE), then joins automatically |
+| Signed out | One card: Name, the invited email (read-only), "Continue" |
 | Signed in as the invitee | One button: "Join <org>" |
 | Signed in as the invitee, email unverified | "Verify your email" (a code, the settings flow), then joins |
-| Signed in as someone else (or without the invited wallet) | "This invitation is for ..." and "Switch account" (signs out, same link) |
-| Signed in with the invited wallet, but the account's email isn't the invitation's | A message: ask the admin to invite that account's email |
+| Signed in as someone else | "This invitation is for ..." and "Switch account" (signs out, same link) |
 | Expired / accepted / rejected / canceled / unknown id | A message, nothing else |
 
 Which signed-in card shows is decided on the server
@@ -149,20 +130,10 @@ Which signed-in card shows is decided on the server
 `src/lib/invitation-accept-policy.ts`) by the same rules the accept endpoint
 applies, so the page never offers a Join that is bound to fail.
 
-**Wallet invitations and better-auth's recipient check.** Accepting needs the
-session's email to equal the invitation's, and a wallet invitation's email is
-`{wallet}@{auth host}` while a SIWE-created account's is
-`{wallet}@siwe.placeholder.invalid` (no `emailDomainName` is set), and an
-account the wallet was linked to has its own email. So today no wallet account
-can accept a wallet invitation; the page says so instead of failing on Join.
-Inviting the person by email works. Making wallet invitations acceptable
-(e.g. an `emailDomainName` matching `getWalletEmail`, or a wallet-keyed accept)
-is a separate change.
-
 **Signing in with a code on the invite page and unverified accounts.**
 better-auth's email-code sign-in treats an existing account whose email is
-unverified as unproven: the first code sign-in deletes its password, wallet
-links and sessions (`revokeUnprovenAccountAccess`) before signing in. That is
+unverified as unproven: the first code sign-in deletes its password, linked
+accounts and sessions (`revokeUnprovenAccountAccess`) before signing in. That is
 the signed-out path here. A signed-in unverified invitee gets the verify step
 instead (`emailOtp.verifyEmail`, which removes nothing). As of this change no
 password-only unverified users exist on the live deployment.
@@ -179,8 +150,8 @@ the error. Opening the page has no side effects: link scanners open it too.
 A direct DB query, keyed by invitation id only, because better-auth's
 `getInvitation` needs the invitee's session. A pending invitation yields the
 email, organization name and inviter *name* (never the inviter's email; with
-no name the page says "an admin of <org>"); a wallet invitation yields a masked
-wallet instead of its derived email. Anything else yields only its state.
+no name the page says "an admin of <org>"). Anything else yields only its
+state.
 
 ### Invitation Lifecycle
 
@@ -199,25 +170,21 @@ wallet instead of its derived email. Anything else yields only its state.
 `src/lib/invitation-accept-policy.ts`. On top of better-auth's own check that
 the session email equals the invitation email:
 
-- **Email invitation:** the user's email must be verified.
-  `changeEmail.updateEmailWithoutVerification` lets an unverified account (a
-  wallet user's placeholder) set its email to any address without proof, so
-  the email match alone would let it accept a leaked link. That option stays
-  on because "Link email" in settings (`useEmailVerification`) depends on it.
-  better-auth's `requireEmailVerificationOnInvitation` is not used: it applies
-  to wallet invitations too, whose users never have a verified email.
-- **Wallet invitation:** the user must have a SIWE account for the invited
-  wallet.
+- The user's email must be verified.
+  `changeEmail.updateEmailWithoutVerification` lets an unverified account set
+  its email to any address without proof, so the email match alone would let
+  it accept a leaked link. That option stays on because "Link email" in
+  settings (`useEmailVerification`) depends on it.
 
-Either refusal is `APIError("FORBIDDEN")`.
+The refusal is `APIError("FORBIDDEN")`.
 
 ### Invitation-Only Registration
 
 When `ENABLE_REGISTRATION=false`, `user.validateUserInfo` in
 `src/lib/auth.ts` (logic in `src/lib/registration-gate.ts`) runs on every path
-that creates a user (email code, password, SIWE) and admits the new user only
-when a pending, unexpired invitation matches the email, or the wallet for a
-wallet invitation. Anything else fails with `registration_disabled`.
+that creates a user and admits the new user only when a pending, unexpired
+invitation matches the email. Anything else fails with
+`registration_disabled`.
 
 **Sign-up from an email invitation (passwordless):**
 
@@ -245,11 +212,11 @@ exist. A failed send is logged and never surfaces as an unhandled rejection;
 invitation failures still reach the admin through `afterCreateInvitation`.
 
 **Password sign-up is off** (`emailAndPassword.disableSignUp: true`).
-Accounts are created by email code or SIWE; password sign-in stays for the
+Accounts are created by email code; password sign-in stays for the
 accounts that already have one.
 
 **Sign-in.** `/login` defaults to the email code, with "Sign in with Passkey"
-and SIWE above it and "Sign in with a password instead" for accounts that have
+above it and "Sign in with a password instead" for accounts that have
 one. A code sign-in by a user with no passkey gets the same passkey offer.
 When `/login` was reached from an app's OAuth redirect, both code requests
 carry the signed query (`ba_param`, `sig`, ...) as `oauth_query`, and the URL
@@ -259,12 +226,12 @@ follows the provider's `{ redirect, url }` continuation back to the app.
 
 **Unverified accounts and email codes.** A code sign-in to an account whose
 email is not verified runs better-auth's `revokeUnprovenAccountAccess`: it
-deletes the account's password, its linked SIWE wallets and its other
+deletes the account's password, its other linked accounts and its other
 sessions, then marks the email verified (passkeys are kept). The code proves
 the mailbox; whatever was attached before that proof is not trusted. Password
 sign-up is off so that no new unverified email accounts appear. As of
-2026-11-16 the only unverified account on the live instance is wallet-only,
-which never signs in by email code.
+2026-11-16 the only unverified account on the live instance is a leftover
+wallet-only user from the removed SIWE sign-in; it can no longer sign in.
 
 ## Teams
 
@@ -305,7 +272,7 @@ URL parameters, responses, proxy manifests, the trust model) are in
 **Granting someone access:**
 
 1. **Invite them to the pinned organization** (Members page -> Invite, by
-   email or wallet). Once they accept, they are a `member` and can reach every
+   email). Once they accept, they are a `member` and can reach every
    app whose middleware carries no `team=` or `role=`.
 2. **Add them to a team** (Teams page -> Manage members) for each app whose
    middleware carries `team=<name>`. Team names are matched
@@ -352,7 +319,7 @@ organization.updateMemberRole({ memberId, role })
 organization.removeMember({ memberIdOrEmail })
 
 // Invitations
-organization.inviteMember({ email, role, organizationId, walletAddress? })
+organization.inviteMember({ email, role, organizationId })
 organization.acceptInvitation({ invitationId })
 organization.rejectInvitation({ invitationId })
 organization.cancelInvitation({ invitationId })
@@ -374,7 +341,7 @@ BetterAuth manages these tables (camelCase columns):
 
 - **organization** — `id`, `name`, `slug`, `logo`, `createdAt`
 - **member** — `id`, `userId`, `organizationId`, `role`, `teamId`, `createdAt`
-- **invitation** — `id`, `email`, `organizationId`, `role`, `status`, `inviterId`, `expiresAt`, `walletAddress`
+- **invitation** — `id`, `email`, `organizationId`, `role`, `status`, `inviterId`, `expiresAt` (live databases still carry an unused `walletAddress` column from the removed wallet invitations)
 - **team** — `id`, `name`, `organizationId`, `createdAt`
 - **teamMember** — `id`, `teamId`, `userId`, `createdAt` (the table team membership lives in since 1.7; `member.teamId` is legacy and unused)
 
@@ -382,7 +349,6 @@ BetterAuth manages these tables (camelCase columns):
 
 | Issue | Solution |
 |-------|----------|
-| Invitation acceptance fails for wallet invite | User must SIWE-authenticate with the exact invited wallet address |
 | Signup blocked without invitation | `ENABLE_REGISTRATION=false` — user needs a pending invitation matching their email |
 | Role change not reflected | Invalidate `["organization", orgId, "members"]` query cache |
 | Team member changes not saving | Check for Promise.all errors in batch add/remove operations |

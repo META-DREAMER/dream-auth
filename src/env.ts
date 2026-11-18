@@ -133,10 +133,6 @@ export const serverEnv = createEnv({
 			.string()
 			.default("true")
 			.transform((val) => val === "true"),
-		ENABLE_SIWE: z
-			.string()
-			.default("true")
-			.transform((val) => val === "true"),
 		ENABLE_OIDC_PROVIDER: z
 			.string()
 			.default("false")

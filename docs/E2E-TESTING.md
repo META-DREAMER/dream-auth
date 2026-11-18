@@ -191,10 +191,6 @@ Artifacts retained for 7 days:
 
 Playwright supports virtual authenticators for WebAuthn testing. See `e2e/README.md` for implementation guide using Chrome DevTools Protocol.
 
-### SIWE Testing (Ethereum Wallet)
-
-Mock the Ethereum provider via `page.addInitScript()` to simulate wallet connections and message signing.
-
 ### Full OIDC Flow Testing
 
 The OIDC client simulator in `e2e/helpers/oidc-client.ts` (to be implemented) provides:
@@ -240,7 +236,6 @@ All E2E test environment variables are set directly by `global-setup.ts` when sp
 | `ENABLE_REGISTRATION`      | `true`                                                |
 | `ENABLE_OIDC_PROVIDER`     | `true`                                                |
 | `ENABLE_PASSKEYS`          | `true`                                                |
-| `ENABLE_SIWE`              | `true`                                                |
 | `OIDC_REQUIRE_PKCE`        | `true`                                                |
 | `OIDC_CLIENTS`             | Test client JSON (2 clients)                          |
 

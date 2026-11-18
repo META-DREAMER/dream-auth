@@ -6,16 +6,13 @@ import {
 	GearIcon,
 	SignOutIcon,
 	UserIcon,
-	WalletIcon,
 } from "@phosphor-icons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AddPasskeyDialog } from "@/components/auth/add-passkey-dialog";
 import { ChangeEmailDialog } from "@/components/auth/change-email-dialog";
 import { LinkEmailDialog } from "@/components/auth/link-email-dialog";
-import { LinkWalletDialog } from "@/components/auth/link-wallet-dialog";
 import { PasskeyList } from "@/components/auth/passkey-list";
 import { VerifyEmailDialog } from "@/components/auth/verify-email-dialog";
-import { WalletList } from "@/components/auth/wallet-list";
 import { PageBackground } from "@/components/shared/page-background";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +25,6 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useSignOut } from "@/hooks/use-sign-out";
-import { getRealEmail } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/settings")({
 	component: SettingsPage,
@@ -39,8 +35,7 @@ function SettingsPage() {
 	const { session } = Route.useRouteContext();
 	const handleSignOut = useSignOut();
 
-	// Filter out SIWE-generated placeholder emails (walletAddress@domain)
-	const realEmail = getRealEmail(session.user.email);
+	const email = session.user.email;
 
 	return (
 		<div className="min-h-screen">
@@ -98,7 +93,7 @@ function SettingsPage() {
 								<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary">
 									<span className="text-2xl font-semibold text-primary-foreground">
 										{session.user.name?.charAt(0).toUpperCase() ||
-											realEmail?.charAt(0).toUpperCase() ||
+											email.charAt(0).toUpperCase() ||
 											"U"}
 									</span>
 								</div>
@@ -106,12 +101,10 @@ function SettingsPage() {
 									<p className="text-lg font-medium">
 										{session.user.name || "User"}
 									</p>
-									{realEmail && (
-										<p className="text-muted-foreground flex items-center gap-1">
-											<EnvelopeIcon className="h-4 w-4" />
-											{realEmail}
-										</p>
-									)}
+									<p className="text-muted-foreground flex items-center gap-1">
+										<EnvelopeIcon className="h-4 w-4" />
+										{email}
+									</p>
 								</div>
 							</div>
 						</CardContent>
@@ -130,7 +123,7 @@ function SettingsPage() {
 										Link an email address for account recovery
 									</CardDescription>
 								</div>
-								{realEmail && session.user.emailVerified ? (
+								{session.user.emailVerified ? (
 									<ChangeEmailDialog />
 								) : (
 									<LinkEmailDialog />
@@ -138,36 +131,29 @@ function SettingsPage() {
 							</div>
 						</CardHeader>
 						<CardContent>
-							{realEmail ? (
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<EnvelopeIcon className="h-4 w-4 text-muted-foreground" />
-										<span>{realEmail}</span>
-										<Badge
-											variant={
-												session.user.emailVerified ? "default" : "secondary"
-											}
-											className={
-												session.user.emailVerified
-													? "bg-success/20 text-success border-success/30"
-													: ""
-											}
-										>
-											{session.user.emailVerified ? "Verified" : "Unverified"}
-										</Badge>
-									</div>
-									<div className="flex items-center gap-2">
-										{!session.user.emailVerified && (
-											<VerifyEmailDialog email={realEmail} />
-										)}
-									</div>
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<EnvelopeIcon className="h-4 w-4 text-muted-foreground" />
+									<span>{email}</span>
+									<Badge
+										variant={
+											session.user.emailVerified ? "default" : "secondary"
+										}
+										className={
+											session.user.emailVerified
+												? "bg-success/20 text-success border-success/30"
+												: ""
+										}
+									>
+										{session.user.emailVerified ? "Verified" : "Unverified"}
+									</Badge>
 								</div>
-							) : (
-								<p className="text-muted-foreground text-sm">
-									No email linked to your account yet. Add one for easier
-									recovery.
-								</p>
-							)}
+								<div className="flex items-center gap-2">
+									{!session.user.emailVerified && (
+										<VerifyEmailDialog email={email} />
+									)}
+								</div>
+							</div>
 						</CardContent>
 					</Card>
 
@@ -192,27 +178,6 @@ function SettingsPage() {
 						</CardContent>
 					</Card>
 
-					{/* Wallets Section */}
-					<Card>
-						<CardHeader>
-							<div className="flex items-center justify-between">
-								<div>
-									<CardTitle className="flex items-center gap-2">
-										<WalletIcon className="h-5 w-5 text-orange-500" />
-										Linked Wallets
-									</CardTitle>
-									<CardDescription>
-										Sign in with your Ethereum wallet
-									</CardDescription>
-								</div>
-								<LinkWalletDialog />
-							</div>
-						</CardHeader>
-						<CardContent>
-							<WalletList />
-						</CardContent>
-					</Card>
-
 					<Separator />
 
 					{/* Session Info */}
@@ -226,7 +191,7 @@ function SettingsPage() {
 									<dt className="text-muted-foreground">User ID</dt>
 									<dd className="font-mono text-xs">{session.user.id}</dd>
 								</div>
-								{realEmail && session.user.emailVerified && (
+								{session.user.emailVerified && (
 									<div className="flex justify-between">
 										<dt className="text-muted-foreground">Email Verified</dt>
 										<dd className="text-success">Yes</dd>

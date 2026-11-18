@@ -6,7 +6,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { Web3Provider } from "@/components/web3-provider";
+import { QueryProvider } from "@/components/query-provider";
 import { getSessionFn } from "@/lib/session.server";
 import { ThemeProvider, themeScript } from "@/lib/theme";
 import appCss from "../styles.css?url";
@@ -86,9 +86,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 function RootComponent() {
 	return (
 		<ThemeProvider>
-			<Web3Provider>
+			<QueryProvider>
 				<Outlet />
-			</Web3Provider>
+			</QueryProvider>
 		</ThemeProvider>
 	);
 }

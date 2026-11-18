@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { type ReactNode, useRef, useState } from "react";
 import { z } from "zod";
-import { ConnectSIWEButton } from "@/components/auth/connect-siwe-button";
 import { EmailCodeSignIn } from "@/components/auth/email-code-sign-in";
 import { EmailOTPInput } from "@/components/auth/email-otp-input";
 import { usePasskeyPrompt } from "@/components/auth/passkey-prompt";
@@ -56,18 +55,6 @@ type PendingInvitation = Extract<InvitationPreview, { state: "pending" }>;
 /** The signed-in visitor, as the page shows them. */
 interface SignedIn {
 	email: string;
-	/** A wallet user's placeholder email (`*.invalid`) is not worth showing. */
-	hasRealEmail: boolean;
-	label: string;
-}
-
-function toSignedIn(user: { email: string; name: string }): SignedIn {
-	const hasRealEmail = !user.email.endsWith(".invalid");
-	return {
-		email: user.email,
-		hasRealEmail,
-		label: hasRealEmail ? user.email : user.name || "your wallet account",
-	};
 }
 
 /**
@@ -106,7 +93,7 @@ function InvitePage() {
 		<InviteFlow
 			invitationId={invitationId}
 			invitation={invitation}
-			signedIn={session ? toSignedIn(session.user) : null}
+			signedIn={session ? { email: session.user.email } : null}
 		/>
 	);
 }
@@ -161,13 +148,13 @@ function InviteFlow({
 		else setJoined(true);
 	};
 
-	/** After a code or wallet sign-in: join, then (code only) offer a passkey. */
-	const joinAfterSignIn = async (passkeyEmail?: string) => {
+	/** After the code sign-in: join, then offer a passkey. */
+	const joinAfterSignIn = async (passkeyEmail: string) => {
 		if (!(await join())) {
 			setSignInFlow(false);
 			return;
 		}
-		if (passkeyEmail) await offerPasskey(passkeyEmail);
+		await offerPasskey(passkeyEmail);
 		finish();
 	};
 
@@ -228,9 +215,6 @@ function InviteFlow({
 				Switch account
 			</Button>
 		);
-		const invitedLabel =
-			invitation.email ?? `the wallet ${invitation.walletAddressPreview}`;
-
 		if (viewer.isPending) return <LoadingCard />;
 		// Gone since the page opened (accepted elsewhere, cancelled, expired).
 		if (viewer.data === null) return <UnavailableCard state="used" />;
@@ -246,7 +230,7 @@ function InviteFlow({
 				body = (
 					<>
 						<p className="text-sm text-muted-foreground text-center">
-							Signed in as <Strong>{signedIn.label}</Strong>
+							Signed in as <Strong>{signedIn.email}</Strong>
 						</p>
 						<Button onClick={joinNow} disabled={isJoining} className="w-full">
 							{isJoining ? (
@@ -277,26 +261,11 @@ function InviteFlow({
 				body = (
 					<>
 						<p className="text-sm text-muted-foreground text-center">
-							This invitation is for <Strong>{invitedLabel}</Strong>, but you're
-							signed in as <Strong>{signedIn.label}</Strong>.
+							This invitation is for <Strong>{invitation.email}</Strong>, but
+							you're signed in as <Strong>{signedIn.email}</Strong>.
 						</p>
 						{switchAccount}
 					</>
-				);
-				break;
-			case "wallet-account-mismatch":
-				body = (
-					<p className="text-sm text-muted-foreground text-center">
-						Your wallet is linked to the account{" "}
-						<Strong>{signedIn.label}</Strong>, which can't accept an invitation
-						sent to the wallet. Ask {inviter} to invite{" "}
-						{signedIn.hasRealEmail ? (
-							<Strong>{signedIn.email}</Strong>
-						) : (
-							"your email address"
-						)}{" "}
-						instead.
-					</p>
 				);
 				break;
 		}
@@ -328,42 +297,26 @@ function InviteFlow({
 			{header}
 			<CardContent className="space-y-4">
 				{error && <ErrorAlert message={error} />}
-				{invitation.email === null ? (
-					<>
-						<p className="text-sm text-muted-foreground text-center">
-							Connect the invited wallet{" "}
-							<span className="font-mono text-foreground">
-								{invitation.walletAddressPreview}
-							</span>{" "}
-							to join.
-						</p>
-						<ConnectSIWEButton
-							onSuccess={() => joinAfterSignIn()}
-							onError={setError}
+				<EmailCodeSignIn
+					name={name}
+					fixedEmail={invitation.email}
+					sendLabel="Continue"
+					wrongEmailHint={`Not your address? Ask ${inviter} to re-invite you.`}
+					onSignedIn={(_data, email) => joinAfterSignIn(email)}
+				>
+					<div className="space-y-2">
+						<Label htmlFor="name">Name</Label>
+						<Input
+							id="name"
+							type="text"
+							placeholder="Your name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							required
+							autoComplete="name"
 						/>
-					</>
-				) : (
-					<EmailCodeSignIn
-						name={name}
-						fixedEmail={invitation.email}
-						sendLabel="Continue"
-						wrongEmailHint={`Not your address? Ask ${inviter} to re-invite you.`}
-						onSignedIn={(_data, email) => joinAfterSignIn(email)}
-					>
-						<div className="space-y-2">
-							<Label htmlFor="name">Name</Label>
-							<Input
-								id="name"
-								type="text"
-								placeholder="Your name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								required
-								autoComplete="name"
-							/>
-						</div>
-					</EmailCodeSignIn>
-				)}
+					</div>
+				</EmailCodeSignIn>
 			</CardContent>
 		</CenteredCard>
 	);
@@ -474,8 +427,8 @@ function Strong({ children }: { children: ReactNode }) {
 }
 
 /**
- * The signed-in invitee's email is not verified yet, and an email invitation
- * needs it verified. Prove it with a code (the settings flow: it changes
+ * The signed-in invitee's email is not verified yet, and an invitation needs
+ * it verified. Prove it with a code (the settings flow: it changes
  * nothing else on the account), then join.
  */
 function VerifyThenJoin({

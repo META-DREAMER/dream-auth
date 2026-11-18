@@ -50,7 +50,6 @@ Catch-all splat route delegating to `auth.handler(request)`. Ensures OIDC client
 
 - `/api/auth/sign-in/email`, `/api/auth/sign-up/email`, `/api/auth/sign-out`
 - `/api/auth/passkey/*` — WebAuthn registration/authentication
-- `/api/auth/siwe/*` — SIWE nonce and verification
 - `/api/auth/organization/*` — Organization CRUD, invitations, teams
 
 ### OAuth2 Proxy

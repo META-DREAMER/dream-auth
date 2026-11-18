@@ -16,8 +16,6 @@ import { addVirtualAuthenticator } from "../../helpers/webauthn";
  * passkey is offered and a done screen follows.
  */
 
-const WALLET = `0x${"1234567890abcdef".repeat(2)}12345678`;
-
 async function membership(pool: Pool, email: string) {
 	const { rows } = await pool.query(
 		`SELECT u.name, u."emailVerified",
@@ -60,7 +58,6 @@ test.describe("Invite link", () => {
 		for (const other of [
 			"Sign in with Passkey",
 			"Sign in with a password instead",
-			"Connect Wallet",
 		]) {
 			await expect(page.getByRole("button", { name: other })).toHaveCount(0);
 		}
@@ -274,51 +271,6 @@ test.describe("Invite link", () => {
 			[user.email],
 		);
 		expect(rows[0].n).toBe(1);
-		await cleanupTestUsers(pool, user.email);
-	});
-
-	test("wallet invitation, signed in without that wallet: offers to switch", async ({
-		authenticatedPage: page,
-		pool,
-	}) => {
-		const { invitationId } = await seedInvitation(pool, `${WALLET}@localhost`, {
-			walletAddress: WALLET,
-		});
-
-		await page.goto(`/invite/${invitationId}`);
-		await expect(
-			page.getByText("This invitation is for the wallet 0x1234...5678"),
-		).toBeVisible();
-		await expect(page.getByRole("button", { name: /^Join / })).toHaveCount(0);
-		await expect(
-			page.getByRole("button", { name: "Switch account" }),
-		).toBeVisible();
-	});
-
-	test("wallet invitation, the wallet's account has another email: says what to do", async ({
-		page,
-		pool,
-	}) => {
-		const user = await createTestUser(pool, {
-			email: `e2e-test-wallet-${Date.now()}@example.com`,
-		});
-		await pool.query(
-			`INSERT INTO account (id, "accountId", "providerId", "userId", "createdAt", "updatedAt")
-			 SELECT gen_random_uuid(), $1, 'siwe', id, NOW(), NOW() FROM "user" WHERE email = $2`,
-			[`${WALLET}:1`, user.email],
-		);
-		const { invitationId } = await seedInvitation(pool, `${WALLET}@localhost`, {
-			walletAddress: WALLET,
-		});
-		await page.goto("/login");
-		await signInWithPassword(page, user.email, user.password);
-
-		await page.goto(`/invite/${invitationId}`);
-		await expect(
-			page.getByText("can't accept an invitation sent to the wallet"),
-		).toBeVisible();
-		await expect(page.getByText(`to invite ${user.email}`)).toBeVisible();
-		await expect(page.getByRole("button", { name: /^Join / })).toHaveCount(0);
 		await cleanupTestUsers(pool, user.email);
 	});
 });

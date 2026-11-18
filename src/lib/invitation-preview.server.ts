@@ -23,7 +23,7 @@ export const getInvitationPreviewFn = createServerFn({ method: "GET" })
 	.inputValidator(z.object({ invitationId: z.string().min(1).max(128) }))
 	.handler(async ({ data }): Promise<InvitationPreview> => {
 		const result = await pool.query<InvitationPreviewRow>(
-			`SELECT i.email, i.status, i."expiresAt", i."walletAddress",
+			`SELECT i.email, i.status, i."expiresAt",
 			        o.name AS "organizationName", u.name AS "inviterName"
 			   FROM invitation i
 			   JOIN organization o ON o.id = i."organizationId"
@@ -49,23 +49,15 @@ export const getInvitationViewerStateFn = createServerFn({ method: "GET" })
 		});
 		if (!session) return null;
 
-		const invitation = await pool.query<{
-			email: string;
-			walletAddress: string | null;
-		}>(
-			`SELECT email, "walletAddress" FROM invitation
+		const invitation = await pool.query<{ email: string }>(
+			`SELECT email FROM invitation
 			  WHERE id = $1 AND status = 'pending' AND "expiresAt" > NOW()`,
 			[data.invitationId],
 		);
 		if (!invitation.rows[0]) return null;
 
-		const accounts = await pool.query<{ accountId: string }>(
-			`SELECT "accountId" FROM account WHERE "userId" = $1 AND "providerId" = 'siwe'`,
-			[session.user.id],
-		);
 		return invitationViewerState({
 			invitation: invitation.rows[0],
 			user: session.user,
-			siweAccountIds: accounts.rows.map((row) => row.accountId),
 		});
 	});

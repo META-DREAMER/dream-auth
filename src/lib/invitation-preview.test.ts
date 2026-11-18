@@ -5,14 +5,12 @@ import {
 } from "./invitation-preview";
 
 const NOW = new Date("2026-11-17T12:00:00Z");
-const WALLET = "0x1234567890abcdef1234567890abcdef12345678";
 
 function row(overrides: Partial<InvitationPreviewRow> = {}) {
 	return {
 		email: "invitee@example.com",
 		status: "pending",
 		expiresAt: new Date("2026-11-20T00:00:00Z"),
-		walletAddress: null,
 		organizationName: "Home",
 		inviterName: "Owner",
 		...overrides,
@@ -26,7 +24,6 @@ describe("toInvitationPreview", () => {
 			email: "invitee@example.com",
 			organizationName: "Home",
 			inviterName: "Owner",
-			walletAddressPreview: null,
 		});
 	});
 
@@ -40,7 +37,6 @@ describe("toInvitationPreview", () => {
 			"inviterName",
 			"organizationName",
 			"state",
-			"walletAddressPreview",
 		]);
 	});
 
@@ -69,19 +65,5 @@ describe("toInvitationPreview", () => {
 	it("treats a blank inviter name as none", () => {
 		const preview = toInvitationPreview(row({ inviterName: "  " }), NOW);
 		expect(preview).toMatchObject({ inviterName: null });
-	});
-
-	it("keeps a wallet invitation's derived address out, masking the wallet", () => {
-		const preview = toInvitationPreview(
-			row({ email: `${WALLET}@auth.example.com`, walletAddress: WALLET }),
-			NOW,
-		);
-		expect(preview).toEqual({
-			state: "pending",
-			email: null,
-			organizationName: "Home",
-			inviterName: "Owner",
-			walletAddressPreview: "0x1234...5678",
-		});
 	});
 });

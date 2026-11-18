@@ -130,7 +130,6 @@ async function globalSetup(_config: FullConfig) {
 		ENABLE_REGISTRATION: "true",
 		ENABLE_OIDC_PROVIDER: "true",
 		ENABLE_PASSKEYS: "true",
-		ENABLE_SIWE: "true",
 		OIDC_REQUIRE_PKCE: "true",
 		OIDC_CLIENTS: oidcClients,
 	};

@@ -4,4 +4,3 @@
 
 export * from "./auth-client";
 export * from "./org-query";
-export * from "./wagmi";

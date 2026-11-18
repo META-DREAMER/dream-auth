@@ -29,7 +29,6 @@ process.env.BETTER_AUTH_URL = "http://localhost:3000";
 process.env.ENABLE_REGISTRATION = "true";
 process.env.ENABLE_OIDC_PROVIDER = "false";
 process.env.ENABLE_PASSKEYS = "false";
-process.env.ENABLE_SIWE = "false";
 
 // OIDC defaults
 process.env.OIDC_REQUIRE_PKCE = "true";

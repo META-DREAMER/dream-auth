@@ -30,7 +30,7 @@ reviews:
     - path: "test/**"
       instructions: |
         Test utilities and infrastructure:
-        - test/mocks/: Mock factories for Wagmi, BetterAuth, etc.
+        - test/mocks/: Mock factories for BetterAuth, org queries, etc.
         - test/fixtures/: Test data fixtures
         - test/helpers/: Shared test utilities
         - test/setup.ts: Vitest global setup

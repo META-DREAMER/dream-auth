@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Self-hosted identity provider (TanStack Start + BetterAuth) with passkeys, SIWE, and OIDC provider for Kubernetes SSO.
+Self-hosted identity provider (TanStack Start + BetterAuth) with email codes, passkeys, and an OIDC provider for Kubernetes SSO.
 
 ## Commands
 
@@ -26,8 +26,7 @@ pnpm dlx shadcn@latest add <component>
 
 - [Auth System (BetterAuth)](./docs/AUTH.md) - Plugin ordering, account linking, session loading
 - [API Endpoints](./docs/API.md) - Route handlers, server functions, response patterns
-- [Web3 / SIWE](./docs/WEB3.md) - Wagmi config, SimpleKit UI, wallet auth flow, account linking
-- [Organization & Teams](./docs/ORGANIZATION.md) - Roles, invitations (email + wallet), team management
+- [Organization & Teams](./docs/ORGANIZATION.md) - Roles, email invitations, team management
 - [OIDC Provider](./docs/OIDC.md) - Client seeding, FK constraint workaround, testing
 - [Kubernetes Integration](./docs/KUBERNETES.md) - Forward auth, auto-migrations, nginx config
 - [Coding Conventions](./docs/CONVENTIONS.md) - Database schema, env vars, styling

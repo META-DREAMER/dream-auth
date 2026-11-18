@@ -178,25 +178,6 @@ export async function createVirtualAuthenticator(page: Page) {
 }
 ```
 
-### Adding SIWE Tests (Wallet Mocking)
-
-Mock the Ethereum provider via `page.addInitScript()`:
-
-```typescript
-// e2e/helpers/mock-wallet.ts
-export async function injectMockWallet(page: Page, address: string) {
-  await page.addInitScript((address) => {
-    window.ethereum = {
-      request: async ({ method }) => {
-        if (method === 'eth_requestAccounts') return [address];
-        if (method === 'personal_sign') return '0x...'; // Mock signature
-      },
-      on: () => {},
-    };
-  }, address);
-}
-```
-
 ### Adding Full OIDC Flow Tests
 
 See the `oidc/discovery.spec.ts` for endpoint tests. For full flow tests:
