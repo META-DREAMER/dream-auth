@@ -24,6 +24,15 @@ interface EmailCodeSignInProps {
 	/** Extra fields on the first step, above the email (e.g. a name). */
 	children?: ReactNode;
 	emailAutoComplete?: string;
+	/**
+	 * The address is already known (an email invitation): shown read-only and
+	 * never editable, so "Use a different email" goes too.
+	 */
+	fixedEmail?: string;
+	/** Under the read-only email, and under the code: what to do if it's wrong. */
+	wrongEmailHint?: ReactNode;
+	/** Label of the button that sends the code. */
+	sendLabel?: string;
 }
 
 /**
@@ -39,8 +48,12 @@ export function EmailCodeSignIn({
 	name,
 	children,
 	emailAutoComplete = "email",
+	fixedEmail,
+	wrongEmailHint,
+	sendLabel = "Email me a code",
 }: EmailCodeSignInProps) {
-	const [email, setEmail] = useState("");
+	const [typedEmail, setEmail] = useState("");
+	const email = fixedEmail ?? typedEmail;
 	const [otp, setOtp] = useState("");
 	const [codeSent, setCodeSent] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -117,8 +130,14 @@ export function EmailCodeSignIn({
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
 						required
+						readOnly={fixedEmail !== undefined}
+						aria-readonly={fixedEmail !== undefined}
+						className={fixedEmail !== undefined ? "bg-muted" : undefined}
 						autoComplete={emailAutoComplete}
 					/>
+					{wrongEmailHint && (
+						<p className="text-xs text-muted-foreground">{wrongEmailHint}</p>
+					)}
 				</div>
 				<Button type="submit" disabled={isLoading} className="w-full">
 					{isLoading ? (
@@ -127,7 +146,7 @@ export function EmailCodeSignIn({
 							Sending code...
 						</>
 					) : (
-						"Email me a code"
+						sendLabel
 					)}
 				</Button>
 			</form>
@@ -144,8 +163,18 @@ export function EmailCodeSignIn({
 		>
 			{error && <ErrorAlert message={error} />}
 			<p className="text-sm text-muted-foreground text-center">
-				If <span className="font-medium text-foreground">{email}</span> can sign
-				in here, a 6-digit code is on its way. It expires in 5 minutes.
+				{fixedEmail === undefined ? (
+					<>
+						If <span className="font-medium text-foreground">{email}</span> can
+						sign in here, a 6-digit code is on its way.
+					</>
+				) : (
+					<>
+						We sent a 6-digit code to{" "}
+						<span className="font-medium text-foreground">{email}</span>.
+					</>
+				)}{" "}
+				It expires in 5 minutes.
 			</p>
 			<EmailOTPInput
 				value={otp}
@@ -168,18 +197,26 @@ export function EmailCodeSignIn({
 					"Continue"
 				)}
 			</Button>
-			<Button
-				type="button"
-				variant="link"
-				className="w-full"
-				onClick={() => {
-					setCodeSent(false);
-					setOtp("");
-					setError(null);
-				}}
-			>
-				Use a different email
-			</Button>
+			{fixedEmail === undefined ? (
+				<Button
+					type="button"
+					variant="link"
+					className="w-full"
+					onClick={() => {
+						setCodeSent(false);
+						setOtp("");
+						setError(null);
+					}}
+				>
+					Use a different email
+				</Button>
+			) : (
+				wrongEmailHint && (
+					<p className="text-xs text-muted-foreground text-center">
+						{wrongEmailHint}
+					</p>
+				)
+			)}
 		</form>
 	);
 }

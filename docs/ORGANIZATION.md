@@ -131,13 +131,56 @@ Generates deterministic email `{walletAddress}@{auth-domain}`. Stores `walletAdd
 
 ### Invitation Page
 
-**Route:** `src/routes/invite.$id.tsx`
+**Route:** `src/routes/invite.$id.tsx`. The invite link is the invitee's whole
+journey; the page offers no generic sign-in options.
 
-1. **Public preview** (no auth): org name, role, expiration, wallet requirement
-2. **Authenticated view**: full details, accept/decline buttons
-3. **Wallet validation**: verifies connected wallet matches invitation
+| Visitor | Page |
+|---------|------|
+| Signed out, email invitation | One card: Name, the invited email (read-only), "Continue" |
+| Signed out, wallet invitation | "Connect Wallet" (SIWE), then joins automatically |
+| Signed in as the invitee | One button: "Join <org>" |
+| Signed in as the invitee, email unverified | "Verify your email" (a code, the settings flow), then joins |
+| Signed in as someone else (or without the invited wallet) | "This invitation is for ..." and "Switch account" (signs out, same link) |
+| Signed in with the invited wallet, but the account's email isn't the invitation's | A message: ask the admin to invite that account's email |
+| Expired / accepted / rejected / canceled / unknown id | A message, nothing else |
 
-The public preview uses a direct DB query (exception to "prefer `auth.api`" rule — pre-auth access needed).
+Which signed-in card shows is decided on the server
+(`getInvitationViewerStateFn`, rules in `invitationViewerState` in
+`src/lib/invitation-accept-policy.ts`) by the same rules the accept endpoint
+applies, so the page never offers a Join that is bound to fail.
+
+**Wallet invitations and better-auth's recipient check.** Accepting needs the
+session's email to equal the invitation's, and a wallet invitation's email is
+`{wallet}@{auth host}` while a SIWE-created account's is
+`{wallet}@siwe.placeholder.invalid` (no `emailDomainName` is set), and an
+account the wallet was linked to has its own email. So today no wallet account
+can accept a wallet invitation; the page says so instead of failing on Join.
+Inviting the person by email works. Making wallet invitations acceptable
+(e.g. an `emailDomainName` matching `getWalletEmail`, or a wallet-keyed accept)
+is a separate change.
+
+**Signing in with a code on the invite page and unverified accounts.**
+better-auth's email-code sign-in treats an existing account whose email is
+unverified as unproven: the first code sign-in deletes its password, wallet
+links and sessions (`revokeUnprovenAccountAccess`) before signing in. That is
+the signed-out path here. A signed-in unverified invitee gets the verify step
+instead (`emailOtp.verifyEmail`, which removes nothing). As of this change no
+password-only unverified users exist on the live deployment.
+
+"Continue" emails a sign-in code; the same card turns into the code input.
+The code signs in (creating the account, named, email verified), the page
+accepts the invitation itself, then offers a passkey, then shows a done screen,
+or goes to `?redirect=` / `?rd=` (validated like `/login`) when present. If the
+accept fails after sign-in, the card drops to the signed-in "Join" state with
+the error. Opening the page has no side effects: link scanners open it too.
+
+**Lookup before sign-in:** `getInvitationPreviewFn`
+(`src/lib/invitation-preview.server.ts`, shape in `src/lib/invitation-preview.ts`).
+A direct DB query, keyed by invitation id only, because better-auth's
+`getInvitation` needs the invitee's session. A pending invitation yields the
+email, organization name and inviter *name* (never the inviter's email; with
+no name the page says "an admin of <org>"); a wallet invitation yields a masked
+wallet instead of its derived email. Anything else yields only its state.
 
 ### Invitation Lifecycle
 
@@ -150,11 +193,23 @@ The public preview uses a direct DB query (exception to "prefer `auth.api`" rule
 
 **Expiration:** 7 days. Resending cancels the old invitation and creates a new one.
 
-### Wallet Verification Hook
+### Accept Checks
 
-**Location:** `src/lib/auth.ts` (`beforeAcceptInvitation`)
+**Location:** `src/lib/auth.ts` (`beforeAcceptInvitation`), logic in
+`src/lib/invitation-accept-policy.ts`. On top of better-auth's own check that
+the session email equals the invitation email:
 
-For wallet invitations, validates the accepting user has a SIWE account matching the invited wallet address. Throws `APIError("FORBIDDEN")` on mismatch.
+- **Email invitation:** the user's email must be verified.
+  `changeEmail.updateEmailWithoutVerification` lets an unverified account (a
+  wallet user's placeholder) set its email to any address without proof, so
+  the email match alone would let it accept a leaked link. That option stays
+  on because "Link email" in settings (`useEmailVerification`) depends on it.
+  better-auth's `requireEmailVerificationOnInvitation` is not used: it applies
+  to wallet invitations too, whose users never have a verified email.
+- **Wallet invitation:** the user must have a SIWE account for the invited
+  wallet.
+
+Either refusal is `APIError("FORBIDDEN")`.
 
 ### Invitation-Only Registration
 
@@ -166,19 +221,18 @@ wallet invitation. Anything else fails with `registration_disabled`.
 
 **Sign-up from an email invitation (passwordless):**
 
-1. The invite link opens `/invite/<id>`; "Create one" goes to
-   `/register?redirect=/invite/<id>` ("Sign in with Email" to `/login` works
-   the same way, without the name field).
-2. The invitee enters a name and email; "Email me a code" calls
+1. The invite link opens `/invite/<id>` with the invited email prefilled.
+2. The invitee enters a name; "Continue" calls
    `/email-otp/send-verification-otp` with `type: "sign-in"`.
 3. They enter the 6-digit code. `/sign-in/email-otp` finds no user and calls
-   `internalAdapter.createUser` with `emailVerified: true`, which runs the
-   `validateUserInfo` gate above. The code proves the mailbox, so the gate
-   matches on the email alone. The account and a session are created.
-4. Right after, while the session is fresh, they are offered a passkey
+   `internalAdapter.createUser` with `emailVerified: true` and the name, which
+   runs the `validateUserInfo` gate above. The code proves the mailbox, so the
+   gate matches on the email alone. The account and a session are created (an
+   existing user is just signed in; their name is left alone).
+4. The page accepts the invitation.
+5. While the session is fresh, they are offered a passkey
    (`passkey.addPasskey()`, `requireSession` stays on). "Not now" is
-   remembered in this browser for 30 days.
-5. They land back on `/invite/<id>` and accept.
+   remembered in this browser for 30 days. Then the done screen.
 
 **Who gets a code.** The send endpoint answers `{ success: true }` for every
 address. The `sendVerificationOTP` callback mails a sign-in code only when

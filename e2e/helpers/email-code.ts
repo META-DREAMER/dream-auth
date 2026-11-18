@@ -8,7 +8,12 @@ import type { Pool } from "pg";
  * the server, but the row is written before it answers.
  */
 export async function readSignInCode(pool: Pool, email: string) {
-	const identifier = `sign-in-otp-${email.toLowerCase()}`;
+	return readEmailCode(pool, "sign-in", email);
+}
+
+/** Same, for any code type (`sign-in`, `email-verification`, ...). */
+export async function readEmailCode(pool: Pool, type: string, email: string) {
+	const identifier = `${type}-otp-${email.toLowerCase()}`;
 	const deadline = Date.now() + 10_000;
 	while (Date.now() < deadline) {
 		const { rows } = await pool.query<{ value: string }>(
@@ -19,7 +24,7 @@ export async function readSignInCode(pool: Pool, email: string) {
 		if (rows[0]) return rows[0].value.split(":")[0];
 		await new Promise((r) => setTimeout(r, 200));
 	}
-	throw new Error(`No sign-in code was issued for ${email}`);
+	throw new Error(`No ${type} code was issued for ${email}`);
 }
 
 /**
@@ -32,15 +37,29 @@ export async function signInWithEmailCode(
 	email: string,
 ) {
 	await page.getByLabel("Email").fill(email);
+	await requestAndEnterCode(page, pool, email, "Email me a code");
+}
+
+/**
+ * Click the button that sends the code (`sendLabel`), then enter the code
+ * issued for `email`. On an invite page the email is prefilled, so this is
+ * the whole of the code step.
+ */
+export async function requestAndEnterCode(
+	page: Page,
+	pool: Pool,
+	email: string,
+	sendLabel: string,
+) {
 	const sent = page.waitForResponse((r) =>
 		r.url().endsWith("/api/auth/email-otp/send-verification-otp"),
 	);
-	await page.getByRole("button", { name: "Email me a code" }).click();
+	await page.getByRole("button", { name: sendLabel, exact: true }).click();
 	await sent;
 	const code = await readSignInCode(pool, email);
 	// input-otp renders one real input behind the six slots.
 	await page.locator("input[data-input-otp]").fill(code);
-	await page.getByRole("button", { name: "Continue" }).click();
+	await page.getByRole("button", { name: "Continue", exact: true }).click();
 }
 
 /** Switch `/login` from the default email code to the password form. */
